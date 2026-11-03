@@ -81,7 +81,7 @@ La explicación completa (CGNAT, seguridad, consumo, problemas habituales) está
 
 ## Compilar y ejecutar
 
-Necesitas [Flutter](https://docs.flutter.dev/get-started/install) 3.47 o superior.
+Necesitas [Flutter](https://docs.flutter.dev/get-started/install) 3.44 o superior (Dart 3.12+). Comprueba tu versión con `flutter --version`.
 
 ```bash
 flutter pub get
