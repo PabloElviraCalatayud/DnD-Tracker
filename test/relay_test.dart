@@ -28,13 +28,23 @@ void main() {
     final player = UserProfile(displayName: 'Brom');
     final campaign = Campaign(name: 'Por datos móviles', dmUserId: dm.userId, dmName: 'Máster');
     final host = HostSession(
-        campaign: campaign, profile: dm, storage: null, port: 0, relayUrl: relayUrl, enableLanBeacon: false);
+      campaign: campaign,
+      profile: dm,
+      storage: null,
+      port: 0,
+      relayUrl: relayUrl,
+      enableLanBeacon: false,
+    );
     await host.start();
     await waitFor(() => host.relayState == RelayState.online);
 
     // La invitación no lleva IPs directas: sólo el relay.
-    final invite = Invite(campaignId: campaign.id, campaignName: campaign.name, code: campaign.joinCode,
-        relayUrl: relayUrl);
+    final invite = Invite(
+      campaignId: campaign.id,
+      campaignName: campaign.name,
+      code: campaign.joinCode,
+      relayUrl: relayUrl,
+    );
     final client = ClientSession(invite: invite, profile: player)..start();
     await waitFor(() => client.status == ConnectionStatus.online);
     expect(client.connectedVia!.path, endsWith('/join'));

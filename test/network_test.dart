@@ -41,12 +41,12 @@ void main() {
   });
 
   Invite inviteFor({String? code}) => Invite(
-        campaignId: host.campaign.id,
-        campaignName: host.campaign.name,
-        code: code ?? host.campaign.joinCode,
-        hosts: ['127.0.0.1'],
-        port: host.port,
-      );
+    campaignId: host.campaign.id,
+    campaignName: host.campaign.name,
+    code: code ?? host.campaign.joinCode,
+    hosts: ['127.0.0.1'],
+    port: host.port,
+  );
 
   test('un jugador se une, crea su personaje y recibe sólo su vista', () async {
     client = ClientSession(invite: inviteFor(), profile: player)..start();
@@ -61,8 +61,14 @@ void main() {
     expect(host.campaign.character(pc.id)!.ownerId, player.userId);
 
     // El máster le da un objeto con el peso y el valor ocultos.
-    final gem = InventoryItem(name: 'Gema extraña', weight: 1, valueCp: 50000, hideWeight: true, hideValue: true,
-        dmNote: 'Es una piedra de Ioun');
+    final gem = InventoryItem(
+      name: 'Gema extraña',
+      weight: 1,
+      valueCp: 50000,
+      hideWeight: true,
+      hideValue: true,
+      dmNote: 'Es una piedra de Ioun',
+    );
     await host.send(Command.giveItem(pc.id, gem));
     await waitFor(() => client.campaign.character(pc.id)!.inventory.isNotEmpty);
     final seen = client.campaign.character(pc.id)!.inventory.single;
@@ -85,7 +91,10 @@ void main() {
   });
 
   test('código incorrecto => acceso denegado', () async {
-    client = ClientSession(invite: inviteFor(code: 'XXXXXX'), profile: player)..start();
+    client = ClientSession(
+      invite: inviteFor(code: 'XXXXXX'),
+      profile: player,
+    )..start();
     await waitFor(() => client.status == ConnectionStatus.denied);
     expect(client.statusMessage, contains('Código'));
     expect(host.campaign.members, isEmpty);

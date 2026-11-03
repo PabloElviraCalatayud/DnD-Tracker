@@ -140,9 +140,9 @@ ICONS = {
     'boots': 'lorc/boots.svg',
     'cape': 'delapouite/cape.svg',
     'robe': 'lorc/robe.svg',
-    'crown': 'badges/crown.svg',
-    'sun': 'badges/sun.svg',
-    'moon': 'badges/moon.svg',
+    'crown': 'delapouite/jewel-crown.svg',
+    'sun': 'lorc/sun.svg',
+    'moon': 'lorc/moon.svg',
 }
 
 BACKGROUND = re.compile(r'<path d="M0 0h512v512H0z"\s*/>')

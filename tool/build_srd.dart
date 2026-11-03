@@ -324,7 +324,7 @@ List<Map<String, Object?>> _classes(List<dynamic> classes, List<dynamic> levels)
       'name': c['name'],
       'hitDie': c['hit_die'],
       'saves': (c['saving_throws'] as List? ?? const []).map((s) => (s as Map)['name']).toList(),
-      if (spellAbility != null) 'spellAbility': spellAbility,
+      'spellAbility': ?spellAbility,
       'levels': lv.map((l) {
         final sc = l['spellcasting'] as Map<String, dynamic>?;
         return {

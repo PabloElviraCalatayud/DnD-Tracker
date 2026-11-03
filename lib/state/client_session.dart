@@ -199,9 +199,13 @@ class ClientSession extends GameSession {
       case Proto.view:
         _applyServerView(Campaign.fromJson(asMap(msg['view'])));
       case Proto.ack:
+        final ok = asBool(msg['ok']);
         final c = _pending.remove(asInt(msg['id']));
-        c?.complete(CommandResult(asBool(msg['ok']), asStringOrNull(msg['error'])));
-        if (_pending.isEmpty && _serverView != null && !identical(_view, _serverView)) {
+        c?.complete(CommandResult(ok, asStringOrNull(msg['error'])));
+        // Si el máster acepta, su nueva vista llegará enseguida: mantenemos la
+        // versión optimista hasta entonces para que no "parpadee". Si lo
+        // rechaza, volvemos a la última vista buena.
+        if (!ok && _pending.isEmpty && _serverView != null) {
           _view = _serverView!;
           notifyListeners();
         }
@@ -274,7 +278,7 @@ class ClientSession extends GameSession {
       final view = _serverView;
       if (updateInvite && view != null) {
         invite = Invite(
-          campaignId: invite.campaignId,
+          campaignId: view.id,
           campaignName: view.name,
           code: invite.code,
           hosts: invite.hosts,

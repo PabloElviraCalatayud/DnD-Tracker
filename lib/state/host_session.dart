@@ -92,6 +92,9 @@ class HostSession extends GameSession {
       if (p.authed) p.userId!,
   };
 
+  @override
+  int get onlineCount => onlineUserIds.length;
+
   List<ConnectedPlayer> get connectedPlayers => _players.values.where((p) => p.authed).toList();
 
   Invite get invite {

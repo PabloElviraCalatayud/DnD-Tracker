@@ -68,6 +68,7 @@ class ViewFilter {
       if (copy.kind == CombatantKind.pc) {
         final ch = copy.characterId == null ? null : full.character(copy.characterId!);
         final own = ch != null && ch.ownerId == userId;
+        if (ch != null) copy.conditions = List.of(ch.conditions);
         if (ch != null && (own || full.settings.showPartyHp)) {
           copy.hp = ch.hpCurrent;
           copy.hpMax = ch.hpMax;

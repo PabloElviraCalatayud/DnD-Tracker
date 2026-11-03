@@ -5,12 +5,6 @@ y se distribuyen bajo la licencia
 [Creative Commons Attribution 3.0 (CC BY 3.0)](https://creativecommons.org/licenses/by/3.0/).
 La única modificación es la eliminación del fondo negro para poder colorearlos.
 
-## badges
-
-- `crown.svg` ← `badges/crown.svg`
-- `moon.svg` ← `badges/moon.svg`
-- `sun.svg` ← `badges/sun.svg`
-
 ## carl-olsen
 
 - `crossbow.svg` ← `carl-olsen/crossbow.svg`
@@ -25,6 +19,7 @@ La única modificación es la eliminación del fondo negro para poder colorearlo
 - `castle.svg` ← `delapouite/castle.svg`
 - `chat.svg` ← `delapouite/chat-bubble.svg`
 - `coins.svg` ← `delapouite/two-coins.svg`
+- `crown.svg` ← `delapouite/jewel-crown.svg`
 - `d20.svg` ← `delapouite/dice-twenty-faces-twenty.svg`
 - `dagger.svg` ← `delapouite/dagger-rose.svg`
 - `dice.svg` ← `delapouite/rolling-dices.svg`
@@ -118,6 +113,7 @@ La única modificación es la eliminación del fondo negro para poder colorearlo
 - `magnifier.svg` ← `lorc/magnifying-glass.svg`
 - `metal_bar.svg` ← `lorc/metal-bar.svg`
 - `minotaur.svg` ← `lorc/minotaur.svg`
+- `moon.svg` ← `lorc/moon.svg`
 - `muscle.svg` ← `lorc/muscle-up.svg`
 - `mushroom.svg` ← `lorc/mushroom-gills.svg`
 - `padlock.svg` ← `lorc/padlock.svg`
@@ -132,6 +128,7 @@ La única modificación es la eliminación del fondo negro para poder colorearlo
 - `shield.svg` ← `lorc/checked-shield.svg`
 - `spear.svg` ← `lorc/spear-hook.svg`
 - `stone.svg` ← `lorc/stone-block.svg`
+- `sun.svg` ← `lorc/sun.svg`
 - `swap_bag.svg` ← `lorc/swap-bag.svg`
 - `sword_clash.svg` ← `lorc/sword-clash.svg`
 - `sword_wound.svg` ← `lorc/sword-wound.svg`

@@ -56,6 +56,16 @@ abstract class GameSession extends ChangeNotifier {
 
   int get totalUnread => unread.values.fold(0, (a, b) => a + b);
 
+  /// Jugadores conectados ahora mismo.
+  int get onlineCount => campaign.online.length;
+
+  void refresh() => notifyListeners();
+
+  void selectCharacter(String id) {
+    selectedCharacterId = id;
+    notifyListeners();
+  }
+
   void markRead(String channelId) {
     if ((unread[channelId] ?? 0) == 0) return;
     unread[channelId] = 0;
