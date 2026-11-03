@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+"""Copia una selección de iconos de game-icons.net (CC BY 3.0) a assets/icons.
+
+Uso:
+  git clone --depth 1 https://github.com/game-icons/icons /ruta/game-icons
+  python3 tool/import_icons.py /ruta/game-icons
+
+Los SVG originales traen un cuadrado negro de fondo y el dibujo en blanco.
+Quitamos el fondo para poder teñir el icono con el color del tema
+(flutter_svg + ColorFilter). El autor de cada icono queda registrado en
+assets/icons/CREDITS.md, como pide la licencia.
+"""
+import os
+import re
+import sys
+
+# nombre en la app -> ruta dentro del repo de game-icons
+ICONS = {
+    'd20': 'delapouite/dice-twenty-faces-twenty.svg',
+    'dice': 'delapouite/rolling-dices.svg',
+    'dice6': 'delapouite/perspective-dice-six-faces-random.svg',
+    'dragon': 'lorc/dragon-head.svg',
+    'dragon_spiral': 'lorc/dragon-spiral.svg',
+    'dragon_breath': 'lorc/dragon-breath.svg',
+    'crossed_swords': 'lorc/crossed-swords.svg',
+    'sword_clash': 'lorc/sword-clash.svg',
+    'swords_emblem': 'lorc/swords-emblem.svg',
+    'broadsword': 'lorc/broadsword.svg',
+    'dagger': 'delapouite/dagger-rose.svg',
+    'thrown_daggers': 'lorc/thrown-daggers.svg',
+    'axe': 'lorc/battle-axe.svg',
+    'mace': 'lorc/spiked-mace.svg',
+    'spear': 'lorc/spear-hook.svg',
+    'bow': 'delapouite/bow-arrow.svg',
+    'crossbow': 'carl-olsen/crossbow.svg',
+    'arrows': 'lorc/arrow-cluster.svg',
+    'shield': 'lorc/checked-shield.svg',
+    'breastplate': 'lorc/breastplate.svg',
+    'leather_armor': 'delapouite/leather-armor.svg',
+    'helm': 'lorc/visored-helm.svg',
+    'backpack': 'delapouite/backpack.svg',
+    'knapsack': 'lorc/knapsack.svg',
+    'swap_bag': 'lorc/swap-bag.svg',
+    'chest': 'lorc/locked-chest.svg',
+    'open_chest': 'skoll/open-treasure-chest.svg',
+    'coins': 'delapouite/two-coins.svg',
+    'gold_bar': 'willdabeast/gold-bar.svg',
+    'gem': 'lorc/cut-diamond.svg',
+    'ring': 'delapouite/ring.svg',
+    'amulet': 'lorc/gem-pendant.svg',
+    'potion': 'lorc/standing-potion.svg',
+    'flask': 'lorc/round-bottom-flask.svg',
+    'bubbling_flask': 'lorc/bubbling-flask.svg',
+    'cauldron': 'lorc/cauldron.svg',
+    'scroll': 'lorc/scroll-unfurled.svg',
+    'scroll_quill': 'delapouite/scroll-quill.svg',
+    'spell_book': 'delapouite/spell-book.svg',
+    'book': 'delapouite/book-cover.svg',
+    'notebook': 'delapouite/notebook.svg',
+    'quill': 'lorc/quill-ink.svg',
+    'wizard_staff': 'lorc/wizard-staff.svg',
+    'pointy_hat': 'lorc/pointy-hat.svg',
+    'crystal_ball': 'lorc/crystal-ball.svg',
+    'magic_swirl': 'lorc/magic-swirl.svg',
+    'fire_spell': 'delapouite/fire-spell-cast.svg',
+    'lightning': 'lorc/lightning-tear.svg',
+    'sparkles': 'delapouite/sparkles.svg',
+    'magic_gate': 'lorc/magic-gate.svg',
+    'portal': 'lorc/portal.svg',
+    'anvil': 'lorc/anvil-impact.svg',
+    'hammer': 'lorc/hammer-nails.svg',
+    'ore': 'faithtoken/ore.svg',
+    'metal_bar': 'lorc/metal-bar.svg',
+    'herbs': 'delapouite/herbs-bundle.svg',
+    'mushroom': 'lorc/mushroom-gills.svg',
+    'leaf': 'lorc/leaf-swirl.svg',
+    'hide': 'delapouite/animal-hide.svg',
+    'wood': 'delapouite/wood-pile.svg',
+    'wool': 'delapouite/wool.svg',
+    'stone': 'lorc/stone-block.svg',
+    'heart_plus': 'zeromancer/heart-plus.svg',
+    'heart': 'lorc/heart-organ.svg',
+    'health': 'sbed/health-normal.svg',
+    'skull': 'sbed/death-skull.svg',
+    'crossbones': 'lorc/skull-crossed-bones.svg',
+    'crowned_skull': 'lorc/crowned-skull.svg',
+    'sword_wound': 'lorc/sword-wound.svg',
+    'goblin': 'delapouite/goblin-head.svg',
+    'orc': 'delapouite/orc-head.svg',
+    'troll': 'skoll/troll.svg',
+    'wolf': 'lorc/wolf-head.svg',
+    'spider': 'carl-olsen/spider-face.svg',
+    'ghost': 'lorc/ghost.svg',
+    'hydra': 'lorc/hydra.svg',
+    'minotaur': 'lorc/minotaur.svg',
+    'vampire': 'delapouite/vampire-dracula.svg',
+    'tentacle': 'lorc/tentacle-strike.svg',
+    'wizard_face': 'delapouite/wizard-face.svg',
+    'elf_helmet': 'kier-heyl/elf-helmet.svg',
+    'hood': 'lorc/hood.svg',
+    'person': 'delapouite/person.svg',
+    'party': 'delapouite/meeple-group.svg',
+    'rally': 'lorc/rally-the-troops.svg',
+    'castle': 'delapouite/castle.svg',
+    'tower_flag': 'delapouite/tower-flag.svg',
+    'dungeon_gate': 'delapouite/dungeon-gate.svg',
+    'campfire': 'lorc/campfire.svg',
+    'sleep': 'delapouite/night-sleep.svg',
+    'hourglass': 'lorc/hourglass.svg',
+    'stopwatch': 'skoll/stopwatch.svg',
+    'treasure_map': 'lorc/treasure-map.svg',
+    'compass': 'lorc/compass.svg',
+    'torch': 'delapouite/torch.svg',
+    'lantern': 'lorc/lantern-flame.svg',
+    'candle': 'lorc/candle-light.svg',
+    'key': 'lorc/key.svg',
+    'lockpicks': 'delapouite/lockpicks.svg',
+    'padlock': 'lorc/padlock.svg',
+    'padlock_open': 'delapouite/padlock-open.svg',
+    'rope': 'delapouite/rope-coil.svg',
+    'hidden': 'lorc/hidden.svg',
+    'invisible': 'delapouite/invisible.svg',
+    'eye_target': 'delapouite/eye-target.svg',
+    'magnifier': 'lorc/magnifying-glass.svg',
+    'brain': 'lorc/brain.svg',
+    'muscle': 'lorc/muscle-up.svg',
+    'running': 'delapouite/running-shoe.svg',
+    'fist': 'skoll/fist.svg',
+    'feather': 'lorc/feather.svg',
+    'conversation': 'lorc/conversation.svg',
+    'chat': 'delapouite/chat-bubble.svg',
+    'radar': 'lorc/radar-sweep.svg',
+    'wifi': 'delapouite/wifi-router.svg',
+    'network': 'delapouite/network-bars.svg',
+    'globe': 'lorc/globe.svg',
+    'settings': 'delapouite/settings-knobs.svg',
+    'exit': 'delapouite/exit-door.svg',
+    'backup': 'lorc/backup.svg',
+    'gloves': 'delapouite/gloves.svg',
+    'boots': 'lorc/boots.svg',
+    'cape': 'delapouite/cape.svg',
+    'robe': 'lorc/robe.svg',
+    'crown': 'badges/crown.svg',
+    'sun': 'badges/sun.svg',
+    'moon': 'badges/moon.svg',
+}
+
+BACKGROUND = re.compile(r'<path d="M0 0h512v512H0z"\s*/>')
+
+
+def main() -> None:
+    if len(sys.argv) != 2:
+        print(__doc__)
+        sys.exit(1)
+    src_root = sys.argv[1]
+    here = os.path.dirname(os.path.abspath(__file__))
+    out_dir = os.path.join(here, '..', 'assets', 'icons')
+    os.makedirs(out_dir, exist_ok=True)
+    credits = {}
+    for name, rel in sorted(ICONS.items()):
+        with open(os.path.join(src_root, rel), encoding='utf-8') as f:
+            svg = f.read()
+        svg = BACKGROUND.sub('', svg)
+        svg = svg.replace('fill="#fff"', 'fill="#ffffff"')
+        with open(os.path.join(out_dir, f'{name}.svg'), 'w', encoding='utf-8') as f:
+            f.write(svg)
+        author = rel.split('/')[0]
+        credits.setdefault(author, []).append((name, rel))
+
+    lines = [
+        '# Créditos de los iconos',
+        '',
+        'Todos los iconos de esta carpeta proceden de [game-icons.net](https://game-icons.net)',
+        'y se distribuyen bajo la licencia',
+        '[Creative Commons Attribution 3.0 (CC BY 3.0)](https://creativecommons.org/licenses/by/3.0/).',
+        'La única modificación es la eliminación del fondo negro para poder colorearlos.',
+        '',
+    ]
+    for author in sorted(credits):
+        lines.append(f'## {author}')
+        lines.append('')
+        for name, rel in credits[author]:
+            lines.append(f'- `{name}.svg` ← `{rel}`')
+        lines.append('')
+    with open(os.path.join(out_dir, 'CREDITS.md'), 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+    print(f'{len(ICONS)} iconos copiados en {os.path.normpath(out_dir)}')
+
+
+if __name__ == '__main__':
+    main()
