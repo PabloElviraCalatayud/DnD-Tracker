@@ -10,12 +10,31 @@ import '../../../domain/ruleset.dart';
 import '../../../state/providers.dart';
 import '../../../state/session.dart';
 import '../../theme.dart';
+import '../../widgets/art.dart';
 import '../../widgets/common.dart';
+import '../board/image_tools.dart';
 import '../../../core/i18n.dart';
 import '../../../core/text.dart';
 
 const portraitChoices = [
   'hood',
+  'barbarian',
+  'black_knight',
+  'monk_face',
+  'rogue',
+  'hooded_assassin',
+  'sun_priest',
+  'warlock_hood',
+  'witch_face',
+  'bowman',
+  'archer',
+  'ninja_mask',
+  'cowled',
+  'hooded_figure',
+  'elf_face',
+  'dwarf_face',
+  'dwarf_helmet',
+  'horned_helm',
   'wizard_face',
   'elf_helmet',
   'helm',
@@ -237,12 +256,47 @@ class _FieldState extends State<_Field> {
 
 // ---------------------------------------------------------------- Básico
 
-class _BasicTab extends StatelessWidget {
+class _BasicTab extends StatefulWidget {
   const _BasicTab({required this.c, required this.set, required this.srd, required this.ruleset});
   final Character c;
   final void Function(VoidCallback) set;
   final SrdData? srd;
   final Ruleset ruleset;
+
+  @override
+  State<_BasicTab> createState() => _BasicTabState();
+}
+
+class _BasicTabState extends State<_BasicTab> {
+  Character get c => widget.c;
+  void Function(VoidCallback) get set => widget.set;
+  SrdData? get srd => widget.srd;
+  Ruleset get ruleset => widget.ruleset;
+  bool _uploading = false;
+
+  /// Retrato con una imagen propia: se recorta en cuadrado y se envía al máster.
+  Future<void> _uploadPortrait() async {
+    final s = SessionScope.read(context);
+    final bytes = await pickImageFile();
+    if (bytes == null || !mounted) return;
+    setState(() => _uploading = true);
+    try {
+      final img = await prepareTokenImage(bytes);
+      if (img == null) {
+        if (mounted) showSnack(context, tr('No se pudo leer la imagen'), error: true);
+        return;
+      }
+      final id = await s.uploadAsset(img.bytes);
+      if (!mounted) return;
+      if (id == null) {
+        showSnack(context, tr('No se pudo subir la imagen'), error: true);
+        return;
+      }
+      set(() => c.portraitAssetId = id);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
 
   void _onClassChosen(ClassLevel cl, String name) {
     cl.name = name;
@@ -283,6 +337,36 @@ class _BasicTab extends StatelessWidget {
         _Field(label: tr('Nombre'), value: c.name, onChanged: (v) => c.name = v),
         Gap.m,
         Text(tr('Retrato'), style: t.titleSmall),
+        Gap.s,
+        Row(
+          children: [
+            CharacterPortrait(character: c, size: 64),
+            Gap.m,
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _uploading ? null : _uploadPortrait,
+                    icon: _uploading
+                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.image_outlined),
+                    label: Text(tr('Usar una imagen')),
+                  ),
+                  if (c.portraitAssetId != null)
+                    TextButton.icon(
+                      onPressed: () => set(() => c.portraitAssetId = null),
+                      icon: const Icon(Icons.close),
+                      label: Text(tr('Quitar imagen')),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        Gap.xs,
+        Text(tr('O elige un icono:'), style: t.bodySmall),
         Gap.s,
         Wrap(
           spacing: 6,

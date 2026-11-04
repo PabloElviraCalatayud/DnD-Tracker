@@ -134,6 +134,9 @@ class SessionScope extends InheritedNotifier<GameSession> {
     return scope!.notifier!;
   }
 
+  static GameSession? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<SessionScope>()?.notifier;
+
   static GameSession read(BuildContext context) {
     final scope = context.getInheritedWidgetOfExactType<SessionScope>();
     return scope!.notifier!;

@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/dice.dart';
 import '../../../domain/abilities.dart';
 import '../../../domain/character.dart';
+import '../../../domain/icons.dart';
 import '../../../domain/ruleset.dart';
 import '../../../state/providers.dart';
 import '../../../state/session.dart';
 import '../../layout.dart';
 import '../../theme.dart';
+import '../../widgets/art.dart';
 import '../../widgets/common.dart';
 import '../shared/dice_roller.dart';
 import 'character_editor.dart';
@@ -223,17 +225,7 @@ class _MobileSheetHeader extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 10, 6, 8),
         child: Row(
           children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceHighest,
-                border: Border.all(color: AppColors.hpColor(ratio), width: 2.5),
-              ),
-              alignment: Alignment.center,
-              child: GameIcon(c.portrait, size: 28),
-            ),
+            CharacterPortrait(character: c, size: 46, borderColor: AppColors.hpColor(ratio)),
             Gap.m,
             Expanded(
               child: Column(
@@ -298,17 +290,7 @@ class _Header extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.surfaceHigh,
-                border: Border.all(color: AppColors.goldSoft, width: 2),
-              ),
-              padding: const EdgeInsets.all(10),
-              child: GameIcon(c.portrait, color: AppColors.gold),
-            ),
+            CharacterPortrait(character: c, size: isDesktopLayout(context) ? 88 : 64),
             Gap.m,
             Expanded(
               child: Column(
@@ -537,6 +519,12 @@ class _Conditions extends ConsumerWidget {
               for (final id in ids)
                 if (editable || c.conditions.contains(id))
                   FilterChip(
+                    avatar: GameIcon(
+                      conditionIcon(id),
+                      size: 18,
+                      color: c.conditions.contains(id) ? AppColors.warning : AppColors.muted,
+                    ),
+                    showCheckmark: false,
                     label: Text(conditionLabel(id)),
                     selected: c.conditions.contains(id),
                     tooltip: srd?.condition(id)?.description,

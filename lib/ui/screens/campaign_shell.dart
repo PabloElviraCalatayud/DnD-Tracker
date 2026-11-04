@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/client_session.dart';
+import '../../state/providers.dart';
 import '../../state/session.dart';
 import '../../engine/commands.dart';
 import '../layout.dart';
 import '../theme.dart';
+import '../widgets/art.dart';
 import '../widgets/common.dart';
 import 'character/character_editor.dart';
 import 'board/board_screen.dart';
@@ -54,6 +57,13 @@ class _CampaignShellState extends State<CampaignShell> {
 
   /// Panel derecho: abierto por defecto en pantallas grandes.
   bool? _panelOpen;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Empieza a cargar el SRD de la partida en cuanto se entra, en segundo plano.
+    ProviderScope.containerOf(context, listen: false).read(srdProvider(widget.session.campaign.ruleset));
+  }
 
   @override
   void dispose() {
@@ -474,17 +484,7 @@ class _ActiveCharacterCard extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final max = c.effectiveHpMax(s.campaign.ruleset);
     final ratio = max <= 0 ? 0.0 : (c.hpCurrent / max).clamp(0.0, 1.0);
-    final portrait = Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.surfaceHighest,
-        border: Border.all(color: AppColors.hpColor(ratio), width: 2),
-      ),
-      alignment: Alignment.center,
-      child: GameIcon(c.portrait, size: 24),
-    );
+    final portrait = CharacterPortrait(character: c, size: 42, borderColor: AppColors.hpColor(ratio));
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 10, 10, 2),
       child: Material(

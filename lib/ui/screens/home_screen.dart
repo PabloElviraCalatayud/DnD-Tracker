@@ -7,7 +7,9 @@ import '../../domain/campaign.dart';
 import '../../state/client_session.dart';
 import '../../state/host_session.dart';
 import '../../state/providers.dart';
+import '../layout.dart';
 import '../theme.dart';
+import '../widgets/art.dart';
 import '../widgets/common.dart';
 import 'about_screen.dart';
 import 'campaign_shell.dart';
@@ -63,8 +65,41 @@ class HomeScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(tr('Saludos, {0}', [profile.displayName]), style: t.headlineSmall),
-                    Text(tr('¿Diriges o juegas hoy?'), style: t.bodyLarge?.copyWith(color: AppColors.muted)),
+                    HeroBanner(
+                      height: isDesktopLayout(context) ? 220 : 170,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'DnD Tracker',
+                              style: TextStyle(
+                                fontFamily: 'CinzelDecorative',
+                                fontWeight: FontWeight.w700,
+                                fontSize: isDesktopLayout(context) ? 38 : 28,
+                                color: AppColors.gold,
+                                shadows: const [Shadow(blurRadius: 12, color: Colors.black)],
+                              ),
+                            ),
+                            Text(
+                              tr('Saludos, {0}', [profile.displayName]),
+                              style: t.headlineSmall?.copyWith(
+                                shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
+                              ),
+                            ),
+                            Text(
+                              tr('¿Diriges o juegas hoy?'),
+                              style: t.bodyLarge?.copyWith(
+                                color: AppColors.parchment.withValues(alpha: 0.85),
+                                shadows: const [Shadow(blurRadius: 8, color: Colors.black)],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     Gap.m,
                     LayoutBuilder(
                       builder: (context, c) {

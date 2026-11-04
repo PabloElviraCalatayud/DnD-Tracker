@@ -1134,4 +1134,7 @@ const Map<String, String> englishStrings = {
   'Sin más datos.': 'No more data.',
   'desconectado': 'disconnected',
   'Sin combate': 'No combat',
+  'Usar una imagen': 'Use an image',
+  'Quitar imagen': 'Remove image',
+  'O elige un icono:': 'Or pick an icon:',
 };

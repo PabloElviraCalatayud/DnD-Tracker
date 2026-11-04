@@ -94,27 +94,102 @@ class Monster {
     final t = type.toLowerCase();
     final n = name.toLowerCase();
     bool any(String text, List<String> words) => words.any(text.contains);
-    if (any(n, ['dragon', 'dragón', 'wyrm']) || any(t, ['dragon', 'dragón'])) return 'dragon';
-    if (any(n, ['goblin', 'trasgo', 'bugbear', 'osgo'])) return 'goblin';
-    if (any(n, ['orc', 'orco'])) return 'orc';
-    if (any(n, ['troll', 'trol'])) return 'troll';
-    if (any(n, ['wolf', 'worg', 'lobo'])) return 'wolf';
-    if (any(n, ['spider', 'araña'])) return 'spider';
-    if (any(n, ['hydra', 'hidra'])) return 'hydra';
-    if (any(n, ['minotaur', 'minotauro'])) return 'minotaur';
-    if (any(n, ['vampire', 'vampiro'])) return 'vampire';
-    if (any(n, ['lich', 'liche'])) return 'crowned_skull';
+    // Primero por nombre (más concreto), luego por tipo.
+    const byName = <String, List<String>>{
+      'beholder': ['beholder', 'contemplador'],
+      'wyvern': ['wyvern', 'guiverno'],
+      'spiked_dragon': ['dracolich', 'ancient', 'anciano'],
+      'dragon': ['dragon', 'dragón', 'wyrm'],
+      'goblin': ['goblin', 'trasgo', 'bugbear', 'osgo', 'hobgoblin', 'kobold'],
+      'orc': ['orc', 'orco'],
+      'troll': ['troll', 'trol'],
+      'ogre': ['ogre', 'ogro'],
+      'cyclops': ['cyclops', 'cíclope'],
+      'werewolf': [
+        'werewolf',
+        'hombre lobo',
+        'weretiger',
+        'hombre tigre',
+        'wererat',
+        'hombre rata',
+        'werebear',
+        'hombre oso',
+        'wereboar',
+        'hombre jabalí',
+      ],
+      'wolf': ['wolf', 'worg', 'lobo', 'jackal', 'chacal', 'dog', 'perro', 'mastiff', 'mastín', 'hyena', 'hiena'],
+      'bear': ['bear', 'oso'],
+      'rat': ['rat', 'rata'],
+      'bat': ['bat', 'murciélago'],
+      'spider': ['spider', 'araña', 'ettercap', 'phase spider'],
+      'scorpion': ['scorpion', 'escorpión'],
+      'centipede': ['centipede', 'ciempiés'],
+      'wasp': ['wasp', 'avispa', 'bee', 'abeja'],
+      'beetle': ['beetle', 'escarabajo'],
+      'insect': ['insect', 'insecto', 'ankheg', 'stirge', 'estirge'],
+      'crab': ['crab', 'cangrejo'],
+      'shark': ['shark', 'tiburón', 'quipper', 'piraña'],
+      'octopus': ['octopus', 'pulpo', 'kraken'],
+      'cobra': ['cobra', 'naga'],
+      'snake': ['snake', 'serpiente', 'constrictor'],
+      'frog': ['frog', 'toad', 'rana', 'sapo'],
+      'lizardman': ['lizardfolk', 'hombre lagarto', 'troglodyte', 'troglodita'],
+      'horned_reptile': ['lizard', 'lagarto', 'crocodile', 'cocodrilo', 'basilisk', 'basilisco', 'behir'],
+      'dinosaur': ['tyrannosaurus', 'tiranosaurio', 'triceratops', 'plesiosaurus', 'dinosaur'],
+      'eagle': ['eagle', 'águila', 'hawk', 'halcón', 'owl', 'búho', 'raven', 'cuervo', 'vulture', 'buitre', 'roc'],
+      'griffin': ['griffon', 'grifo', 'hippogriff', 'hipogrifo'],
+      'harpy': ['harpy', 'arpía'],
+      'horse': ['horse', 'caballo', 'pony', 'poni', 'mule', 'mula', 'nightmare', 'pesadilla', 'pegasus', 'pegaso'],
+      'unicorn': ['unicorn', 'unicornio'],
+      'centaur': ['centaur', 'centauro'],
+      'minotaur': ['minotaur', 'minotauro'],
+      'sphinx': ['sphinx', 'esfinge'],
+      'medusa': ['medusa'],
+      'mermaid': ['merfolk', 'sirena', 'tritón', 'sahuagin'],
+      'hydra': ['hydra', 'hidra', 'chimera', 'quimera', 'manticore', 'mantícora'],
+      'vampire': ['vampire', 'vampiro'],
+      'crowned_skull': ['lich', 'liche', 'demilich', 'semiliche'],
+      'mummy': ['mummy', 'momia'],
+      'skeleton': ['skeleton', 'esqueleto'],
+      'zombie': ['zombie', 'zombi', 'ghoul', 'necrófago', 'ghast'],
+      'floating_ghost': ['ghost', 'fantasma', 'specter', 'espectro', 'wraith', 'wight', 'banshee', 'shadow', 'sombra'],
+      'imp': ['imp', 'diablillo', 'quasit', 'kobold'],
+      'golem': ['golem', 'gólem'],
+      'slime': ['ooze', 'pudding', 'jelly', 'cube', 'cieno', 'pudin', 'cubo', 'gelatinoso'],
+      'tree_face': ['treant', 'ent', 'blight', 'shrub', 'arbusto', 'árbol'],
+      'fire_elemental': [
+        'fire elemental',
+        'elemental de fuego',
+        'salamander',
+        'salamandra',
+        'azer',
+        'efreeti',
+        'ifrit',
+      ],
+      'water_elemental': ['water elemental', 'elemental de agua', 'water weird'],
+      'air_elemental': ['air elemental', 'elemental de aire', 'djinni', 'djinn', 'invisible stalker'],
+      'earth_elemental': ['earth elemental', 'elemental de tierra', 'xorn', 'gargoyle', 'gárgola'],
+      'fairy': ['sprite', 'pixie', 'duende', 'pixi', 'dryad', 'dríade', 'satyr', 'sátiro', 'hag', 'saga'],
+      'angel': ['deva', 'planetar', 'solar', 'couatl', 'ángel'],
+      // Al final: «giant» aparece en muchos nombres de animales gigantes.
+      'giant': ['giant', 'gigante', 'ettin'],
+    };
+    for (final e in byName.entries) {
+      if (any(n, e.value)) return e.key;
+    }
     if (any(t, ['undead', 'muerto'])) return 'skull';
     if (any(t, ['aberration', 'aberración'])) return 'tentacle';
-    if (any(t, ['fiend', 'infernal', 'demonio', 'diablo'])) return 'dragon_breath';
-    if (t.contains('elemental')) return 'fire_spell';
+    if (any(t, ['fiend', 'infernal', 'demon', 'devil', 'demonio', 'diablo'])) return 'devil_mask';
+    if (t.contains('elemental')) return 'fire_elemental';
     if (any(t, ['beast', 'bestia'])) return 'wolf';
     if (any(t, ['monstrosity', 'monstruosidad'])) return 'hydra';
-    if (any(t, ['construct', 'constructo'])) return 'helm';
-    if (any(t, ['fey', 'feéric', 'feeric', 'hada'])) return 'sparkles';
-    if (t.contains('celestial')) return 'sun';
-    if (any(t, ['giant', 'gigante'])) return 'troll';
-    if (any(t, ['ooze', 'plant', 'cieno', 'planta', 'limo'])) return 'mushroom';
+    if (any(t, ['construct', 'constructo'])) return 'golem';
+    if (any(t, ['fey', 'feéric', 'feeric', 'hada'])) return 'fairy';
+    if (t.contains('celestial')) return 'angel';
+    if (any(t, ['giant', 'gigante'])) return 'giant';
+    if (any(t, ['ooze', 'cieno', 'limo'])) return 'slime';
+    if (any(t, ['plant', 'planta'])) return 'tree_face';
+    if (any(t, ['dragon', 'dragón'])) return 'dragon';
     if (any(t, ['humanoid', 'humanoide'])) return 'hood';
     return 'crossed_swords';
   }

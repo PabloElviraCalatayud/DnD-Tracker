@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../domain/profile.dart';
 import '../theme.dart';
+import 'art.dart';
 import '../../core/i18n.dart';
 
 /// Icono de game-icons.net teñido con el color que se pida.
@@ -103,18 +104,26 @@ class SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: padding ?? const EdgeInsets.fromLTRB(14, 12, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (title != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.surfaceHigh.withValues(alpha: 0.55), AppColors.surface.withValues(alpha: 0)],
+            stops: const [0, 0.45],
+          ),
+        ),
+        child: Padding(
+          padding: padding ?? const EdgeInsets.fromLTRB(14, 12, 14, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (title != null) ...[
+                Row(
                   children: [
-                    if (icon != null) ...[GameIcon(icon!, size: 20), Gap.s],
+                    if (icon != null) ...[IconMedallion(icon!, size: 30), Gap.s],
                     Expanded(
                       child: Text(
                         title!,
@@ -124,9 +133,11 @@ class SectionCard extends StatelessWidget {
                     ?trailing,
                   ],
                 ),
-              ),
-            child,
-          ],
+                const Padding(padding: EdgeInsets.only(top: 4, bottom: 8), child: Flourish()),
+              ],
+              child,
+            ],
+          ),
         ),
       ),
     );

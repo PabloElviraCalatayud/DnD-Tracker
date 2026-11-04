@@ -1087,9 +1087,10 @@ class TokenView extends StatelessWidget {
         final icon = Center(
           child: GameIcon(info.icon, size: faceSide * 0.66, color: Colors.white.withValues(alpha: 0.95)),
         );
-        if (t.assetId != null) {
+        final imageId = t.assetId ?? info.character?.portraitAssetId;
+        if (imageId != null) {
           face = FutureBuilder<Uint8List?>(
-            future: s.asset(t.assetId!),
+            future: s.asset(imageId),
             builder: (context, snap) => snap.data == null
                 ? icon
                 : Image.memory(snap.data!, fit: BoxFit.cover, gaplessPlayback: true, filterQuality: FilterQuality.high),

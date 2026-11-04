@@ -68,37 +68,125 @@ class DieShapePainter extends CustomPainter {
     }
   }
 
+  /// Vértices de la silueta del dado (para dibujar sus facetas).
+  List<Offset> vertices(Size s) {
+    final c = s.center(Offset.zero);
+    List<Offset> regular(int n, double scale, {double rotation = -pi / 2}) => [
+      for (var i = 0; i < n; i++)
+        c + Offset(cos(rotation + 2 * pi * i / n), sin(rotation + 2 * pi * i / n)) * (s.shortestSide * scale),
+    ];
+    switch (sides) {
+      case 4:
+        return regular(3, 0.56);
+      case 6:
+        final h = s.shortestSide * 0.41;
+        return [c + Offset(-h, -h), c + Offset(h, -h), c + Offset(h, h), c + Offset(-h, h)];
+      case 8:
+        return regular(4, 0.52);
+      case 10:
+      case 100:
+        final w = s.width * 0.42;
+        final h = s.height * 0.5;
+        return [c + Offset(0, -h), c + Offset(w, -h * 0.1), c + Offset(0, h), c + Offset(-w, -h * 0.1)];
+      case 12:
+        return regular(5, 0.51);
+      default:
+        return regular(6, 0.5);
+    }
+  }
+
+  Path _path(List<Offset> pts) {
+    final p = Path()..moveTo(pts.first.dx, pts.first.dy);
+    for (final v in pts.skip(1)) {
+      p.lineTo(v.dx, v.dy);
+    }
+    return p..close();
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    final path = shape(size);
-    canvas.drawShadow(path, Colors.black, 4, false);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..shader = LinearGradient(
-          colors: [Color.lerp(fill, Colors.white, 0.25)!, fill, Color.lerp(fill, Colors.black, 0.25)!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ).createShader(Offset.zero & size),
-    );
-    canvas.drawPath(
-      path,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.04
-        ..color = edge,
-    );
-    // Aristas interiores sugeridas para dar volumen al d20.
-    if (sides == 20) {
-      final inner = _polygon(size, 3, rotation: -pi / 2, scale: 0.3);
+    final side = size.shortestSide;
+    final c = size.center(Offset.zero);
+    final outer = vertices(size);
+    final inner = [for (final v in outer) c + (v - c) * (sides == 4 ? 0.5 : 0.64)];
+    final outline = _path(outer);
+    canvas.drawShadow(outline, Colors.black, side * 0.08, false);
+    // Facetas: más claras las que miran a la luz (arriba a la izquierda).
+    const light = -3 * pi / 4;
+    final darkTone = Color.lerp(fill, Colors.black, 0.5)!;
+    final lightTone = Color.lerp(fill, Colors.white, 0.4)!;
+    for (var i = 0; i < outer.length; i++) {
+      final j = (i + 1) % outer.length;
+      final mid = (outer[i] + outer[j]) / 2 - c;
+      final facing = (cos(atan2(mid.dy, mid.dx) - light) + 1) / 2;
       canvas.drawPath(
-        inner,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = size.shortestSide * 0.02
-          ..color = edge.withValues(alpha: 0.6),
+        _path([outer[i], outer[j], inner[j], inner[i]]),
+        Paint()..color = Color.lerp(darkTone, lightTone, facing)!,
       );
     }
+    // Cara frontal.
+    final face = _path(inner);
+    final faceRect = face.getBounds();
+    canvas.drawPath(
+      face,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.35, -0.4),
+          radius: 1.1,
+          colors: [Color.lerp(fill, Colors.white, 0.3)!, fill, Color.lerp(fill, Colors.black, 0.15)!],
+          stops: const [0, 0.55, 1],
+        ).createShader(faceRect),
+    );
+    // Aristas.
+    final ridge = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = side * 0.012
+      ..color = Colors.black.withValues(alpha: 0.28);
+    for (var i = 0; i < outer.length; i++) {
+      canvas.drawLine(outer[i], inner[i], ridge);
+    }
+    canvas.drawPath(
+      face,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = side * 0.014
+        ..color = Colors.white.withValues(alpha: 0.35),
+    );
+    if (sides == 20) {
+      final tri = [
+        for (var k = 0; k < 3; k++)
+          c + Offset(cos(-pi / 2 + 2 * pi * k / 3), sin(-pi / 2 + 2 * pi * k / 3)) * side * 0.3,
+      ];
+      canvas.drawPath(
+        _path(tri),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = side * 0.012
+          ..color = Colors.black.withValues(alpha: 0.18),
+      );
+    }
+    canvas.drawPath(
+      outline,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = side * 0.035
+        ..strokeJoin = StrokeJoin.round
+        ..color = edge,
+    );
+    // Brillo.
+    canvas.save();
+    canvas.clipPath(face);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: faceRect.topLeft + Offset(faceRect.width * 0.3, faceRect.height * 0.22),
+        width: faceRect.width * 0.55,
+        height: faceRect.height * 0.3,
+      ),
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.22)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, side * 0.04),
+    );
+    canvas.restore();
     final label = sides == 100
         ? value == 100
               ? '00'
@@ -110,18 +198,16 @@ class DieShapePainter extends CustomPainter {
         style: TextStyle(
           fontFamily: 'Cinzel',
           fontVariations: const [FontVariation('wght', 800)],
-          fontSize: size.shortestSide * (label.length > 2 ? 0.26 : 0.34),
+          fontSize: side * (label.length > 2 ? 0.25 : (sides == 4 ? 0.28 : 0.33)),
           color: textColor,
+          shadows: [Shadow(color: Colors.white.withValues(alpha: 0.35), offset: Offset(0, side * 0.012))],
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    tp.paint(
-      canvas,
-      size.center(Offset.zero) - Offset(tp.width / 2, tp.height / 2 - (sides == 4 ? size.height * 0.08 : 0)),
-    );
+    tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2 - (sides == 4 ? size.height * 0.1 : 0)));
     if (dimmed) {
-      canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.45));
+      canvas.drawPath(outline, Paint()..color = Colors.black.withValues(alpha: 0.45));
     }
   }
 

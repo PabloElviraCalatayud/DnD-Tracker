@@ -509,11 +509,7 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
                   itemBuilder: (context, idx) {
                     final i = list[idx];
                     return ListTile(
-                      leading: GameIcon(
-                        ItemCategory.fromSrd(i.category).icon,
-                        size: 26,
-                        color: i.isMagic ? AppColors.arcane : AppColors.gold,
-                      ),
+                      leading: GameIcon(i.icon, size: 26, color: i.isMagic ? AppColors.arcane : AppColors.gold),
                       title: Text(i.name),
                       subtitle: Text(
                         [

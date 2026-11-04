@@ -219,8 +219,8 @@ class HostSession extends GameSession {
 
   final Map<String, Uint8List> _assetCache = {};
 
-  /// Tamaño máximo de una imagen subida por un jugador (fichas).
-  static const maxPlayerAssetBytes = 512 * 1024;
+  /// Tamaño máximo de una imagen subida por un jugador (retratos y fichas de 512 px).
+  static const maxPlayerAssetBytes = 1536 * 1024;
 
   Future<void> _sendAsset(ConnectedPlayer p, String id) async {
     final bytes = await loadAsset(id);

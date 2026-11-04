@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/dice.dart';
 import '../../../core/text.dart';
+import '../../../domain/icons.dart';
 import '../../../data/srd.dart';
 import '../../../domain/abilities.dart';
 import '../../../domain/character.dart';
@@ -203,7 +204,12 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: sp.isCantrip
-                            ? const GameIcon('sparkles', size: 22)
+                            ? SizedBox(
+                                width: 40,
+                                child: Center(
+                                  child: GameIcon(schoolIcon(sp.school), size: 24, color: AppColors.arcane),
+                                ),
+                              )
                             : Checkbox(
                                 value: sp.prepared || sp.alwaysPrepared,
                                 onChanged: editable && !sp.alwaysPrepared
@@ -215,6 +221,10 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                               ),
                         title: Row(
                           children: [
+                            if (!sp.isCantrip) ...[
+                              GameIcon(schoolIcon(sp.school), size: 18, color: AppColors.arcane),
+                              const SizedBox(width: 6),
+                            ],
                             Flexible(child: Text(sp.name)),
                             if (sp.concentration)
                               Padding(
@@ -736,10 +746,20 @@ class _SpellBrowserState extends State<SpellBrowser> {
                               ? null
                               : (v) => setState(() => v == true ? _selected.add(sp.id) : _selected.remove(sp.id)),
                         )
-                      : CircleAvatar(
-                          radius: 16,
-                          backgroundColor: AppColors.surfaceHigh,
-                          child: Text('${sp.level}', style: t.labelLarge?.copyWith(color: AppColors.arcane)),
+                      : Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            GameIcon(schoolIcon(sp.school), size: 30, color: AppColors.arcane),
+                            Positioned(
+                              right: -6,
+                              bottom: -4,
+                              child: CircleAvatar(
+                                radius: 9,
+                                backgroundColor: AppColors.surfaceHighest,
+                                child: Text('${sp.level}', style: t.labelSmall?.copyWith(color: AppColors.gold)),
+                              ),
+                            ),
+                          ],
                         ),
                   title: Text(sp.name),
                   subtitle: Text(

@@ -20,7 +20,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
   final brom = Character(
     ownerId: ana,
     name: 'Brom Yunquehondo',
-    portrait: 'helm',
+    portrait: 'dwarf_face',
     classes: [ClassLevel(name: 'Cleric', srdId: 'cleric', subclass: 'Life', level: 3, hitDie: 8)],
     species: 'Dwarf',
     background: 'Acolyte',

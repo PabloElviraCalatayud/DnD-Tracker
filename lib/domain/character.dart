@@ -368,6 +368,7 @@ class Character {
     this.appearance = '',
     this.backstory = '',
     this.portrait = 'hood',
+    this.portraitAssetId,
     this.dmNotes = '',
     this.shareCurrency = false,
     this.isSummary = false,
@@ -434,6 +435,9 @@ class Character {
   String appearance;
   String backstory;
   String portrait;
+
+  /// Imagen propia del retrato (id del recurso); si no hay, se usa el icono.
+  String? portraitAssetId;
 
   /// Notas privadas del máster sobre el personaje (nunca se envían al jugador).
   String dmNotes;
@@ -666,6 +670,7 @@ class Character {
     'appearance': appearance,
     'backstory': backstory,
     'portrait': portrait,
+    'portraitAsset': ?portraitAssetId,
     if (dmNotes.isNotEmpty) 'dmNotes': dmNotes,
     'shareCurrency': shareCurrency,
     if (isSummary) 'isSummary': true,
@@ -725,6 +730,7 @@ class Character {
       appearance: asString(j['appearance']),
       backstory: asString(j['backstory']),
       portrait: asString(j['portrait'], 'hood'),
+      portraitAssetId: asStringOrNull(j['portraitAsset']),
       dmNotes: asString(j['dmNotes']),
       shareCurrency: asBool(j['shareCurrency']),
       isSummary: asBool(j['isSummary']),

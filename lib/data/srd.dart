@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../core/json.dart';
 import '../core/text.dart';
 import '../domain/character.dart';
+import '../domain/icons.dart';
 import '../domain/item.dart';
 import '../domain/monster.dart';
 import '../domain/ruleset.dart';
@@ -158,8 +159,12 @@ class SrdItem {
     return parts.join(', ');
   }
 
+  /// Icono según el tipo de objeto (se elige con el nombre inglés).
+  String get icon => iconForItem(nameEn, category);
+
   InventoryItem toInventoryItem({int quantity = 1}) => InventoryItem(
     name: name,
+    icon: icon,
     description: description,
     category: ItemCategory.fromSrd(category),
     quantity: quantity,
