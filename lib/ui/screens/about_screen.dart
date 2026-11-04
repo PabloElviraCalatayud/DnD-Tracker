@@ -42,7 +42,7 @@ class AboutScreen extends StatelessWidget {
             icon: 'sparkles',
             child: RichDescription(
               tr(
-                'Iconos de **game-icons.net** creados por Lorc, Delapouite, Skoll, Sbed, Carl Olsen, Willdabeast, Faithtoken, Zeromancer, Kier Heyl y otros autores, bajo licencia Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/). Lista completa en {0}.',
+                'Iconos de **game-icons.net** creados por Lorc, Delapouite, Skoll, Sbed, Carl Olsen, Willdabeast, Faithtoken, Zeromancer, Kier Heyl, Cathelineau, DarkZaitzev y otros autores, bajo licencia Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/). Lista completa en {0}.',
                 ['assets/icons/CREDITS.md'],
               ),
             ),

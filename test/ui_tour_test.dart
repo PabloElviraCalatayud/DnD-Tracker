@@ -316,4 +316,38 @@ void main() {
       debugDisableShadows = true;
     });
   }
+
+  testWidgets('pantalla grande', (tester) async {
+    tester.view.physicalSize = const Size(1680, 1050);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    debugDisableShadows = _shotDir == null;
+    addTearDown(() => debugDisableShadows = true);
+    final host = demoHost();
+    await tester.pumpWidget(_app(storage, dm, CampaignShell(session: host)));
+    await _shot(tester, 'grande_dm_01_tablero');
+    await _goTo(tester, 'Combate');
+    await _shot(tester, 'grande_dm_02_combate');
+    await _goTo(tester, 'Grimorio');
+    await _settle(tester, ms: 800);
+    await _tap(tester, 'Aboleth');
+    await _shot(tester, 'grande_dm_03_grimorio');
+    await tester.pumpWidget(const SizedBox());
+    final player = DemoPlayerSession(host, 'demo-luis', 'Luis');
+    final luis = UserProfile(userId: 'demo-luis', displayName: 'Luis');
+    await tester.pumpWidget(_app(storage, luis, CampaignShell(session: player)));
+    await _settle(tester, ms: 800);
+    await _goTo(tester, 'Ficha');
+    await _settle(tester, ms: 800);
+    await _shot(tester, 'grande_jugador_01_ficha');
+    await _goTo(tester, 'Inventario');
+    await _tap(tester, 'Poción de curación');
+    await _shot(tester, 'grande_jugador_02_inventario');
+    await _goTo(tester, 'Conjuros');
+    await _tap(tester, 'Proyectil mágico');
+    await _shot(tester, 'grande_jugador_03_conjuros');
+    await tester.pumpWidget(const SizedBox());
+    host.dispose();
+    debugDisableShadows = true;
+  });
 }
