@@ -155,7 +155,7 @@ class ItemsScreen extends StatelessWidget {
                         children: [
                           IconButton(
                             tooltip: tr('Entregar'),
-                            icon: const Icon(Icons.card_giftcard, color: AppColors.gold),
+                            icon: Icon(Icons.card_giftcard, color: AppColors.gold),
                             onPressed: () => giveItemDialog(context, i.copy()..templateId = i.id),
                           ),
                           IconButton(

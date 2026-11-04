@@ -293,4 +293,25 @@ void main() {
     await _settle(tester, ms: 600);
     await _shot(tester, 'inicio');
   });
+
+  for (final theme in ThemeChoice.values) {
+    testWidgets('tema ${theme.name}', (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      AppColors.palette = AppPalettes.of(theme);
+      addTearDown(() => AppColors.palette = AppPalettes.dungeon);
+      debugDisableShadows = _shotDir == null;
+      addTearDown(() => debugDisableShadows = true);
+      final host = demoHost();
+      await tester.pumpWidget(_app(storage, dm, CampaignShell(session: host)));
+      await _shot(tester, 'tema_${theme.name}_1_tablero');
+      await _goTo(tester, 'Resumen');
+      await _shot(tester, 'tema_${theme.name}_2_resumen');
+      await _goTo(tester, 'Combate');
+      await _shot(tester, 'tema_${theme.name}_3_combate');
+      host.dispose();
+      debugDisableShadows = true;
+    });
+  }
 }

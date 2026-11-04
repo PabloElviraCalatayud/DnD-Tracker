@@ -72,7 +72,7 @@ class RollFeed extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const GameIcon('d20', size: 48, color: AppColors.goldSoft),
+            GameIcon('d20', size: 48, color: AppColors.goldSoft),
             Gap.s,
             Text(
               s.isDm

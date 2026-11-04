@@ -107,7 +107,7 @@ class CampaignSettingsScreen extends ConsumerWidget {
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.favorite_outline, color: AppColors.gold),
+                leading: Icon(Icons.favorite_outline, color: AppColors.gold),
                 title: Text(tr('Los PG y estados de los personajes jugadores los ve todo el grupo.')),
                 subtitle: Text(
                   tr('Los PG de los enemigos sólo los ves tú: describe su estado con etiquetas desde el tablero.'),

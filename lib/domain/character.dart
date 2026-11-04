@@ -35,8 +35,7 @@ class ClassLevel {
   );
 
   @override
-  String toString() =>
-      subclass.isEmpty ? '${srdTerm(name)} $level' : '${srdTerm(name)} (${srdTerm(subclass)}) $level';
+  String toString() => subclass.isEmpty ? '${srdTerm(name)} $level' : '${srdTerm(name)} (${srdTerm(subclass)}) $level';
 }
 
 enum Recharge {

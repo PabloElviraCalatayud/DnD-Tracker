@@ -270,7 +270,7 @@ class StatBlock extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: '$label ',
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.gold),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.gold),
                   ),
                   TextSpan(text: value),
                 ],
@@ -284,7 +284,7 @@ class StatBlock extends StatelessWidget {
         children: [
           Gap.m,
           Text(title, style: t.titleLarge?.copyWith(color: AppColors.crimson)),
-          const Divider(color: AppColors.crimson),
+          Divider(color: AppColors.crimson),
           for (final e in entries) _ActionEntry(entry: e, monsterName: m.name, hit: _hit, dmg: _dmg),
         ],
       );
@@ -314,7 +314,7 @@ class StatBlock extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(color: AppColors.crimson, height: 24),
+            Divider(color: AppColors.crimson, height: 24),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -359,7 +359,7 @@ class StatBlock extends StatelessWidget {
                   ),
               ],
             ),
-            const Divider(color: AppColors.crimson, height: 20),
+            Divider(color: AppColors.crimson, height: 20),
             line(tr('Salvaciones'), m.saves),
             line(tr('Habilidades'), m.skills),
             line(tr('Vulnerabilidades'), m.vulnerabilities),

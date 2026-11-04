@@ -246,7 +246,7 @@ class _PlayerNotebookState extends ConsumerState<_PlayerNotebook> {
         children: [
           Row(
             children: [
-              const Icon(Icons.lock_outline, size: 16, color: AppColors.muted),
+              Icon(Icons.lock_outline, size: 16, color: AppColors.muted),
               Gap.s,
               Expanded(
                 child: Text(

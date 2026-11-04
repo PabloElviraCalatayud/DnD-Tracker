@@ -243,7 +243,11 @@ class _RecipeTile extends StatelessWidget {
                 color: check.toolOk ? AppColors.success : AppColors.warning,
               ),
               Gap.s,
-              Expanded(child: Text(check.toolOk ? tr('Herramienta: {0}', [r.tool]) : tr('Herramienta: {0} (no la tienes)', [r.tool]))),
+              Expanded(
+                child: Text(
+                  check.toolOk ? tr('Herramienta: {0}', [r.tool]) : tr('Herramienta: {0} (no la tienes)', [r.tool]),
+                ),
+              ),
             ],
           ),
         if (r.days > 0) Text(tr('Tiempo: {0} día(s) de trabajo', [r.days]), style: t.bodySmall),
@@ -252,7 +256,7 @@ class _RecipeTile extends StatelessWidget {
           Gap.s,
           FilledButton.icon(
             onPressed: check.canCraft ? () => _craft(context, check.maxTimes) : null,
-            icon: const GameIcon('anvil', size: 18, color: AppColors.background),
+            icon: GameIcon('anvil', size: 18, color: AppColors.background),
             label: Text(tr('Fabricar')),
           ),
         ],
@@ -399,7 +403,7 @@ class _StandardCraftingCard extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   tr('No tienes dinero suficiente para los materiales.'),
-                  style: const TextStyle(color: AppColors.danger),
+                  style: TextStyle(color: AppColors.danger),
                 ),
               ),
           ],

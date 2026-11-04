@@ -82,8 +82,22 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
     spellcasting: Spellcasting(
       ability: Ability.wis,
       spells: [
-        CharacterSpell(name: 'Guidance', srdId: 'guidance', level: 0, school: 'Divination', castingTime: 'Action', range: 'Touch'),
-        CharacterSpell(name: 'Sacred Flame', srdId: 'sacred-flame', level: 0, school: 'Evocation', castingTime: 'Action', range: '60 feet'),
+        CharacterSpell(
+          name: 'Guidance',
+          srdId: 'guidance',
+          level: 0,
+          school: 'Divination',
+          castingTime: 'Action',
+          range: 'Touch',
+        ),
+        CharacterSpell(
+          name: 'Sacred Flame',
+          srdId: 'sacred-flame',
+          level: 0,
+          school: 'Evocation',
+          castingTime: 'Action',
+          range: '60 feet',
+        ),
         CharacterSpell(
           name: 'Cure Wounds',
           srdId: 'cure-wounds',
@@ -189,8 +203,22 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
     spellcasting: Spellcasting(
       ability: Ability.intl,
       spells: [
-        CharacterSpell(name: 'Fire Bolt', srdId: 'fire-bolt', level: 0, school: 'Evocation', castingTime: 'Action', range: '120 feet'),
-        CharacterSpell(name: 'Mage Hand', srdId: 'mage-hand', level: 0, school: 'Conjuration', castingTime: 'Action', range: '30 feet'),
+        CharacterSpell(
+          name: 'Fire Bolt',
+          srdId: 'fire-bolt',
+          level: 0,
+          school: 'Evocation',
+          castingTime: 'Action',
+          range: '120 feet',
+        ),
+        CharacterSpell(
+          name: 'Mage Hand',
+          srdId: 'mage-hand',
+          level: 0,
+          school: 'Conjuration',
+          castingTime: 'Action',
+          range: '30 feet',
+        ),
         CharacterSpell(
           name: 'Magic Missile',
           srdId: 'magic-missile',
@@ -363,7 +391,9 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
     cr: 3,
     crText: '3',
     xp: 700,
-    traits: [NamedText('Rescoldos', 'Cuando cae a 0 PG, cada criatura a 1,5 m o menos recibe 5 (2d4) de daño de fuego.')],
+    traits: [
+      NamedText('Rescoldos', 'Cuando cae a 0 PG, cada criatura a 1,5 m o menos recibe 5 (2d4) de daño de fuego.'),
+    ],
     actions: [
       NamedText('Multiataque', 'El caballero hace dos ataques con su espada.'),
       NamedText(

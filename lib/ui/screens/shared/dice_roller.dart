@@ -65,7 +65,7 @@ Future<void> showD20Roll(BuildContext context, String label, int modifier, {Stri
                   flex: 2,
                   child: FilledButton.icon(
                     onPressed: () => Navigator.pop(ctx, '1d20'),
-                    icon: const GameIcon('d20', size: 20, color: AppColors.background),
+                    icon: GameIcon('d20', size: 20, color: AppColors.background),
                     label: Text(tr('Tirar')),
                   ),
                 ),

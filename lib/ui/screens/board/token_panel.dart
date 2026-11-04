@@ -167,12 +167,12 @@ class TokenPanel extends ConsumerWidget {
                 ),
                 if (ownsCharacter || (s.isDm && info.combatant != null)) ...[
                   TextButton.icon(
-                    icon: const GameIcon('sword_wound', size: 16, color: AppColors.crimson),
+                    icon: GameIcon('sword_wound', size: 16, color: AppColors.crimson),
                     label: Text(tr('Daño')),
                     onPressed: () => _hp(context, damage: true),
                   ),
                   TextButton.icon(
-                    icon: const GameIcon('heart_plus', size: 16, color: AppColors.success),
+                    icon: GameIcon('heart_plus', size: 16, color: AppColors.success),
                     label: Text(tr('Curar')),
                     onPressed: () => _hp(context, damage: false),
                   ),

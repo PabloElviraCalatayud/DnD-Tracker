@@ -16,13 +16,16 @@ class DndTrackerApp extends ConsumerWidget {
     final profile = ref.watch(profileProvider);
     // El idioma es global para tr(); al cambiarlo se reconstruye toda la app.
     I18n.language = profile.language;
+    // Igual con el tema: los colores se leen de AppColors al construir.
+    AppColors.palette = AppPalettes.of(profile.theme);
+    final theme = buildTheme();
     return MaterialApp(
-      key: ValueKey(profile.language),
+      key: ValueKey('${profile.language.name}-${profile.theme.name}'),
       title: 'DnD Tracker',
       debugShowCheckedModeBanner: false,
-      theme: buildTheme(),
-      darkTheme: buildTheme(),
-      themeMode: ThemeMode.dark,
+      theme: theme,
+      darkTheme: theme,
+      themeMode: AppColors.palette.isDark ? ThemeMode.dark : ThemeMode.light,
       locale: Locale(profile.language.name),
       supportedLocales: [const Locale('es'), const Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

@@ -571,7 +571,7 @@ class _AbilitiesTab extends StatelessWidget {
               backgroundColor: c.skillProficiency(sk) == Proficiency.none
                   ? AppColors.surfaceHigh
                   : AppColors.primaryContainer,
-              child: Text(c.skillProficiency(sk).badge, style: const TextStyle(color: AppColors.gold, fontSize: 12)),
+              child: Text(c.skillProficiency(sk).badge, style: TextStyle(color: AppColors.gold, fontSize: 12)),
             ),
             onTap: () => set(() {
               final next = c.skillProficiency(sk).next;

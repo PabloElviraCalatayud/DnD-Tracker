@@ -359,7 +359,7 @@ class _CombatantTile extends StatelessWidget {
             if (c.kind != CombatantKind.pc && hp != null) ...[
               IconButton(
                 tooltip: tr('Daño'),
-                icon: const GameIcon('sword_wound', size: 20, color: AppColors.crimson),
+                icon: GameIcon('sword_wound', size: 20, color: AppColors.crimson),
                 onPressed: () async {
                   final v = await promptNumber(context, tr('Daño a {0}', [c.name]));
                   if (v != null && context.mounted) {
@@ -369,7 +369,7 @@ class _CombatantTile extends StatelessWidget {
               ),
               IconButton(
                 tooltip: tr('Curar'),
-                icon: const GameIcon('heart_plus', size: 20, color: AppColors.success),
+                icon: GameIcon('heart_plus', size: 20, color: AppColors.success),
                 onPressed: () async {
                   final v = await promptNumber(context, tr('Curar a {0}', [c.name]));
                   if (v != null && context.mounted) {
@@ -479,7 +479,7 @@ class _PlayerInitiative extends StatelessWidget {
                             );
                           }
                         },
-                  icon: const GameIcon('dice', size: 18, color: AppColors.background),
+                  icon: GameIcon('dice', size: 18, color: AppColors.background),
                   label: Text(tr('Tirar ({0})', [signed(me.initiative)])),
                 ),
                 Gap.s,
@@ -510,7 +510,7 @@ class _PlayerInitiative extends StatelessWidget {
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: AppColors.surfaceHighest,
-                  child: Text('${e.combatants[i].initiative}', style: const TextStyle(color: AppColors.gold)),
+                  child: Text('${e.combatants[i].initiative}', style: TextStyle(color: AppColors.gold)),
                 ),
                 title: Text(i == e.turn ? tr('{0}  ← turno', [e.combatants[i].name]) : e.combatants[i].name),
                 subtitle: Text(

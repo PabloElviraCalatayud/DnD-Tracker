@@ -11,6 +11,23 @@ enum UnitSystem {
   String get label => tr(_label);
 }
 
+/// Tema visual de la app (colores y fondo).
+enum ThemeChoice {
+  dungeon('Mazmorra', 'Cuero oscuro y oro viejo'),
+  parchment('Pergamino', 'Claro, como una hoja de personaje'),
+  inferno('Fuego infernal', 'Brasas, hierro y ceniza'),
+  feywild('Bosque feérico', 'Musgo, esmeralda y magia de las hadas'),
+  abyss('Abismo arcano', 'Noche estrellada y runas azules'),
+  frost('Escarcha', 'Hielo, plata y piedra fría'),
+  ash('Ceniza', 'Gris neutro y alto contraste');
+
+  const ThemeChoice(this._label, this._hint);
+  final String _label;
+  final String _hint;
+  String get label => tr(_label);
+  String get hint => tr(_hint);
+}
+
 /// Perfil local del usuario de este dispositivo. El mismo perfil puede ser
 /// máster en unas partidas y jugador en otras.
 class UserProfile {
@@ -22,6 +39,7 @@ class UserProfile {
     this.hostPort = 4040,
     this.relayUrl = '',
     this.language = AppLanguage.es,
+    this.theme = ThemeChoice.dungeon,
   }) : userId = userId ?? newId(),
        secret = secret ?? newSecret();
 
@@ -32,6 +50,7 @@ class UserProfile {
   int hostPort;
   String relayUrl;
   AppLanguage language;
+  ThemeChoice theme;
 
   bool get isComplete => displayName.trim().isNotEmpty;
 
@@ -45,6 +64,7 @@ class UserProfile {
     'hostPort': hostPort,
     'relayUrl': relayUrl,
     'language': language.name,
+    'theme': theme.name,
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
@@ -55,6 +75,7 @@ class UserProfile {
     hostPort: asInt(j['hostPort'], 4040),
     relayUrl: asString(j['relayUrl']),
     language: AppLanguage.parse(j['language']),
+    theme: enumByName(ThemeChoice.values, j['theme'], ThemeChoice.dungeon),
   );
 }
 

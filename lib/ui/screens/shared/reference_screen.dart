@@ -151,7 +151,9 @@ class _Rules extends StatelessWidget {
       '### ${tr('Descansos')}',
       rules.longRestSummary,
       '',
-      tr('Descanso corto: gastas dados de golpe (1dX + mod. de CON cada uno) y recuperas los rasgos de descanso corto.'),
+      tr(
+        'Descanso corto: gastas dados de golpe (1dX + mod. de CON cada uno) y recuperas los rasgos de descanso corto.',
+      ),
       '',
       '### ${tr('Cansancio')} (${rules.ruleset.short})',
       for (var i = 1; i <= 6; i++) '- **${tr('Nivel {0}', [i])}:** ${rules.exhaustionEffect(i)}',
@@ -166,7 +168,9 @@ class _Rules extends StatelessWidget {
       tr('Cada casilla mide 5 pies (1,5 m) en 2014 y en 2024. Por defecto cada diagonal cuenta como una casilla.'),
       '',
       '### ${tr('Carga')}',
-      tr('Capacidad = FUE × 15 libras (criatura mediana). Variante: más de FUE × 5 cargado (−10 pies), más de FUE × 10 muy cargado (−20 pies y desventaja en pruebas de FUE, DES y CON).'),
+      tr(
+        'Capacidad = FUE × 15 libras (criatura mediana). Variante: más de FUE × 5 cargado (−10 pies), más de FUE × 10 muy cargado (−20 pies y desventaja en pruebas de FUE, DES y CON).',
+      ),
       '',
       '### ${tr('Dinero')}',
       '1 ${coins[3]} = 10 ${coins[1]} = 100 ${coins[0]} · 1 ${coins[2]} = 5 ${coins[1]} · 1 ${coins[4]} = 10 ${coins[3]} · ${tr('50 monedas pesan 1 libra.')}',
@@ -246,16 +250,11 @@ A rough summary of the most visible table changes between the 2014 rules (5e) an
 The app adapts automatically: race/species naming, exhaustion, rests, suggested prepared spells, crafting pace and the SRD data (creatures, spells, items).
 ''';
 
-
-
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(12),
     child: Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: RichDescription(I18n.isEnglish ? _textEn : _textEs),
-      ),
+      child: Padding(padding: const EdgeInsets.all(14), child: RichDescription(I18n.isEnglish ? _textEn : _textEs)),
     ),
   );
 }

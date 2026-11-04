@@ -151,8 +151,8 @@ class _PartyCard extends StatelessWidget {
                   if (c.ownerId != s.myUserId)
                     Tooltip(
                       message: online
-                      ? tr('{0} conectado', [s.campaign.memberName(c.ownerId)])
-                      : tr('{0} desconectado', [s.campaign.memberName(c.ownerId)]),
+                          ? tr('{0} conectado', [s.campaign.memberName(c.ownerId)])
+                          : tr('{0} desconectado', [s.campaign.memberName(c.ownerId)]),
                       child: Icon(Icons.circle, size: 10, color: online ? AppColors.success : AppColors.outline),
                     ),
                 ],
@@ -178,7 +178,7 @@ class _PartyCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     tooltip: tr('Daño'),
-                    icon: const GameIcon('sword_wound', size: 20, color: AppColors.crimson),
+                    icon: GameIcon('sword_wound', size: 20, color: AppColors.crimson),
                     onPressed: () async {
                       final v = await promptNumber(context, tr('Daño a {0}', [c.name]));
                       if (v != null && context.mounted) await editCharacter(context, c.id, (x) => x.takeDamage(v));
@@ -187,7 +187,7 @@ class _PartyCard extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     tooltip: tr('Curar'),
-                    icon: const GameIcon('heart_plus', size: 20, color: AppColors.success),
+                    icon: GameIcon('heart_plus', size: 20, color: AppColors.success),
                     onPressed: () async {
                       final v = await promptNumber(context, tr('Curar a {0}', [c.name]));
                       if (v != null && context.mounted) {

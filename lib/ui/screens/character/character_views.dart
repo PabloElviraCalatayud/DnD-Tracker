@@ -272,13 +272,13 @@ class _Vitals extends ConsumerWidget {
                 FilledButton.tonalIcon(
                   style: FilledButton.styleFrom(backgroundColor: AppColors.secondaryDark, padding: _compact),
                   onPressed: () => _damage(context),
-                  icon: const GameIcon('sword_wound', size: 18, color: AppColors.parchment),
+                  icon: GameIcon('sword_wound', size: 18, color: AppColors.parchment),
                   label: Text(tr('Daño')),
                 ),
                 FilledButton.tonalIcon(
                   style: FilledButton.styleFrom(padding: _compact),
                   onPressed: () => _heal(context, rs),
-                  icon: const GameIcon('heart_plus', size: 18, color: AppColors.parchment),
+                  icon: GameIcon('heart_plus', size: 18, color: AppColors.parchment),
                   label: Text(tr('Curar')),
                 ),
                 OutlinedButton(
@@ -863,7 +863,7 @@ class _Proficiencies extends StatelessWidget {
                   children: [
                     TextSpan(
                       text: '${tr(r.$1)}: ',
-                      style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
                     ),
                     TextSpan(text: r.$2),
                   ],

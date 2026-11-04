@@ -124,7 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final list = ListView(
       children: [
         ListTile(
-          leading: const Icon(Icons.group_add, color: AppColors.gold),
+          leading: Icon(Icons.group_add, color: AppColors.gold),
           title: Text(tr('Nueva conversación')),
           onTap: s.canEdit ? _newChannel : null,
         ),
@@ -308,7 +308,7 @@ class _Bubble extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (isRoll) ...[const GameIcon('d20', size: 14, color: AppColors.arcane), const SizedBox(width: 4)],
+                  if (isRoll) ...[GameIcon('d20', size: 14, color: AppColors.arcane), const SizedBox(width: 4)],
                   Text(message.authorName, style: t.labelMedium?.copyWith(color: AppColors.gold)),
                   Gap.s,
                   Text(time, style: t.labelSmall?.copyWith(color: AppColors.muted)),

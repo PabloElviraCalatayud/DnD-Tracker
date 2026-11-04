@@ -13,9 +13,9 @@ class DieShapePainter extends CustomPainter {
     required this.value,
     required this.fill,
     required this.edge,
-    this.textColor = AppColors.background,
+    Color? textColor,
     this.dimmed = false,
-  });
+  }) : textColor = textColor ?? const Color(0xFF16110A);
 
   final int sides;
   final int value;

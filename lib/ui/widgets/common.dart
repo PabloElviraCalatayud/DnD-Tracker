@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../domain/profile.dart';
 import '../theme.dart';
 import '../../core/i18n.dart';
 
@@ -27,20 +28,23 @@ class GameIcon extends StatelessWidget {
   }
 }
 
-/// Fondo con la textura oscura, para que las pantallas no sean planas.
+/// Fondo con textura: un grano neutro que cada tema tiñe con su color.
 class Backdrop extends StatelessWidget {
   const Backdrop({super.key, required this.child});
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    final p = AppColors.palette;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.background,
+      decoration: BoxDecoration(
+        color: p.background,
         image: DecorationImage(
-          image: AssetImage('assets/images/parchment_dark.png'),
+          image: const AssetImage('assets/images/texture_grain.png'),
           repeat: ImageRepeat.repeat,
-          opacity: 0.9,
+          scale: 2,
+          filterQuality: FilterQuality.medium,
+          colorFilter: ColorFilter.mode(p.textureTint, BlendMode.multiply),
         ),
       ),
       // Material transparente para que ListTile e InkWell pinten sus efectos
@@ -345,13 +349,16 @@ class NumberStepper extends StatelessWidget {
 }
 
 class Pill extends StatelessWidget {
-  const Pill(this.text, {super.key, this.color = AppColors.gold, this.icon});
+  const Pill(this.text, {super.key, Color? color, this.icon}) : _color = color;
   final String text;
-  final Color color;
+  final Color? _color;
   final IconData? icon;
+
+  Color get color => _color ?? AppColors.gold;
 
   @override
   Widget build(BuildContext context) {
+    final color = this.color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -403,15 +410,15 @@ class RichDescription extends StatelessWidget {
       selectable: selectable,
       styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
         p: t.bodyMedium,
-        strong: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.parchment),
+        strong: TextStyle(fontWeight: FontWeight.w700, color: AppColors.parchment),
         h1: t.titleLarge,
         h2: t.titleLarge?.copyWith(fontSize: 17),
         h3: t.titleMedium?.copyWith(color: AppColors.gold),
         h4: t.titleSmall?.copyWith(color: AppColors.gold),
         tableBorder: TableBorder.all(color: AppColors.outline),
-        tableHead: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.gold),
+        tableHead: TextStyle(fontWeight: FontWeight.w700, color: AppColors.gold),
         tableBody: t.bodySmall?.copyWith(color: AppColors.parchment),
-        blockquoteDecoration: const BoxDecoration(
+        blockquoteDecoration: BoxDecoration(
           color: AppColors.surfaceHigh,
           border: Border(left: BorderSide(color: AppColors.goldSoft, width: 3)),
         ),
@@ -532,10 +539,112 @@ class LanguageSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return SegmentedButton<AppLanguage>(
       segments: [
-        for (final l in AppLanguage.values) ButtonSegment(value: l, label: Text(l.nativeName), icon: const Icon(Icons.translate)),
+        for (final l in AppLanguage.values)
+          ButtonSegment(value: l, label: Text(l.nativeName), icon: const Icon(Icons.translate)),
       ],
       selected: {value},
       onSelectionChanged: (v) => onChanged(v.first),
+    );
+  }
+}
+
+/// Selector de tema con una muestra de cada paleta.
+class ThemePicker extends StatelessWidget {
+  const ThemePicker({super.key, required this.value, required this.onChanged});
+  final ThemeChoice value;
+  final ValueChanged<ThemeChoice> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (final t in ThemeChoice.values) _ThemeSwatch(choice: t, selected: t == value, onTap: () => onChanged(t)),
+      ],
+    );
+  }
+}
+
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch({required this.choice, required this.selected, required this.onTap});
+  final ThemeChoice choice;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = AppPalettes.of(choice);
+    Widget dot(Color c) => Container(
+      width: 14,
+      height: 14,
+      margin: const EdgeInsets.only(right: 4),
+      decoration: BoxDecoration(
+        color: c,
+        shape: BoxShape.circle,
+        border: Border.all(color: p.outline),
+      ),
+    );
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: choice.label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 164,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: p.background,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: selected ? p.primary : p.outline, width: selected ? 2.5 : 1),
+            boxShadow: selected ? [BoxShadow(color: p.glow.withValues(alpha: 0.35), blurRadius: 14)] : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      choice.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Cinzel',
+                        fontVariations: const [FontVariation('wght', 700)],
+                        color: p.primary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                  if (selected) Icon(Icons.check_circle, size: 18, color: p.primary),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Container(
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: p.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: p.outlineSoft),
+                ),
+                child: Row(children: [dot(p.primary), dot(p.secondary), dot(p.tertiary), dot(p.success)]),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                choice.hint,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: p.muted, fontSize: 12, height: 1.2),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -18,6 +18,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _name = TextEditingController();
   UnitSystem _units = UnitSystem.metric;
   late AppLanguage _language = ref.read(profileProvider).language;
+  ThemeChoice _theme = ThemeChoice.dungeon;
 
   Future<void> _continue() async {
     final name = _name.text.trim();
@@ -25,7 +26,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final p = ref.read(profileProvider).copy()
       ..displayName = name
       ..units = _units
-      ..language = _language;
+      ..language = _language
+      ..theme = _theme;
     await ref.read(profileProvider.notifier).save(p);
   }
 
@@ -44,7 +46,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 key: ValueKey(_language),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(child: GameIcon('dragon', size: 110, color: AppColors.gold)),
+                  Center(child: GameIcon('dragon', size: 110, color: AppColors.gold)),
                   Gap.m,
                   Text(
                     tr('DnD Tracker'),
@@ -79,6 +81,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       I18n.language = v;
                     }),
                   ),
+                  Gap.l,
+                  Text(tr('Tema'), style: t.titleLarge),
+                  Gap.s,
+                  ThemePicker(value: _theme, onChanged: (v) => setState(() => _theme = v)),
                   Gap.l,
                   Text(tr('Unidades'), style: t.titleLarge),
                   Gap.s,

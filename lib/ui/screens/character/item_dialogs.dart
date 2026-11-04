@@ -409,8 +409,12 @@ Future<(SrdItem, int)?> pickSrdItem(
   return Navigator.push<(SrdItem, int)>(
     context,
     MaterialPageRoute(
-      builder: (_) =>
-          _SrdItemPicker(ruleset: ruleset, includeMagic: includeMagic, includeMundane: includeMundane, title: title ?? tr('Añadir objeto del SRD')),
+      builder: (_) => _SrdItemPicker(
+        ruleset: ruleset,
+        includeMagic: includeMagic,
+        includeMundane: includeMundane,
+        title: title ?? tr('Añadir objeto del SRD'),
+      ),
     ),
   );
 }

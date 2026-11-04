@@ -154,7 +154,7 @@ class _FeedHeader extends StatelessWidget {
           if (s.isDm)
             Tooltip(
               message: tr('Tus tiradas son secretas'),
-              child: const Icon(Icons.visibility_off, size: 18, color: AppColors.muted),
+              child: Icon(Icons.visibility_off, size: 18, color: AppColors.muted),
             ),
         ],
       ),
@@ -207,7 +207,7 @@ class _RollTicker extends StatelessWidget {
             ),
             IconButton.filled(
               tooltip: tr('Tirar dados'),
-              icon: const GameIcon('d20', size: 24, color: AppColors.background),
+              icon: GameIcon('d20', size: 24, color: AppColors.background),
               onPressed: () => showDiceRoller(context),
             ),
             Gap.s,
@@ -320,7 +320,7 @@ class _BoardToolbar extends StatelessWidget {
             if (s.isDm && m != null)
               PopupMenuButton<String>(
                 tooltip: tr('Añadir fichas'),
-                icon: const Icon(Icons.person_add_alt_1, color: AppColors.gold),
+                icon: Icon(Icons.person_add_alt_1, color: AppColors.gold),
                 onSelected: (v) async {
                   if (v == 'party') {
                     await _addParty(context, m);
@@ -341,7 +341,7 @@ class _BoardToolbar extends StatelessWidget {
             if (s.isDm)
               PopupMenuButton<String>(
                 tooltip: tr('Mapas'),
-                icon: const Icon(Icons.map_outlined, color: AppColors.gold),
+                icon: Icon(Icons.map_outlined, color: AppColors.gold),
                 onSelected: (v) async {
                   switch (v) {
                     case 'image':

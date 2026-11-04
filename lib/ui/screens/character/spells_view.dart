@@ -138,7 +138,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                 if (sc.concentratingOn.isNotEmpty) ...[
                   Gap.s,
                   InputChip(
-                    avatar: const GameIcon('brain', size: 18, color: AppColors.arcane),
+                    avatar: GameIcon('brain', size: 18, color: AppColors.arcane),
                     label: Text(tr('Concentrado en: {0}', [sc.concentratingOn])),
                     onDeleted: editable
                         ? () => editCharacter(context, c.id, (x) => x.spellcasting.concentratingOn = '')
@@ -307,7 +307,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                 runSpacing: 8,
                 children: [
                   FilledButton.icon(
-                    icon: const GameIcon('fire_spell', size: 18, color: AppColors.background),
+                    icon: GameIcon('fire_spell', size: 18, color: AppColors.background),
                     label: Text(tr('Lanzar')),
                     onPressed: () async {
                       Navigator.pop(ctx);

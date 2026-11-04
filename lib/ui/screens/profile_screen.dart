@@ -80,6 +80,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           SectionCard(
+            title: tr('Apariencia'),
+            icon: 'crystal_ball',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(tr('Tema'), style: t.titleSmall),
+                Gap.s,
+                ThemePicker(value: _p.theme, onChanged: (v) => setState(() => _p.theme = v)),
+                Gap.s,
+                Text(tr('El tema se aplica al guardar.'), style: t.bodySmall),
+              ],
+            ),
+          ),
+          SectionCard(
             title: tr('Cuando eres máster (anfitrión)'),
             icon: 'wifi',
             child: Column(

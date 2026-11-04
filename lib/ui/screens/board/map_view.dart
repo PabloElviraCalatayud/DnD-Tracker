@@ -409,7 +409,7 @@ class _MapButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: active ? AppColors.primaryContainer : AppColors.surface.withValues(alpha: 0.9),
-      shape: const CircleBorder(side: BorderSide(color: AppColors.outline)),
+      shape: CircleBorder(side: BorderSide(color: AppColors.outline)),
       child: IconButton(
         tooltip: tooltip,
         icon: Icon(icon, color: active ? AppColors.gold : AppColors.parchment),
@@ -443,13 +443,17 @@ class _MapBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!map.hasImage) {
-      return const DecoratedBox(
+      return DecoratedBox(
         decoration: BoxDecoration(
-          color: Color(0xFF2A2420),
+          color: AppColors.mapFloor,
           image: DecorationImage(
-            image: AssetImage('assets/images/parchment_dark.png'),
+            image: const AssetImage('assets/images/texture_floor.png'),
             repeat: ImageRepeat.repeat,
-            opacity: 0.6,
+            filterQuality: FilterQuality.medium,
+            colorFilter: ColorFilter.mode(
+              Color.lerp(AppColors.mapFloor, Colors.white, AppColors.palette.isDark ? 0.18 : 0.1)!,
+              BlendMode.multiply,
+            ),
           ),
         ),
       );
@@ -668,7 +672,7 @@ class TokenView extends StatelessWidget {
                   top: 0,
                   child: Container(
                     padding: EdgeInsets.all(side * 0.04),
-                    decoration: const BoxDecoration(color: AppColors.warning, shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: AppColors.warning, shape: BoxShape.circle),
                     child: Text(
                       '${info.labels.length}',
                       style: TextStyle(fontSize: max(8, side * 0.18), color: Colors.black, fontWeight: FontWeight.w800),
@@ -753,7 +757,7 @@ class _TurnStrip extends StatelessWidget {
           if (s.isDm)
             IconButton(
               tooltip: tr('Siguiente turno'),
-              icon: const Icon(Icons.skip_next, color: AppColors.gold),
+              icon: Icon(Icons.skip_next, color: AppColors.gold),
               onPressed: () => s.send(Command.putEncounter(e.copy()..next())),
             ),
         ],

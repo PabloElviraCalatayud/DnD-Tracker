@@ -136,6 +136,7 @@ class SrdItem {
     mastery = asString(o['mastery'], mastery);
     subcategory = asString(o['sub'], subcategory);
   }
+
   final String rarity;
   final bool attunement;
   final bool stealthDisadvantage;
@@ -402,13 +403,19 @@ class SrdData {
       }
     }
 
-    addNames('species', [...enLists['species']!, ...enLists['subspecies']!],
-        [...esLists['species']!, ...esLists['subspecies']!]);
+    addNames(
+      'species',
+      [...enLists['species']!, ...enLists['subspecies']!],
+      [...esLists['species']!, ...esLists['subspecies']!],
+    );
     addNames('background', enLists['backgrounds']!, esLists['backgrounds']!);
     addNames('language', enLists['languages']!, esLists['languages']!);
     final esClasses = esPart('classes');
-    addNames('class', [for (final c in classes) c.nameEn],
-        [for (final c in classes) asString(asMap(esClasses[c.id] ?? const {})['name'], c.nameEn)]);
+    addNames(
+      'class',
+      [for (final c in classes) c.nameEn],
+      [for (final c in classes) asString(asMap(esClasses[c.id] ?? const {})['name'], c.nameEn)],
+    );
 
     if (useEs) {
       final esMon = esPart('monsters');
