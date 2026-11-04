@@ -7,6 +7,7 @@ import '../../../domain/board.dart';
 import '../../../domain/roll.dart';
 import '../../../engine/commands.dart';
 import '../../../state/session.dart';
+import '../../layout.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/dice_animation.dart';
@@ -64,7 +65,11 @@ class _BoardScreenState extends State<BoardScreen> {
     final s = SessionScope.of(context);
     _watchRolls(s);
     final map = s.campaign.board.activeMap;
-    final wide = MediaQuery.sizeOf(context).width >= 1000;
+    final desktop = isDesktopLayout(context);
+    // En escritorio el registro de tiradas va en el panel derecho del armazón
+    // si cabe; si no, el tablero muestra el suyo.
+    final external = ShellPanels.of(context)?.rollsInSidePanel ?? false;
+    final wide = desktop && !external && MediaQuery.sizeOf(context).width >= 1000;
     final mapArea = Stack(
       children: [
         Positioned.fill(
@@ -72,7 +77,7 @@ class _BoardScreenState extends State<BoardScreen> {
               ? const _NoMap()
               : KeyedSubtree(
                   key: ValueKey(map.id),
-                  child: MapView(key: _mapKey, map: map, desktop: wide),
+                  child: MapView(key: _mapKey, map: map, desktop: desktop),
                 ),
         ),
         if (_incoming != null)
@@ -143,7 +148,7 @@ class _BoardScreenState extends State<BoardScreen> {
       children: [
         toolbar,
         Expanded(child: mapArea),
-        const _RollTicker(),
+        if (!desktop) const _RollTicker(),
       ],
     );
   }

@@ -10,6 +10,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../../core/i18n.dart';
+import '../../../core/text.dart';
 
 String _date(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -230,9 +231,9 @@ class _PlayerNotebookState extends ConsumerState<_PlayerNotebook> {
     final notes = _notes;
     final t = Theme.of(context).textTheme;
     if (notes == null) return const Center(child: CircularProgressIndicator());
-    final q = _query.toLowerCase();
+    final q = foldText(_query);
     final visible =
-        notes.where((n) => q.isEmpty || n.title.toLowerCase().contains(q) || n.body.toLowerCase().contains(q)).toList()
+        notes.where((n) => q.isEmpty || foldText(n.title).contains(q) || foldText(n.body).contains(q)).toList()
           ..sort((a, b) => a.pinned != b.pinned ? (a.pinned ? -1 : 1) : b.updatedAt.compareTo(a.updatedAt));
     return Scaffold(
       backgroundColor: Colors.transparent,

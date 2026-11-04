@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/dice.dart';
+import '../../../core/text.dart';
 import '../../../data/srd.dart';
 import '../../../domain/abilities.dart';
 import '../../../domain/character.dart';
 import '../../../domain/ruleset.dart';
 import '../../../state/providers.dart';
 import '../../../state/session.dart';
+import '../../layout.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../shared/dice_roller.dart';
@@ -56,6 +58,7 @@ class SpellsView extends ConsumerStatefulWidget {
 
 class _SpellsViewState extends ConsumerState<SpellsView> {
   bool _onlyReady = false;
+  String? _selectedSpellId;
 
   @override
   Widget build(BuildContext context) {
@@ -80,155 +83,197 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
               label: Text(tr('Conjuro')),
             )
           : null,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
-        children: [
-          SectionCard(
-            title: tr('Lanzamiento de conjuros'),
-            icon: 'magic_swirl',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (editable)
-                      SizedBox(
-                        width: 190,
-                        child: DropdownButtonFormField<Ability?>(
-                          initialValue: sc.ability,
-                          decoration: InputDecoration(labelText: tr('Característica')),
-                          items: [
-                            const DropdownMenuItem(value: null, child: Text('—')),
-                            for (final a in [Ability.intl, Ability.wis, Ability.cha])
-                              DropdownMenuItem(value: a, child: Text(a.label)),
-                          ],
-                          onChanged: (v) => editCharacter(context, c.id, (x) => x.spellcasting.ability = v),
-                        ),
-                      )
-                    else if (sc.ability != null)
-                      Text(sc.ability!.label, style: t.titleSmall),
-                    StatBox(
-                      label: tr('CD salvación'),
-                      value: sc.ability == null ? '—' : '${c.spellSaveDc}',
-                      width: 100,
-                    ),
-                    StatBox(
-                      label: tr('Ataque'),
-                      value: sc.ability == null ? '—' : signed(c.spellAttackBonus),
-                      onTap: sc.ability == null
-                          ? null
-                          : () => showD20Roll(
-                              context,
-                              tr('Ataque de conjuro'),
-                              c.spellAttackBonus + s.campaign.rules.exhaustionD20Penalty(c.exhaustion),
-                            ),
-                    ),
-                    StatBox(
-                      label: tr('Preparados'),
-                      value: '${sc.preparedCount}${limit != null ? '/$limit' : ''}',
-                      highlight: limit != null && sc.preparedCount > limit,
-                      width: 100,
-                      onTap: editable ? () => _editLimit(context, c, limit) : null,
-                    ),
-                  ],
-                ),
-                if (sc.concentratingOn.isNotEmpty) ...[
-                  Gap.s,
-                  InputChip(
-                    avatar: GameIcon('brain', size: 18, color: AppColors.arcane),
-                    label: Text(tr('Concentrado en: {0}', [sc.concentratingOn])),
-                    onDeleted: editable
-                        ? () => editCharacter(context, c.id, (x) => x.spellcasting.concentratingOn = '')
-                        : null,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          SectionCard(
-            title: tr('Espacios de conjuro'),
-            icon: 'crystal_ball',
-            trailing: editable
-                ? TextButton(onPressed: () => _autoSlots(context, c, rs, srd), child: Text(tr('Calcular por clase')))
-                : null,
-            child: !sc.hasSlots
-                ? Text(tr('Sin espacios. Pulsa «Calcular por clase» o edítalos a mano.'), style: t.bodySmall)
-                : Column(
+      body: _withDetail(
+        context,
+        c,
+        spells,
+        editable,
+        ListView(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
+          children: [
+            SectionCard(
+              title: tr('Lanzamiento de conjuros'),
+              icon: 'magic_swirl',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      for (var i = 0; i < 9; i++)
-                        if (sc.slots[i].max > 0) _SlotRow(character: c, level: i + 1, editable: editable),
-                      if (sc.pactSlotsMax > 0)
-                        _SlotRow(character: c, level: sc.pactSlotLevel, editable: editable, pact: true),
+                      if (editable)
+                        SizedBox(
+                          width: 190,
+                          child: DropdownButtonFormField<Ability?>(
+                            initialValue: sc.ability,
+                            decoration: InputDecoration(labelText: tr('Característica')),
+                            items: [
+                              const DropdownMenuItem(value: null, child: Text('—')),
+                              for (final a in [Ability.intl, Ability.wis, Ability.cha])
+                                DropdownMenuItem(value: a, child: Text(a.label)),
+                            ],
+                            onChanged: (v) => editCharacter(context, c.id, (x) => x.spellcasting.ability = v),
+                          ),
+                        )
+                      else if (sc.ability != null)
+                        Text(sc.ability!.label, style: t.titleSmall),
+                      StatBox(
+                        label: tr('CD salvación'),
+                        value: sc.ability == null ? '—' : '${c.spellSaveDc}',
+                        width: 100,
+                      ),
+                      StatBox(
+                        label: tr('Ataque'),
+                        value: sc.ability == null ? '—' : signed(c.spellAttackBonus),
+                        onTap: sc.ability == null
+                            ? null
+                            : () => showD20Roll(
+                                context,
+                                tr('Ataque de conjuro'),
+                                c.spellAttackBonus + s.campaign.rules.exhaustionD20Penalty(c.exhaustion),
+                              ),
+                      ),
+                      StatBox(
+                        label: tr('Preparados'),
+                        value: '${sc.preparedCount}${limit != null ? '/$limit' : ''}',
+                        highlight: limit != null && sc.preparedCount > limit,
+                        width: 100,
+                        onTap: editable ? () => _editLimit(context, c, limit) : null,
+                      ),
                     ],
                   ),
-          ),
-          Row(
-            children: [
-              Text(tr('Conjuros ({0})', [sc.spells.length]), style: t.titleLarge),
-              const Spacer(),
-              SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(value: false, label: Text(tr('Todos'))),
-                  ButtonSegment(value: true, label: Text(tr('Preparados'))),
-                ],
-                selected: {_onlyReady},
-                onSelectionChanged: (v) => setState(() => _onlyReady = v.first),
-              ),
-            ],
-          ),
-          Gap.s,
-          if (spells.isEmpty)
-            EmptyState(
-              icon: 'spell_book',
-              title: _onlyReady ? tr('Nada preparado') : tr('Libro de conjuros vacío'),
-              message: tr('Añade conjuros del SRD (filtrados por tu clase) o crea los tuyos.'),
-            ),
-          for (final lvl in levels)
-            SectionCard(
-              title: spellLevelLabel(lvl),
-              child: Column(
-                children: [
-                  for (final sp in spells.where((x) => x.level == lvl))
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: sp.isCantrip
-                          ? const GameIcon('sparkles', size: 22)
-                          : Checkbox(
-                              value: sp.prepared || sp.alwaysPrepared,
-                              onChanged: editable && !sp.alwaysPrepared
-                                  ? (v) => editCharacter(context, c.id, (x) {
-                                      final y = x.spellcasting.spells.firstWhere((z) => z.id == sp.id);
-                                      y.prepared = v ?? false;
-                                    })
-                                  : null,
-                            ),
-                      title: Row(
-                        children: [
-                          Flexible(child: Text(sp.name)),
-                          if (sp.concentration)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 6),
-                              child: Pill(tr('C'), color: AppColors.arcane),
-                            ),
-                          if (sp.ritual) Padding(padding: const EdgeInsets.only(left: 4), child: Pill(tr('R'))),
-                          if (sp.alwaysPrepared)
-                            Padding(padding: const EdgeInsets.only(left: 4), child: Pill(tr('siempre'))),
-                        ],
-                      ),
-                      subtitle: Text(
-                        [sp.school, sp.castingTime, sp.range].where((e) => e.isNotEmpty).join(' · '),
-                        style: t.bodySmall,
-                      ),
-                      onTap: () => _showSpell(context, c, sp, editable),
+                  if (sc.concentratingOn.isNotEmpty) ...[
+                    Gap.s,
+                    InputChip(
+                      avatar: GameIcon('brain', size: 18, color: AppColors.arcane),
+                      label: Text(tr('Concentrado en: {0}', [sc.concentratingOn])),
+                      onDeleted: editable
+                          ? () => editCharacter(context, c.id, (x) => x.spellcasting.concentratingOn = '')
+                          : null,
                     ),
+                  ],
                 ],
               ),
             ),
-        ],
+            SectionCard(
+              title: tr('Espacios de conjuro'),
+              icon: 'crystal_ball',
+              trailing: editable
+                  ? TextButton(onPressed: () => _autoSlots(context, c, rs, srd), child: Text(tr('Calcular por clase')))
+                  : null,
+              child: !sc.hasSlots
+                  ? Text(tr('Sin espacios. Pulsa «Calcular por clase» o edítalos a mano.'), style: t.bodySmall)
+                  : Column(
+                      children: [
+                        for (var i = 0; i < 9; i++)
+                          if (sc.slots[i].max > 0) _SlotRow(character: c, level: i + 1, editable: editable),
+                        if (sc.pactSlotsMax > 0)
+                          _SlotRow(character: c, level: sc.pactSlotLevel, editable: editable, pact: true),
+                      ],
+                    ),
+            ),
+            Row(
+              children: [
+                Text(tr('Conjuros ({0})', [sc.spells.length]), style: t.titleLarge),
+                const Spacer(),
+                SegmentedButton<bool>(
+                  segments: [
+                    ButtonSegment(value: false, label: Text(tr('Todos'))),
+                    ButtonSegment(value: true, label: Text(tr('Preparados'))),
+                  ],
+                  selected: {_onlyReady},
+                  onSelectionChanged: (v) => setState(() => _onlyReady = v.first),
+                ),
+              ],
+            ),
+            Gap.s,
+            if (spells.isEmpty)
+              EmptyState(
+                icon: 'spell_book',
+                title: _onlyReady ? tr('Nada preparado') : tr('Libro de conjuros vacío'),
+                message: tr('Añade conjuros del SRD (filtrados por tu clase) o crea los tuyos.'),
+              ),
+            for (final lvl in levels)
+              SectionCard(
+                title: spellLevelLabel(lvl),
+                child: Column(
+                  children: [
+                    for (final sp in spells.where((x) => x.level == lvl))
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: sp.isCantrip
+                            ? const GameIcon('sparkles', size: 22)
+                            : Checkbox(
+                                value: sp.prepared || sp.alwaysPrepared,
+                                onChanged: editable && !sp.alwaysPrepared
+                                    ? (v) => editCharacter(context, c.id, (x) {
+                                        final y = x.spellcasting.spells.firstWhere((z) => z.id == sp.id);
+                                        y.prepared = v ?? false;
+                                      })
+                                    : null,
+                              ),
+                        title: Row(
+                          children: [
+                            Flexible(child: Text(sp.name)),
+                            if (sp.concentration)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 6),
+                                child: Pill(tr('C'), color: AppColors.arcane),
+                              ),
+                            if (sp.ritual) Padding(padding: const EdgeInsets.only(left: 4), child: Pill(tr('R'))),
+                            if (sp.alwaysPrepared)
+                              Padding(padding: const EdgeInsets.only(left: 4), child: Pill(tr('siempre'))),
+                          ],
+                        ),
+                        subtitle: Text(
+                          [sp.school, sp.castingTime, sp.range].where((e) => e.isNotEmpty).join(' · '),
+                          style: t.bodySmall,
+                        ),
+                        selected: sp.id == _selectedSpellId,
+                        onTap: () => _showSpell(context, c, sp, editable),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// En PC, el conjuro elegido se ve en un panel a la derecha de la lista.
+  Widget _withDetail(BuildContext context, Character c, List<CharacterSpell> spells, bool editable, Widget list) {
+    if (!isDesktopLayout(context)) return list;
+    final sp = spells.where((x) => x.id == _selectedSpellId).firstOrNull;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(child: list),
+        if (sp != null) ...[
+          VerticalDivider(width: 1, color: AppColors.outlineSoft),
+          SizedBox(
+            width: 420,
+            child: Material(
+              color: AppColors.surface.withValues(alpha: 0.9),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 8, 12, 24),
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      tooltip: tr('Cerrar'),
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() => _selectedSpellId = null),
+                    ),
+                  ),
+                  ..._detail(context, c, sp, editable, () => setState(() => _selectedSpellId = null)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -263,9 +308,68 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
     });
   }
 
-  Future<void> _showSpell(BuildContext context, Character c, CharacterSpell sp, bool editable) async {
+  /// Contenido del detalle de un conjuro (hoja inferior en móvil, panel en PC).
+  List<Widget> _detail(BuildContext context, Character c, CharacterSpell sp, bool editable, VoidCallback close) {
     final s = SessionScope.read(context);
     final t = Theme.of(context).textTheme;
+    return [
+      Text(sp.name, style: t.headlineSmall),
+      Text('${spellLevelLabel(sp.level)} · ${sp.school}${sp.ritual ? ' (ritual)' : ''}', style: t.bodySmall),
+      Gap.m,
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (sp.castingTime.isNotEmpty) StatBox(label: tr('Tiempo'), value: sp.castingTime, width: 130),
+          if (sp.range.isNotEmpty) StatBox(label: tr('Alcance'), value: sp.range, width: 130),
+          if (sp.duration.isNotEmpty) StatBox(label: tr('Duración'), value: sp.duration, width: 150),
+        ],
+      ),
+      if (sp.components.isNotEmpty) ...[
+        Gap.s,
+        Text(tr('Componentes: {0}', [sp.components]), style: t.bodySmall),
+      ],
+      Gap.m,
+      if (sp.description.isNotEmpty) RichDescription(sp.description),
+      if (sp.higherLevels.isNotEmpty) ...[
+        Gap.s,
+        Text(tr('A niveles superiores'), style: t.titleSmall?.copyWith(color: AppColors.gold)),
+        RichDescription(sp.higherLevels),
+      ],
+      if (editable) ...[
+        const Divider(height: 28),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.icon(
+              icon: GameIcon('fire_spell', size: 18, color: AppColors.onGold),
+              label: Text(tr('Lanzar')),
+              onPressed: () async {
+                close();
+                await _cast(context, c, sp);
+              },
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+              icon: const Icon(Icons.delete_outline),
+              label: Text(tr('Quitar')),
+              onPressed: () async {
+                close();
+                await s.editCharacter(c.id, (x) => x.spellcasting.spells.removeWhere((y) => y.id == sp.id));
+              },
+            ),
+          ],
+        ),
+      ],
+    ];
+  }
+
+  Future<void> _showSpell(BuildContext context, Character c, CharacterSpell sp, bool editable) async {
+    if (isDesktopLayout(context)) {
+      setState(() => _selectedSpellId = _selectedSpellId == sp.id ? null : sp.id);
+      return;
+    }
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -276,57 +380,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
         builder: (ctx, scroll) => ListView(
           controller: scroll,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          children: [
-            Text(sp.name, style: t.headlineSmall),
-            Text('${spellLevelLabel(sp.level)} · ${sp.school}${sp.ritual ? ' (ritual)' : ''}', style: t.bodySmall),
-            Gap.m,
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (sp.castingTime.isNotEmpty) StatBox(label: tr('Tiempo'), value: sp.castingTime, width: 130),
-                if (sp.range.isNotEmpty) StatBox(label: tr('Alcance'), value: sp.range, width: 130),
-                if (sp.duration.isNotEmpty) StatBox(label: tr('Duración'), value: sp.duration, width: 150),
-              ],
-            ),
-            if (sp.components.isNotEmpty) ...[
-              Gap.s,
-              Text(tr('Componentes: {0}', [sp.components]), style: t.bodySmall),
-            ],
-            Gap.m,
-            if (sp.description.isNotEmpty) RichDescription(sp.description),
-            if (sp.higherLevels.isNotEmpty) ...[
-              Gap.s,
-              Text(tr('A niveles superiores'), style: t.titleSmall?.copyWith(color: AppColors.gold)),
-              RichDescription(sp.higherLevels),
-            ],
-            if (editable) ...[
-              const Divider(height: 28),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    icon: GameIcon('fire_spell', size: 18, color: AppColors.background),
-                    label: Text(tr('Lanzar')),
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      await _cast(context, c, sp);
-                    },
-                  ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
-                    icon: const Icon(Icons.delete_outline),
-                    label: Text(tr('Quitar')),
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      await s.editCharacter(c.id, (x) => x.spellcasting.spells.removeWhere((y) => y.id == sp.id));
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ],
+          children: _detail(context, c, sp, editable, () => Navigator.pop(ctx)),
         ),
       ),
     );
@@ -615,11 +669,11 @@ class _SpellBrowserState extends State<SpellBrowser> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final casterClasses = widget.srd.classes.where((c) => c.spellAbility != null).toList();
-    final q = _query.toLowerCase();
+    final q = foldText(_query);
     final list = widget.srd.spells.where((sp) {
       if (_level != null && sp.level != _level) return false;
       if (_class != null && !sp.classes.contains(_class)) return false;
-      return q.isEmpty || sp.name.toLowerCase().contains(q) || sp.nameEn.toLowerCase().contains(q);
+      return q.isEmpty || foldText(sp.name).contains(q) || foldText(sp.nameEn).contains(q);
     }).toList();
     return AppScaffold(
       title: widget.picking ? tr('Añadir conjuros') : tr('Conjuros ({0})', [widget.srd.ruleset.srdName]),

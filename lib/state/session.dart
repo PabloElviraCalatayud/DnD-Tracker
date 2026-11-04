@@ -89,6 +89,7 @@ abstract class GameSession extends ChangeNotifier {
 
   /// Jugadores conectados ahora mismo.
   int get onlineCount => campaign.online.length;
+  Set<String> get onlineIds => campaign.online.toSet();
 
   void refresh() => notifyListeners();
 

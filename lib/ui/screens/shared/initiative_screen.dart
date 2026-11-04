@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/dice.dart';
 import '../../../domain/abilities.dart';
@@ -7,9 +8,12 @@ import '../../../domain/monster.dart';
 import '../../../domain/ruleset.dart';
 import '../../../engine/commands.dart';
 import '../../../state/session.dart';
+import '../../../state/providers.dart';
+import '../../layout.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../board/token_panel.dart';
+import '../character/character_views.dart';
 import '../dm/bestiary_screen.dart';
 import '../../../core/i18n.dart';
 
@@ -49,8 +53,16 @@ int _safeRoll(String expr, int fallback) {
   }
 }
 
-class InitiativeScreen extends StatelessWidget {
+class InitiativeScreen extends StatefulWidget {
   const InitiativeScreen({super.key});
+
+  @override
+  State<InitiativeScreen> createState() => _InitiativeScreenState();
+}
+
+class _InitiativeScreenState extends State<InitiativeScreen> {
+  /// En PC: combatiente fijado en el panel derecho (si no, el del turno).
+  String? _pinnedId;
 
   Future<void> _put(BuildContext context, void Function(Encounter e) change) async {
     final s = SessionScope.read(context);
@@ -109,7 +121,7 @@ class InitiativeScreen extends StatelessWidget {
     final adjusted = rules.adjustedXp(monsters.map((m) => m.xp).toList(), pcLevels.length);
     final totalXp = monsters.fold<int>(0, (a, m) => a + m.xp);
 
-    return ListView(
+    final list = ListView(
       padding: const EdgeInsets.all(12),
       children: [
         Wrap(
@@ -243,17 +255,168 @@ class InitiativeScreen extends StatelessWidget {
             ),
           ),
         for (var i = 0; i < e.combatants.length; i++)
-          _CombatantTile(index: i, combatant: e.combatants[i], isTurn: e.active && i == e.turn),
+          _CombatantTile(
+            index: i,
+            combatant: e.combatants[i],
+            isTurn: e.active && i == e.turn,
+            pinned: e.combatants[i].id == _pinnedId,
+            onSelect: isDesktopLayout(context)
+                ? () => setState(() => _pinnedId = _pinnedId == e.combatants[i].id ? null : e.combatants[i].id)
+                : null,
+          ),
+      ],
+    );
+    if (!isDesktopLayout(context)) return list;
+    // En PC, a la derecha: la criatura o el personaje fijado, o el del turno actual.
+    final shown =
+        e.combatants.where((c) => c.id == _pinnedId).firstOrNull ??
+        (e.active && e.combatants.isNotEmpty ? e.combatants[e.turn.clamp(0, e.combatants.length - 1)] : null);
+    return MasterDetail(
+      masterWidth: MediaQuery.sizeOf(context).width >= 1500 ? 620 : 500,
+      master: list,
+      emptyIcon: Icons.shield_outlined,
+      emptyText: tr('Elige un combatiente para ver sus estadísticas.'),
+      detail: shown == null
+          ? null
+          : CombatantDetail(key: ValueKey(shown.id), combatant: shown, pinned: _pinnedId != null),
+    );
+  }
+}
+
+/// Panel de escritorio con lo necesario para jugar el turno de un combatiente:
+/// el bloque de estadísticas de la criatura o el resumen del personaje.
+class CombatantDetail extends ConsumerWidget {
+  const CombatantDetail({super.key, required this.combatant, required this.pinned});
+  final Combatant combatant;
+  final bool pinned;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = SessionScope.of(context);
+    final c = combatant;
+    final t = Theme.of(context).textTheme;
+    final pc = c.characterId == null ? null : s.campaign.character(c.characterId!);
+    final srd = ref.watch(srdProvider(s.campaign.ruleset)).value;
+    final monster = c.monsterId == null
+        ? null
+        : (s.campaign.monsters.where((m) => m.id == c.monsterId).firstOrNull ??
+              srd?.monsters.where((m) => m.id == c.monsterId).firstOrNull);
+    final hp = pc?.hpCurrent ?? c.hp;
+    final hpMax = pc?.effectiveHpMax(s.campaign.ruleset) ?? c.hpMax;
+    final isTurn = s.campaign.encounter.active && s.campaign.encounter.current?.id == c.id;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.92),
+            border: Border(bottom: BorderSide(color: AppColors.outlineSoft)),
+          ),
+          child: Row(
+            children: [
+              GameIcon(pc?.portrait ?? monster?.iconName ?? 'person', size: 34),
+              Gap.m,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(c.name, style: t.headlineSmall),
+                    Text(
+                      [
+                        if (isTurn) tr('Es su turno'),
+                        if (hp != null) tr('PG {0}/{1}', [hp, hpMax ?? '?']),
+                        if ((pc?.armorClass ?? c.ac) != null) tr('CA {0}', [pc?.armorClass ?? c.ac]),
+                      ].join(' · '),
+                      style: t.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (pc != null)
+                OutlinedButton.icon(
+                  onPressed: () => openCharacterDetail(context, pc.id),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: Text(tr('Abrir ficha')),
+                ),
+              if (pinned)
+                Tooltip(
+                  message: tr('Fijado'),
+                  child: Icon(Icons.push_pin, color: AppColors.gold),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(14),
+            child: monster != null
+                ? StatBlock(monster: monster)
+                : pc != null
+                ? _PcSummary(characterId: pc.id)
+                : Text(c.notes.isEmpty ? tr('Sin más datos.') : c.notes),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PcSummary extends StatelessWidget {
+  const _PcSummary({required this.characterId});
+  final String characterId;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = SessionScope.of(context);
+    final c = s.campaign.character(characterId);
+    if (c == null) return const SizedBox.shrink();
+    final t = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(c.classSummary, style: t.titleMedium?.copyWith(color: AppColors.gold)),
+        Gap.m,
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            StatBox(label: tr('CA'), value: '${c.armorClass}'),
+            StatBox(label: tr('Iniciativa'), value: signed(c.initiative)),
+            StatBox(label: tr('Perc. pasiva'), value: '${c.passive(Skill.perception)}'),
+            if (c.spellcasting.ability != null) StatBox(label: tr('CD salvación'), value: '${c.spellSaveDc}'),
+          ],
+        ),
+        Gap.m,
+        if (c.conditions.isNotEmpty || c.exhaustion > 0)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final x in c.conditions) Pill(conditionLabel(x), color: AppColors.warning),
+              if (c.exhaustion > 0) Pill(tr('Cansancio {0}', [c.exhaustion]), color: AppColors.danger),
+            ],
+          ),
       ],
     );
   }
 }
 
 class _CombatantTile extends StatelessWidget {
-  const _CombatantTile({required this.index, required this.combatant, required this.isTurn});
+  const _CombatantTile({
+    required this.index,
+    required this.combatant,
+    required this.isTurn,
+    this.pinned = false,
+    this.onSelect,
+  });
   final int index;
   final Combatant combatant;
   final bool isTurn;
+  final bool pinned;
+
+  /// En PC, tocar la fila la muestra en el panel derecho.
+  final VoidCallback? onSelect;
 
   Future<void> _edit(BuildContext context, void Function(Combatant c) change) async {
     final s = SessionScope.read(context);
@@ -274,166 +437,174 @@ class _CombatantTile extends StatelessWidget {
     final conditions = pc?.conditions ?? c.conditions;
     final icon = switch (c.kind) {
       CombatantKind.pc => pc?.portrait ?? 'hood',
-      CombatantKind.monster => 'dragon',
+      CombatantKind.monster =>
+        s.campaign.board.tokens.where((t) => t.combatantId == c.id && t.icon.isNotEmpty).firstOrNull?.icon ?? 'dragon',
       CombatantKind.npc => 'person',
     };
     return Card(
       color: isTurn ? AppColors.primaryContainer.withValues(alpha: 0.55) : null,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: isTurn ? AppColors.gold : AppColors.outlineSoft, width: isTurn ? 2 : 1),
+        side: BorderSide(
+          color: pinned ? AppColors.arcane : (isTurn ? AppColors.gold : AppColors.outlineSoft),
+          width: isTurn || pinned ? 2 : 1,
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Row(
-          children: [
-            InkWell(
-              onTap: () async {
-                final v = await promptNumber(
-                  context,
-                  tr('Iniciativa de {0}', [c.name]),
-                  initial: c.initiative,
-                  allowNegative: true,
-                );
-                if (v != null && context.mounted) {
-                  await _edit(context, (x) => x.initiative = v);
-                  if (context.mounted) {
-                    final e = s.campaign.encounter.copy()..sort();
-                    await s.send(Command.putEncounter(e));
+      child: InkWell(
+        onTap: onSelect,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              InkWell(
+                onTap: () async {
+                  final v = await promptNumber(
+                    context,
+                    tr('Iniciativa de {0}', [c.name]),
+                    initial: c.initiative,
+                    allowNegative: true,
+                  );
+                  if (v != null && context.mounted) {
+                    await _edit(context, (x) => x.initiative = v);
+                    if (context.mounted) {
+                      final e = s.campaign.encounter.copy()..sort();
+                      await s.send(Command.putEncounter(e));
+                    }
                   }
-                }
-              },
-              child: CircleAvatar(
-                radius: 20,
-                backgroundColor: AppColors.surfaceHighest,
-                child: Text('${c.initiative}', style: t.titleMedium?.copyWith(color: AppColors.gold)),
+                },
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.surfaceHighest,
+                  child: Text('${c.initiative}', style: t.titleMedium?.copyWith(color: AppColors.gold)),
+                ),
               ),
-            ),
-            Gap.s,
-            GameIcon(icon, size: 28, color: c.kind == CombatantKind.pc ? AppColors.gold : AppColors.crimson),
-            Gap.s,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          c.name,
-                          style: t.titleMedium?.copyWith(
-                            decoration: (hp ?? 1) <= 0 ? TextDecoration.lineThrough : null,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (c.hidden)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 6),
-                          child: Pill(tr('oculto'), color: AppColors.muted),
-                        ),
-                    ],
-                  ),
-                  if (hp != null && hpMax != null && hpMax > 0) ...[
-                    Gap.xs,
+              Gap.s,
+              GameIcon(icon, size: 28, color: c.kind == CombatantKind.pc ? AppColors.gold : AppColors.crimson),
+              Gap.s,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
                       children: [
-                        Expanded(
-                          child: HpBar(current: hp, max: hpMax, height: 8),
+                        Flexible(
+                          child: Text(
+                            c.name,
+                            style: t.titleMedium?.copyWith(
+                              decoration: (hp ?? 1) <= 0 ? TextDecoration.lineThrough : null,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        Gap.s,
-                        Text('$hp/$hpMax', style: t.bodySmall),
-                        if ((pc?.armorClass ?? c.ac) != null)
-                          Text(tr('  CA {0}', [pc?.armorClass ?? c.ac]), style: t.bodySmall),
-                      ],
-                    ),
-                  ],
-                  if (conditions.isNotEmpty)
-                    Wrap(
-                      spacing: 4,
-                      children: [for (final x in conditions) Pill(conditionLabel(x), color: AppColors.warning)],
-                    ),
-                ],
-              ),
-            ),
-            if (c.kind != CombatantKind.pc && hp != null) ...[
-              IconButton(
-                tooltip: tr('Daño'),
-                icon: GameIcon('sword_wound', size: 20, color: AppColors.crimson),
-                onPressed: () async {
-                  final v = await promptNumber(context, tr('Daño a {0}', [c.name]));
-                  if (v != null && context.mounted) {
-                    await _edit(context, (x) => x.hp = ((x.hp ?? 0) - v).clamp(0, 99999));
-                  }
-                },
-              ),
-              IconButton(
-                tooltip: tr('Curar'),
-                icon: GameIcon('heart_plus', size: 20, color: AppColors.success),
-                onPressed: () async {
-                  final v = await promptNumber(context, tr('Curar a {0}', [c.name]));
-                  if (v != null && context.mounted) {
-                    await _edit(context, (x) => x.hp = ((x.hp ?? 0) + v).clamp(0, x.hpMax ?? 99999));
-                  }
-                },
-              ),
-            ],
-            PopupMenuButton<String>(
-              onSelected: (v) async {
-                final ss = SessionScope.read(context);
-                if (v == 'hide') {
-                  await _edit(context, (x) => x.hidden = !x.hidden);
-                } else if (v == 'remove') {
-                  final e = ss.campaign.encounter.copy();
-                  final idx = e.combatants.indexWhere((x) => x.id == c.id);
-                  e.combatants.removeAt(idx);
-                  if (e.turn > idx || e.turn >= e.combatants.length) e.turn = (e.turn - 1).clamp(0, 999);
-                  await ss.send(Command.putEncounter(e));
-                } else if (v == 'tags') {
-                  await editTags(context, name: c.name, combatant: c);
-                } else if (v == 'cond') {
-                  final chosen = await showDialog<String>(
-                    context: context,
-                    builder: (ctx) => SimpleDialog(
-                      title: Text(tr('Estado')),
-                      children: [
-                        for (final id in conditionNamesEs.keys)
-                          SimpleDialogOption(
-                            onPressed: () => Navigator.pop(ctx, id),
-                            child: Text('${conditions.contains(id) ? '✓ ' : ''}${conditionLabel(id)}'),
+                        if (c.hidden)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: Pill(tr('oculto'), color: AppColors.muted),
                           ),
                       ],
                     ),
-                  );
-                  if (chosen == null || !context.mounted) return;
-                  if (pc != null) {
-                    await ss.editCharacter(
-                      pc.id,
-                      (x) => x.conditions.contains(chosen) ? x.conditions.remove(chosen) : x.conditions.add(chosen),
-                    );
-                  } else {
-                    await _edit(
-                      context,
-                      (x) => x.conditions.contains(chosen) ? x.conditions.remove(chosen) : x.conditions.add(chosen),
-                    );
-                  }
-                } else if (v == 'turn') {
-                  final e = ss.campaign.encounter.copy()..turn = index;
-                  await ss.send(Command.putEncounter(e));
-                }
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem(value: 'turn', child: Text(tr('Es su turno'))),
-                PopupMenuItem(value: 'cond', child: Text(tr('Estados…'))),
-                if (c.kind != CombatantKind.pc) PopupMenuItem(value: 'tags', child: Text(tr('Etiquetas visibles…'))),
-                PopupMenuItem(
-                  value: 'hide',
-                  child: Text(c.hidden ? tr('Mostrar a jugadores') : tr('Ocultar a jugadores')),
+                    if (hp != null && hpMax != null && hpMax > 0) ...[
+                      Gap.xs,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: HpBar(current: hp, max: hpMax, height: 8),
+                          ),
+                          Gap.s,
+                          Text('$hp/$hpMax', style: t.bodySmall),
+                          if ((pc?.armorClass ?? c.ac) != null)
+                            Text(tr('  CA {0}', [pc?.armorClass ?? c.ac]), style: t.bodySmall),
+                        ],
+                      ),
+                    ],
+                    if (conditions.isNotEmpty)
+                      Wrap(
+                        spacing: 4,
+                        children: [for (final x in conditions) Pill(conditionLabel(x), color: AppColors.warning)],
+                      ),
+                  ],
                 ),
-                PopupMenuItem(value: 'remove', child: Text(tr('Quitar'))),
+              ),
+              if (c.kind != CombatantKind.pc && hp != null) ...[
+                IconButton(
+                  tooltip: tr('Daño'),
+                  icon: GameIcon('sword_wound', size: 20, color: AppColors.crimson),
+                  onPressed: () async {
+                    final v = await promptNumber(context, tr('Daño a {0}', [c.name]));
+                    if (v != null && context.mounted) {
+                      await _edit(context, (x) => x.hp = ((x.hp ?? 0) - v).clamp(0, 99999));
+                    }
+                  },
+                ),
+                IconButton(
+                  tooltip: tr('Curar'),
+                  icon: GameIcon('heart_plus', size: 20, color: AppColors.success),
+                  onPressed: () async {
+                    final v = await promptNumber(context, tr('Curar a {0}', [c.name]));
+                    if (v != null && context.mounted) {
+                      await _edit(context, (x) => x.hp = ((x.hp ?? 0) + v).clamp(0, x.hpMax ?? 99999));
+                    }
+                  },
+                ),
               ],
-            ),
-          ],
+              PopupMenuButton<String>(
+                onSelected: (v) async {
+                  final ss = SessionScope.read(context);
+                  if (v == 'hide') {
+                    await _edit(context, (x) => x.hidden = !x.hidden);
+                  } else if (v == 'remove') {
+                    final e = ss.campaign.encounter.copy();
+                    final idx = e.combatants.indexWhere((x) => x.id == c.id);
+                    e.combatants.removeAt(idx);
+                    if (e.turn > idx || e.turn >= e.combatants.length) e.turn = (e.turn - 1).clamp(0, 999);
+                    await ss.send(Command.putEncounter(e));
+                  } else if (v == 'tags') {
+                    await editTags(context, name: c.name, combatant: c);
+                  } else if (v == 'cond') {
+                    final chosen = await showDialog<String>(
+                      context: context,
+                      builder: (ctx) => SimpleDialog(
+                        title: Text(tr('Estado')),
+                        children: [
+                          for (final id in conditionNamesEs.keys)
+                            SimpleDialogOption(
+                              onPressed: () => Navigator.pop(ctx, id),
+                              child: Text('${conditions.contains(id) ? '✓ ' : ''}${conditionLabel(id)}'),
+                            ),
+                        ],
+                      ),
+                    );
+                    if (chosen == null || !context.mounted) return;
+                    if (pc != null) {
+                      await ss.editCharacter(
+                        pc.id,
+                        (x) => x.conditions.contains(chosen) ? x.conditions.remove(chosen) : x.conditions.add(chosen),
+                      );
+                    } else {
+                      await _edit(
+                        context,
+                        (x) => x.conditions.contains(chosen) ? x.conditions.remove(chosen) : x.conditions.add(chosen),
+                      );
+                    }
+                  } else if (v == 'turn') {
+                    final e = ss.campaign.encounter.copy()..turn = index;
+                    await ss.send(Command.putEncounter(e));
+                  }
+                },
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'turn', child: Text(tr('Es su turno'))),
+                  PopupMenuItem(value: 'cond', child: Text(tr('Estados…'))),
+                  if (c.kind != CombatantKind.pc) PopupMenuItem(value: 'tags', child: Text(tr('Etiquetas visibles…'))),
+                  PopupMenuItem(
+                    value: 'hide',
+                    child: Text(c.hidden ? tr('Mostrar a jugadores') : tr('Ocultar a jugadores')),
+                  ),
+                  PopupMenuItem(value: 'remove', child: Text(tr('Quitar'))),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

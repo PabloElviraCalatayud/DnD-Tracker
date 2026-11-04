@@ -130,7 +130,7 @@ Future<void> _tap(WidgetTester tester, String text) async {
 
 /// Va a una sección: la busca en la barra/raíl y si no está, en «Más».
 Future<void> _goTo(WidgetTester tester, String section) async {
-  for (final nav in [find.byType(NavigationRail), find.byType(NavigationBar)]) {
+  for (final nav in [find.byKey(const ValueKey('sidebar')), find.byType(NavigationBar)]) {
     final f = find.descendant(of: nav, matching: find.text(section));
     if (f.evaluate().isNotEmpty) {
       await tester.tap(f.first);
@@ -240,7 +240,9 @@ void main() {
 
       // Tirada desde el tablero: la genera el máster, se anima y queda registrada.
       final before = host.campaign.rolls.length;
-      await tester.tap(find.descendant(of: find.byType(AppBar), matching: find.byTooltip(tr('Tirar dados'))));
+      // En móvil el botón de dados está en la barra superior; en escritorio, en la cabecera de sección.
+      final diceInAppBar = find.descendant(of: find.byType(AppBar), matching: find.byTooltip(tr('Tirar dados')));
+      await tester.tap(diceInAppBar.evaluate().isNotEmpty ? diceInAppBar : find.text(tr('Tirar dados')).first);
       await _settle(tester);
       await tester.tap(find.text('d20').last);
       await tester.pump();

@@ -14,6 +14,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../../core/i18n.dart';
+import '../../../core/text.dart';
 
 /// Iconos que se pueden elegir para objetos personalizados.
 const itemIconChoices = [
@@ -142,18 +143,25 @@ Future<void> showItemDetail(BuildContext context, Character character, Inventory
         initialChildSize: 0.7,
         maxChildSize: 0.95,
         builder: (ctx, scroll) =>
-            _ItemDetail(characterId: character.id, itemId: item.id, editable: editable, scroll: scroll),
+            ItemDetailPane(characterId: character.id, itemId: item.id, editable: editable, scroll: scroll),
       ),
     ),
   );
 }
 
-class _ItemDetail extends ConsumerWidget {
-  const _ItemDetail({required this.characterId, required this.itemId, required this.editable, required this.scroll});
+/// Detalle de un objeto: en una hoja inferior (móvil) o en el panel derecho (PC).
+class ItemDetailPane extends ConsumerWidget {
+  const ItemDetailPane({
+    super.key,
+    required this.characterId,
+    required this.itemId,
+    required this.editable,
+    this.scroll,
+  });
   final String characterId;
   final String itemId;
   final bool editable;
-  final ScrollController scroll;
+  final ScrollController? scroll;
 
   Future<void> _edit(BuildContext context, void Function(InventoryItem i) change) async {
     final s = SessionScope.read(context);
@@ -168,7 +176,9 @@ class _ItemDetail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = SessionScope.of(context);
     final c = s.campaign.character(characterId);
-    final item = c?.itemById(itemId);
+    final raw = c?.itemById(itemId);
+    final srd = ref.watch(srdProvider(s.campaign.ruleset)).value;
+    final item = raw == null ? null : (srd?.localizeItem(raw) ?? raw);
     final units = ref.watch(unitsProvider);
     final t = Theme.of(context).textTheme;
     if (c == null || item == null) {
@@ -458,12 +468,12 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('$e')),
         data: (data) {
-          final q = _query.toLowerCase();
+          final q = foldText(_query);
           final list = data.items.where((i) {
             if (i.isMagic && !widget.includeMagic) return false;
             if (!i.isMagic && !widget.includeMundane) return false;
             if (_cat != null && i.category != _cat) return false;
-            return q.isEmpty || i.name.toLowerCase().contains(q);
+            return q.isEmpty || foldText(i.name).contains(q) || foldText(i.nameEn).contains(q);
           }).toList();
           return Column(
             children: [

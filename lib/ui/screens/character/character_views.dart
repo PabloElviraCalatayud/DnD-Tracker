@@ -9,6 +9,7 @@ import '../../../domain/character.dart';
 import '../../../domain/ruleset.dart';
 import '../../../state/providers.dart';
 import '../../../state/session.dart';
+import '../../layout.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../shared/dice_roller.dart';
@@ -115,40 +116,168 @@ class CharacterSheet extends ConsumerWidget {
     final c = character;
     final editable = canEditCharacter(s, c);
     final rules = s.campaign.rules;
+    final header = _Header(character: c, editable: editable);
+    final vitals = _Vitals(character: c, editable: editable);
+    final death = c.hpCurrent <= 0 ? _DeathSaves(character: c, editable: editable) : null;
+    final conditions = _Conditions(character: c, editable: editable, rules: rules);
+    final abilities = _Abilities(character: c, rules: rules);
+    final rest = _HitDiceAndRest(character: c, editable: editable);
+    final skills = _Skills(character: c, rules: rules);
+    final features = _Features(character: c, editable: editable);
+    final attacks = _Attacks(character: c, editable: editable);
+    final profs = _Proficiencies(character: c);
+    final personality = _Personality(character: c);
+    final dmNotes = s.isDm ? _DmNotes(character: c) : null;
+
+    if (!isDesktopLayout(context)) {
+      // Móvil: cabecera fija con los PG y pestañas, en vez de una tira infinita.
+      return DefaultTabController(
+        length: 4,
+        child: Column(
+          children: [
+            _MobileSheetHeader(character: c, editable: editable),
+            TabBar(
+              tabs: [
+                Tab(text: tr('Combate')),
+                Tab(text: tr('Atributos')),
+                Tab(text: tr('Rasgos')),
+                Tab(text: tr('Historia')),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ListView(padding: const EdgeInsets.all(10), children: [vitals, ?death, conditions, attacks]),
+                  ListView(padding: const EdgeInsets.all(10), children: [abilities, skills]),
+                  ListView(padding: const EdgeInsets.all(10), children: [features, rest, profs]),
+                  ListView(padding: const EdgeInsets.all(10), children: [header, personality, ?dmNotes]),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    // Escritorio: como una hoja de personaje impresa, en columnas.
     return LayoutBuilder(
       builder: (context, constraints) {
-        final wide = constraints.maxWidth > 980;
-        final left = <Widget>[
-          _Header(character: c, editable: editable),
-          _Vitals(character: c, editable: editable),
-          if (c.hpCurrent <= 0) _DeathSaves(character: c, editable: editable),
-          _Conditions(character: c, editable: editable, rules: rules),
-          _Abilities(character: c, rules: rules),
-          _HitDiceAndRest(character: c, editable: editable),
-        ];
-        final right = <Widget>[
-          _Skills(character: c, rules: rules),
-          _Features(character: c, editable: editable),
-          _Attacks(character: c, editable: editable),
-          _Proficiencies(character: c),
-          _Personality(character: c),
-          if (s.isDm) _DmNotes(character: c),
-        ];
-        if (wide) {
+        final w = constraints.maxWidth;
+        Widget col(List<Widget?> children) => Expanded(child: Column(children: [for (final w in children) ?w]));
+        if (w >= 1150) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.all(14),
+            child: Column(
               children: [
-                Expanded(child: Column(children: left)),
-                Gap.m,
-                Expanded(child: Column(children: right)),
+                header,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    col([abilities, skills]),
+                    Gap.m,
+                    col([vitals, death, conditions, attacks, rest]),
+                    Gap.m,
+                    col([features, profs, personality, dmNotes]),
+                  ],
+                ),
               ],
             ),
           );
         }
-        return ListView(padding: const EdgeInsets.all(12), children: [...left, ...right]);
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              header,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  col([vitals, death, conditions, abilities, rest]),
+                  Gap.m,
+                  col([skills, features, attacks, profs, personality, dmNotes]),
+                ],
+              ),
+            ],
+          ),
+        );
       },
+    );
+  }
+}
+
+/// Cabecera compacta de la ficha en el móvil: retrato, nombre y PG a mano.
+class _MobileSheetHeader extends StatelessWidget {
+  const _MobileSheetHeader({required this.character, required this.editable});
+  final Character character;
+  final bool editable;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = SessionScope.of(context);
+    final c = character;
+    final t = Theme.of(context).textTheme;
+    final max = c.effectiveHpMax(s.campaign.ruleset);
+    final ratio = max <= 0 ? 0.0 : (c.hpCurrent / max).clamp(0.0, 1.0);
+    return Material(
+      color: AppColors.surface.withValues(alpha: 0.95),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 6, 8),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.surfaceHighest,
+                border: Border.all(color: AppColors.hpColor(ratio), width: 2.5),
+              ),
+              alignment: Alignment.center,
+              child: GameIcon(c.portrait, size: 28),
+            ),
+            Gap.m,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(c.name, style: t.titleLarge, overflow: TextOverflow.ellipsis),
+                  Text(
+                    c.classSummary,
+                    style: t.bodySmall?.copyWith(color: AppColors.gold),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: ratio,
+                            minHeight: 7,
+                            color: AppColors.hpColor(ratio),
+                            backgroundColor: AppColors.surfaceHighest,
+                          ),
+                        ),
+                      ),
+                      Gap.s,
+                      Text(
+                        '${c.hpCurrent}/$max${c.hpTemp > 0 ? ' +${c.hpTemp}' : ''}',
+                        style: t.labelLarge?.copyWith(color: AppColors.hpColor(ratio)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (editable)
+              IconButton(
+                tooltip: tr('Editar ficha'),
+                icon: const Icon(Icons.edit_note),
+                onPressed: () => openCharacterEditor(context, c),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

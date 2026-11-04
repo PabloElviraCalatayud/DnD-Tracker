@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/text.dart';
+
 import '../../../core/dice.dart';
 import '../../../core/ids.dart';
 import '../../../domain/abilities.dart';
@@ -10,6 +12,7 @@ import '../../../domain/ruleset.dart';
 import '../../../engine/commands.dart';
 import '../../../state/providers.dart';
 import '../../../state/session.dart';
+import '../../layout.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../shared/dice_roller.dart';
@@ -32,6 +35,7 @@ class _BestiaryScreenState extends ConsumerState<BestiaryScreen> {
   String? _type;
   RangeValues _cr = const RangeValues(0, 30);
   bool _onlyCustom = false;
+  Monster? _selected;
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +58,17 @@ class _BestiaryScreenState extends ConsumerState<BestiaryScreen> {
         data: (data) {
           final all = [...custom, if (!_onlyCustom) ...data.monsters];
           final types = {for (final m in all) m.type.split(' ').first.toLowerCase()}.toList()..sort();
-          final q = _query.toLowerCase();
+          final q = foldText(_query);
           final list = all.where((m) {
-            if (q.isNotEmpty && !m.name.toLowerCase().contains(q)) return false;
+            if (q.isNotEmpty && !foldText(m.name).contains(q)) return false;
             if (_type != null && !m.type.toLowerCase().startsWith(_type!)) return false;
             return m.cr >= _cr.start && m.cr <= _cr.end;
           }).toList();
-          return Column(
+          final desktop = isDesktopLayout(context) && !widget.picking;
+          final selected = _selected == null
+              ? null
+              : (all.where((m) => m.id == _selected!.id).firstOrNull ?? (_selected!.custom ? null : _selected));
+          final listColumn = Column(
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
@@ -130,9 +138,12 @@ class _BestiaryScreenState extends ConsumerState<BestiaryScreen> {
                               tr('VD {0} · {1} {2} · CA {3} · PG {4}', [m.crText, m.size, m.type, m.ac, m.hp]),
                             ),
                             trailing: m.custom ? Pill(tr('propia'), color: AppColors.arcane) : null,
+                            selected: desktop && m.id == selected?.id,
                             onTap: () {
                               if (widget.picking) {
                                 Navigator.pop(context, m);
+                              } else if (desktop) {
+                                setState(() => _selected = m);
                               } else {
                                 openMonsterDetail(context, m);
                               }
@@ -149,6 +160,56 @@ class _BestiaryScreenState extends ConsumerState<BestiaryScreen> {
                 ),
               ),
             ],
+          );
+          if (!desktop) return listColumn;
+          return MasterDetail(
+            masterWidth: 440,
+            master: listColumn,
+            emptyIcon: Icons.pets_outlined,
+            emptyText: tr('Elige una criatura para ver su bloque de estadísticas.'),
+            detail: selected == null
+                ? null
+                : Column(
+                    key: ValueKey(selected.id),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(20, 10, 8, 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.9),
+                          border: Border(bottom: BorderSide(color: AppColors.outlineSoft)),
+                        ),
+                        child: Row(
+                          children: [
+                            GameIcon(selected.iconName, size: 30),
+                            Gap.m,
+                            Expanded(child: Text(selected.name, style: t.headlineSmall)),
+                            FilledButton.icon(
+                              onPressed: () => addMonsterDialog(context, selected),
+                              icon: GameIcon('crossed_swords', size: 18, color: AppColors.onGold),
+                              label: Text(tr('Añadir al combate')),
+                            ),
+                            ...monsterActions(
+                              context,
+                              selected,
+                              onDeleted: () => setState(() => _selected = null),
+                            ).skip(1),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(16),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 860),
+                              child: StatBlock(monster: selected),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           );
         },
       ),
@@ -185,6 +246,48 @@ void openMonsterDetail(BuildContext context, Monster m) {
   );
 }
 
+/// Acciones sobre una criatura: añadir al combate, copiar, editar y borrar.
+List<Widget> monsterActions(BuildContext context, Monster m, {VoidCallback? onDeleted}) {
+  final s = SessionScope.read(context);
+  return [
+    IconButton(
+      tooltip: tr('Añadir al combate'),
+      icon: const GameIcon('crossed_swords', size: 24),
+      onPressed: () => addMonsterDialog(context, m),
+    ),
+    PopupMenuButton<String>(
+      onSelected: (v) async {
+        if (v == 'copy') {
+          final copy = m.copy()
+            ..id = newId()
+            ..name = m.custom ? tr('{0} (copia)', [m.name]) : m.name
+            ..custom = true;
+          await openMonsterEditor(context, copy);
+        } else if (v == 'edit') {
+          await openMonsterEditor(context, m);
+        } else if (v == 'delete') {
+          final ok = await confirm(
+            context,
+            tr('Borrar'),
+            tr('¿Borrar {0} de tu grimorio?', [m.name]),
+            ok: tr('Borrar'),
+            danger: true,
+          );
+          if (ok) {
+            await s.send(Command.deleteMonster(m.id));
+            onDeleted?.call();
+          }
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(value: 'copy', child: Text(m.custom ? tr('Duplicar') : tr('Copiar y personalizar'))),
+        if (m.custom) PopupMenuItem(value: 'edit', child: Text(tr('Editar'))),
+        if (m.custom) PopupMenuItem(value: 'delete', child: Text(tr('Borrar'))),
+      ],
+    ),
+  ];
+}
+
 class MonsterDetailScreen extends StatelessWidget {
   const MonsterDetailScreen({super.key, required this.monster});
   final Monster monster;
@@ -195,43 +298,7 @@ class MonsterDetailScreen extends StatelessWidget {
     final m = monster.custom ? (s.campaign.monsters.where((x) => x.id == monster.id).firstOrNull ?? monster) : monster;
     return AppScaffold(
       title: m.name,
-      actions: [
-        IconButton(
-          tooltip: tr('Añadir al combate'),
-          icon: const GameIcon('crossed_swords', size: 24),
-          onPressed: () => addMonsterDialog(context, m),
-        ),
-        PopupMenuButton<String>(
-          onSelected: (v) async {
-            if (v == 'copy') {
-              final copy = m.copy()
-                ..id = newId()
-                ..name = m.custom ? tr('{0} (copia)', [m.name]) : m.name
-                ..custom = true;
-              await openMonsterEditor(context, copy);
-            } else if (v == 'edit') {
-              await openMonsterEditor(context, m);
-            } else if (v == 'delete') {
-              final ok = await confirm(
-                context,
-                tr('Borrar'),
-                tr('¿Borrar {0} de tu grimorio?', [m.name]),
-                ok: tr('Borrar'),
-                danger: true,
-              );
-              if (ok) {
-                await s.send(Command.deleteMonster(m.id));
-                if (context.mounted) Navigator.pop(context);
-              }
-            }
-          },
-          itemBuilder: (_) => [
-            PopupMenuItem(value: 'copy', child: Text(m.custom ? tr('Duplicar') : tr('Copiar y personalizar'))),
-            if (m.custom) PopupMenuItem(value: 'edit', child: Text(tr('Editar'))),
-            if (m.custom) PopupMenuItem(value: 'delete', child: Text(tr('Borrar'))),
-          ],
-        ),
-      ],
+      actions: monsterActions(context, m, onDeleted: () => Navigator.pop(context)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Center(

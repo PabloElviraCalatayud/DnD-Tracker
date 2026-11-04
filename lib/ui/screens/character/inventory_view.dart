@@ -6,15 +6,18 @@ import '../../../domain/campaign.dart';
 import '../../../domain/character.dart';
 import '../../../domain/currency.dart';
 import '../../../domain/item.dart';
+import '../../../domain/profile.dart';
 import '../../../engine/commands.dart';
 import '../../../state/providers.dart';
 import '../../../state/session.dart';
+import '../../layout.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import 'character_views.dart';
 import 'item_dialogs.dart';
 import '../../../core/i18n.dart';
 import '../../../data/srd.dart';
+import '../../../core/text.dart';
 
 class InventoryView extends ConsumerStatefulWidget {
   const InventoryView({super.key, required this.character});
@@ -26,6 +29,7 @@ class InventoryView extends ConsumerStatefulWidget {
 
 class _InventoryViewState extends ConsumerState<InventoryView> {
   String _query = '';
+  String? _selectedId;
   ItemCategory? _category;
 
   Future<void> _add() async {
@@ -98,11 +102,11 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
     final t = Theme.of(context).textTheme;
 
     final srd = ref.watch(srdProvider(s.campaign.ruleset)).value;
-    final q = _query.toLowerCase();
+    final q = foldText(_query);
     final items =
         c.inventory.map((i) => srd?.localizeItem(i) ?? i).where((i) {
           if (_category != null && i.category != _category) return false;
-          return q.isEmpty || i.name.toLowerCase().contains(q) || i.tags.any((x) => x.toLowerCase().contains(q));
+          return q.isEmpty || foldText(i.name).contains(q) || i.tags.any((x) => foldText(x).contains(q));
         }).toList()..sort((a, b) {
           if (a.equipped != b.equipped) return a.equipped ? -1 : 1;
           final cat = a.category.index.compareTo(b.category.index);
@@ -120,6 +124,178 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
       includeCoins: settings.countCoinWeight,
     );
 
+    final carga = settings.encumbrance == EncumbranceRule.none
+        ? null
+        : SectionCard(
+            title: tr('Carga'),
+            icon: 'knapsack',
+            trailing: Text(
+              '${units.weight(totalWeight)}${anyHidden ? '+?' : ''} / ${units.weight(capacity)}',
+              style: t.titleSmall,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    minHeight: 10,
+                    value: capacity <= 0 ? 0 : (totalWeight / capacity).clamp(0, 1),
+                    color: switch (enc) {
+                      Encumbrance.none => AppColors.success,
+                      Encumbrance.encumbered => AppColors.warning,
+                      _ => AppColors.danger,
+                    },
+                    backgroundColor: AppColors.outlineSoft,
+                  ),
+                ),
+                Gap.xs,
+                Text(switch (enc) {
+                  Encumbrance.none => tr('Sin penalizaciones.'),
+                  Encumbrance.encumbered => tr('Cargado: −10 pies de velocidad.'),
+                  Encumbrance.heavilyEncumbered => tr(
+                    'Muy cargado: −20 pies de velocidad y desventaja en pruebas, ataques y salvaciones de FUE, DES y CON.',
+                  ),
+                  Encumbrance.overCapacity => tr('Por encima de tu capacidad de carga: velocidad máxima 5 pies.'),
+                }, style: t.bodySmall),
+                if (anyHidden) Text(tr('Hay objetos cuyo peso conoce sólo el máster.'), style: t.bodySmall),
+              ],
+            ),
+          );
+    final filters = Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        ChoiceChip(
+          label: Text(tr('Todo')),
+          selected: _category == null,
+          onSelected: (_) => setState(() => _category = null),
+        ),
+        for (final cat in usedCategories)
+          ChoiceChip(
+            label: Text(cat.label),
+            selected: _category == cat,
+            onSelected: (v) => setState(() => _category = v ? cat : null),
+          ),
+      ],
+    );
+    final summary = Padding(
+      padding: const EdgeInsets.all(8),
+      child: Text(
+        tr('Valor total conocido: {0} · {1} objetos · {2} visibles para otros jugadores', [
+          formatCp(totalValue),
+          c.inventory.length,
+          c.inventory.where((i) => i.shared).length,
+        ]),
+        style: t.bodySmall,
+      ),
+    );
+    final empty = EmptyState(
+      icon: 'backpack',
+      title: tr('Inventario vacío'),
+      message: tr('Añade objetos del SRD o crea los tuyos.'),
+    );
+
+    if (isDesktopLayout(context)) {
+      final selected = items.where((i) => i.id == _selectedId).firstOrNull;
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _CurrencyCard(character: c, editable: editable),
+                      ),
+                      if (carga != null) ...[Gap.m, Expanded(child: carga)],
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 300,
+                        child: SearchField(
+                          onChanged: (v) => setState(() => _query = v),
+                          hint: tr('Buscar en el inventario'),
+                        ),
+                      ),
+                      Gap.m,
+                      Expanded(child: filters),
+                      if (editable)
+                        FilledButton.icon(onPressed: _add, icon: const Icon(Icons.add), label: Text(tr('Añadir'))),
+                    ],
+                  ),
+                ),
+                TableHeader(
+                  children: [
+                    const SizedBox(width: 42),
+                    Expanded(child: Text(tr('OBJETO'))),
+                    SizedBox(width: 60, child: Text(tr('CANT.'), textAlign: TextAlign.right)),
+                    SizedBox(width: 100, child: Text(tr('PESO'), textAlign: TextAlign.right)),
+                    SizedBox(width: 120, child: Text(tr('VALOR'), textAlign: TextAlign.right)),
+                    SizedBox(width: 70, child: Text(tr('VISIBLE'), textAlign: TextAlign.center)),
+                  ],
+                ),
+                Expanded(
+                  child: c.inventory.isEmpty
+                      ? empty
+                      : ListView(
+                          children: [
+                            for (final i in items)
+                              HoverRow(
+                                selected: i.id == _selectedId,
+                                onTap: () => setState(() => _selectedId = i.id == _selectedId ? null : i.id),
+                                child: _InventoryRow(
+                                  item: i,
+                                  units: units,
+                                  editable: editable,
+                                  onVisibility: () => showVisibilityPicker(context, c, i),
+                                ),
+                              ),
+                            summary,
+                          ],
+                        ),
+                ),
+              ],
+            ),
+          ),
+          if (selected != null) ...[
+            VerticalDivider(width: 1, color: AppColors.outlineSoft),
+            SizedBox(
+              width: 400,
+              child: Material(
+                color: AppColors.surface.withValues(alpha: 0.9),
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: IconButton(
+                        tooltip: tr('Cerrar'),
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() => _selectedId = null),
+                      ),
+                    ),
+                    Expanded(
+                      child: ItemDetailPane(characterId: c.id, itemId: selected.id, editable: editable),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: editable
@@ -129,72 +305,16 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
         children: [
           _CurrencyCard(character: c, editable: editable),
-          if (settings.encumbrance != EncumbranceRule.none)
-            SectionCard(
-              title: tr('Carga'),
-              icon: 'knapsack',
-              trailing: Text(
-                '${units.weight(totalWeight)}${anyHidden ? '+?' : ''} / ${units.weight(capacity)}',
-                style: t.titleSmall,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      minHeight: 10,
-                      value: capacity <= 0 ? 0 : (totalWeight / capacity).clamp(0, 1),
-                      color: switch (enc) {
-                        Encumbrance.none => AppColors.success,
-                        Encumbrance.encumbered => AppColors.warning,
-                        _ => AppColors.danger,
-                      },
-                      backgroundColor: AppColors.outlineSoft,
-                    ),
-                  ),
-                  Gap.xs,
-                  Text(switch (enc) {
-                    Encumbrance.none => tr('Sin penalizaciones.'),
-                    Encumbrance.encumbered => tr('Cargado: −10 pies de velocidad.'),
-                    Encumbrance.heavilyEncumbered => tr(
-                      'Muy cargado: −20 pies de velocidad y desventaja en pruebas, ataques y salvaciones de FUE, DES y CON.',
-                    ),
-                    Encumbrance.overCapacity => tr('Por encima de tu capacidad de carga: velocidad máxima 5 pies.'),
-                  }, style: t.bodySmall),
-                  if (anyHidden) Text(tr('Hay objetos cuyo peso conoce sólo el máster.'), style: t.bodySmall),
-                ],
-              ),
-            ),
+          ?carga,
           if (c.inventory.isNotEmpty) ...[
             Gap.s,
             SearchField(onChanged: (v) => setState(() => _query = v), hint: tr('Buscar en el inventario')),
             Gap.s,
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                ChoiceChip(
-                  label: Text(tr('Todo')),
-                  selected: _category == null,
-                  onSelected: (_) => setState(() => _category = null),
-                ),
-                for (final cat in usedCategories)
-                  ChoiceChip(
-                    label: Text(cat.label),
-                    selected: _category == cat,
-                    onSelected: (v) => setState(() => _category = v ? cat : null),
-                  ),
-              ],
-            ),
+            filters,
           ],
           Gap.s,
           if (c.inventory.isEmpty)
-            EmptyState(
-              icon: 'backpack',
-              title: tr('Inventario vacío'),
-              message: tr('Añade objetos del SRD o crea los tuyos.'),
-            )
+            empty
           else
             Card(
               child: Column(
@@ -214,18 +334,86 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                 ],
               ),
             ),
-          if (c.inventory.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(
-                tr('Valor total conocido: {0} · {1} objetos · {2} visibles para otros jugadores', [
-                  formatCp(totalValue),
-                  c.inventory.length,
-                  c.inventory.where((i) => i.shared).length,
-                ]),
-                style: t.bodySmall,
-              ),
+          if (c.inventory.isNotEmpty) summary,
+        ],
+      ),
+    );
+  }
+}
+
+/// Fila de la tabla de inventario de escritorio.
+class _InventoryRow extends StatelessWidget {
+  const _InventoryRow({required this.item, required this.units, required this.editable, required this.onVisibility});
+  final InventoryItem item;
+  final Units units;
+  final bool editable;
+  final VoidCallback onVisibility;
+
+  @override
+  Widget build(BuildContext context) {
+    final i = item;
+    final t = Theme.of(context).textTheme;
+    final muted = t.bodyMedium?.copyWith(color: AppColors.muted);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(13, 7, 16, 7),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 42,
+            child: GameIcon(i.iconName, size: 28, color: i.isMagic ? AppColors.arcane : AppColors.gold),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(i.name, style: t.titleSmall, overflow: TextOverflow.ellipsis),
+                    ),
+                    if (i.equipped) ...[const SizedBox(width: 6), Pill(tr('equipado'), color: AppColors.success)],
+                    if (i.attuned) ...[const SizedBox(width: 6), Pill(tr('vinculado'), color: AppColors.arcane)],
+                  ],
+                ),
+                if (i.rarity.isNotEmpty || i.charges != null)
+                  Text(
+                    [
+                      if (i.rarity.isNotEmpty) rarityLabel(i.rarity),
+                      if (i.charges != null)
+                        tr('cargas {0}{1}', [i.charges, i.maxCharges != null ? '/${i.maxCharges}' : '']),
+                    ].join(' · '),
+                    style: t.bodySmall,
+                  ),
+              ],
             ),
+          ),
+          SizedBox(
+            width: 60,
+            child: Text('${i.quantity}', textAlign: TextAlign.right, style: t.titleSmall),
+          ),
+          SizedBox(
+            width: 100,
+            child: Text(i.weight == null ? '—' : units.weight(i.totalWeight), textAlign: TextAlign.right, style: muted),
+          ),
+          SizedBox(
+            width: 120,
+            child: Text(i.valueCp == null ? '—' : formatCp(i.totalValueCp), textAlign: TextAlign.right, style: muted),
+          ),
+          SizedBox(
+            width: 70,
+            child: Center(
+              child: editable
+                  ? IconButton(
+                      tooltip: visibilityText(context, i),
+                      icon: VisibilityIcon(item: i, size: 20),
+                      onPressed: onVisibility,
+                    )
+                  : Tooltip(
+                      message: visibilityText(context, i),
+                      child: VisibilityIcon(item: i, size: 20),
+                    ),
+            ),
+          ),
         ],
       ),
     );

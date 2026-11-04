@@ -12,6 +12,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../../../core/i18n.dart';
+import '../../../core/text.dart';
 
 const portraitChoices = [
   'hood',
@@ -211,7 +212,7 @@ class _FieldState extends State<_Field> {
         initialValue: TextEditingValue(text: widget.value),
         optionsBuilder: (v) {
           final q = v.text.toLowerCase();
-          return widget.suggestions.where((s) => q.isEmpty || s.toLowerCase().contains(q));
+          return widget.suggestions.where((s) => q.isEmpty || foldText(s).contains(foldText(q)));
         },
         onSelected: widget.onChanged,
         fieldViewBuilder: (context, controller, focus, onSubmit) => TextField(

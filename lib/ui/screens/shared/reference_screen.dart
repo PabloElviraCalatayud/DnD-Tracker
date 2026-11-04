@@ -11,6 +11,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../character/spells_view.dart';
 import '../../../core/i18n.dart';
+import '../../../core/text.dart';
 
 /// Material de consulta rápida de la edición de la partida.
 class ReferenceScreen extends ConsumerWidget {
@@ -94,8 +95,10 @@ class _ItemsState extends ConsumerState<_Items> {
   @override
   Widget build(BuildContext context) {
     final units = ref.watch(unitsProvider);
-    final q = _q.toLowerCase();
-    final list = widget.data.items.where((i) => q.isEmpty || i.name.toLowerCase().contains(q)).toList();
+    final q = foldText(_q);
+    final list = widget.data.items
+        .where((i) => q.isEmpty || foldText(i.name).contains(q) || foldText(i.nameEn).contains(q))
+        .toList();
     return Column(
       children: [
         Padding(

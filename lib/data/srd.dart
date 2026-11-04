@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../core/json.dart';
+import '../core/text.dart';
 import '../domain/character.dart';
 import '../domain/item.dart';
 import '../domain/monster.dart';
@@ -552,19 +553,7 @@ class SrdData {
 }
 
 /// Orden alfabético sin tener en cuenta tildes ni mayúsculas.
-int _cmp(String a, String b) => _fold(a).compareTo(_fold(b));
-
-String _fold(String s) {
-  const from = 'áàäâéèëêíìïîóòöôúùüûñçÁÀÄÂÉÈËÊÍÌÏÎÓÒÖÔÚÙÜÛÑÇ';
-  const to = 'aaaaeeeeiiiioooouuuuncAAAAEEEEIIIIOOOOUUUUNC';
-  final b = StringBuffer();
-  for (final r in s.runes) {
-    final ch = String.fromCharCode(r);
-    final i = from.indexOf(ch);
-    b.write(i >= 0 ? to[i] : ch);
-  }
-  return b.toString().toLowerCase();
-}
+int _cmp(String a, String b) => foldText(a).compareTo(foldText(b));
 
 /// Muestra en el idioma actual los conjuros y objetos del SRD ya guardados en
 /// una ficha (se copiaron en el idioma de quien los añadió). Si el jugador los
