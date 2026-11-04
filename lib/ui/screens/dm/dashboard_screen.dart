@@ -44,7 +44,7 @@ class DashboardScreen extends StatelessWidget {
             StatBox(label: tr('Nivel medio'), value: avgLevel == 0 ? '—' : avgLevel.toStringAsFixed(1), width: 100),
             StatBox(label: tr('Oro del grupo'), value: formatCp(totalGold), width: 150),
             if (c.encounter.active)
-              StatBox(label: tr('Combate'), value: 'Ronda ${c.encounter.round}', highlight: true, width: 120),
+              StatBox(label: tr('Combate'), value: tr('Ronda {0}', [c.encounter.round]), highlight: true, width: 120),
           ],
         ),
         Gap.m,
@@ -150,7 +150,9 @@ class _PartyCard extends StatelessWidget {
                   ),
                   if (c.ownerId != s.myUserId)
                     Tooltip(
-                      message: '${s.campaign.memberName(c.ownerId)} ${online ? 'conectado' : 'desconectado'}',
+                      message: online
+                      ? tr('{0} conectado', [s.campaign.memberName(c.ownerId)])
+                      : tr('{0} desconectado', [s.campaign.memberName(c.ownerId)]),
                       child: Icon(Icons.circle, size: 10, color: online ? AppColors.success : AppColors.outline),
                     ),
                 ],

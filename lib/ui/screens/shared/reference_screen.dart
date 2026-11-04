@@ -146,28 +146,31 @@ class _Rules extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final quick =
-        '''
-### Descansos
-${rules.longRestSummary}
-
-Descanso corto: gastas dados de golpe (1dX + mod. de CON cada uno) y recuperas los rasgos de descanso corto.
-
-### Cansancio (${rules.ruleset.short})
-${[for (var i = 1; i <= 6; i++) '- **Nivel $i:** ${rules.exhaustionEffect(i)}'].join('\n')}
-
-### Artesanía
-${rules.craftingRulesSummary}
-
-### Bonificador por competencia
-Nivel 1-4: +2 · 5-8: +3 · 9-12: +4 · 13-16: +5 · 17-20: +6
-
-### Carga
-Capacidad = FUE × 15 libras (criatura mediana). Variante: más de FUE × 5 cargado (−10 pies), más de FUE × 10 muy cargado (−20 pies y desventaja en pruebas de FUE, DES y CON).
-
-### Dinero
-1 po = 10 pp = 100 pc · 1 pe = 5 pp · 1 ppt = 10 po · 50 monedas pesan 1 libra.
-''';
+    final coins = Currency.coinLabels;
+    final quick = [
+      '### ${tr('Descansos')}',
+      rules.longRestSummary,
+      '',
+      tr('Descanso corto: gastas dados de golpe (1dX + mod. de CON cada uno) y recuperas los rasgos de descanso corto.'),
+      '',
+      '### ${tr('Cansancio')} (${rules.ruleset.short})',
+      for (var i = 1; i <= 6; i++) '- **${tr('Nivel {0}', [i])}:** ${rules.exhaustionEffect(i)}',
+      '',
+      '### ${tr('Artesanía')}',
+      rules.craftingRulesSummary,
+      '',
+      '### ${tr('Bonificador por competencia')}',
+      tr('Nivel 1-4: +2 · 5-8: +3 · 9-12: +4 · 13-16: +5 · 17-20: +6'),
+      '',
+      '### ${tr('Tablero')}',
+      tr('Cada casilla mide 5 pies (1,5 m) en 2014 y en 2024. Por defecto cada diagonal cuenta como una casilla.'),
+      '',
+      '### ${tr('Carga')}',
+      tr('Capacidad = FUE × 15 libras (criatura mediana). Variante: más de FUE × 5 cargado (−10 pies), más de FUE × 10 muy cargado (−20 pies y desventaja en pruebas de FUE, DES y CON).'),
+      '',
+      '### ${tr('Dinero')}',
+      '1 ${coins[3]} = 10 ${coins[1]} = 100 ${coins[0]} · 1 ${coins[2]} = 5 ${coins[1]} · 1 ${coins[4]} = 10 ${coins[3]} · ${tr('50 monedas pesan 1 libra.')}',
+    ].join('\n');
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
@@ -207,7 +210,7 @@ Capacidad = FUE × 15 libras (criatura mediana). Variante: más de FUE × 5 carg
 class _Differences extends StatelessWidget {
   const _Differences();
 
-  static const _text = '''
+  static const _textEs = '''
 Resumen orientativo de los cambios más visibles en mesa entre las reglas de 2014 (5e) y las de 2024 (5.5e).
 
 | Tema | 5e (2014) | 5.5e (2024) |
@@ -225,11 +228,34 @@ Resumen orientativo de los cambios más visibles en mesa entre las reglas de 201
 La app adapta automáticamente: nombre de raza/especie, cansancio, descansos, conjuros preparados sugeridos, ritmo de artesanía y los datos SRD (criaturas, conjuros, objetos).
 ''';
 
+  static const _textEn = '''
+A rough summary of the most visible table changes between the 2014 rules (5e) and the 2024 rules (5.5e).
+
+| Topic | 5e (2014) | 5.5e (2024) |
+|---|---|---|
+| Origin | **Race** with ability score increases | **Species** without increases; the **background** grants +2/+1 (or +1/+1/+1) and an origin feat |
+| Inspiration | Inspiration granted by the DM | **Heroic Inspiration** (from the DM and some traits; e.g. humans regain it on each long rest) |
+| Exhaustion | 6 levels with different effects | Each level: −2 to d20 tests and −5 ft of speed; level 6 is death |
+| Long rest | You regain half your hit dice | You regain **all** your hit dice |
+| Prepared spells | Formula (mod + level) or spells known | Fixed prepared-spells table per class and level |
+| Weapons | Properties | Properties + **masteries** (Sap, Slow, Topple…) |
+| Paladin and ranger | Cast spells from level 2 | From level 1 |
+| Crafting | 5 gp of progress per day | 10 gp of progress per day; each tool lists what it can craft |
+| Monsters | CR, saves and skills listed separately | More compact stat blocks with initiative, saves next to the abilities |
+
+The app adapts automatically: race/species naming, exhaustion, rests, suggested prepared spells, crafting pace and the SRD data (creatures, spells, items).
+''';
+
+
+
   @override
-  Widget build(BuildContext context) => const SingleChildScrollView(
-    padding: EdgeInsets.all(12),
+  Widget build(BuildContext context) => SingleChildScrollView(
+    padding: const EdgeInsets.all(12),
     child: Card(
-      child: Padding(padding: EdgeInsets.all(14), child: RichDescription(_text)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: RichDescription(I18n.isEnglish ? _textEn : _textEs),
+      ),
     ),
   );
 }

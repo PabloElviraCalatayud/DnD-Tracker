@@ -188,7 +188,7 @@ class ClientSession extends GameSession {
     welcomeTimer.cancel();
     _ws = null;
     for (final c in _pending.values) {
-      if (!c.isCompleted) c.complete(const CommandResult(false, 'Se perdió la conexión'));
+      if (!c.isCompleted) c.complete(CommandResult(false, tr('Se perdió la conexión')));
     }
     _pending.clear();
     if (_serverView != null) _view = _serverView!;
@@ -249,10 +249,10 @@ class ClientSession extends GameSession {
         _chat.upsertChannel(ChatChannel.fromJson(asMap(msg['channel'])));
         notifyListeners();
       case Proto.denied:
-        _setStatus(ConnectionStatus.denied, asString(msg['reason'], 'El máster ha rechazado la conexión.'));
+        _setStatus(ConnectionStatus.denied, asString(msg['reason'], tr('El máster ha rechazado la conexión.')));
         return _Outcome.stop;
       case Proto.kicked:
-        _setStatus(ConnectionStatus.kicked, asString(msg['reason'], 'Has sido expulsado.'));
+        _setStatus(ConnectionStatus.kicked, asString(msg['reason'], tr('Has sido expulsado.')));
         return _Outcome.stop;
     }
     return null;
@@ -316,7 +316,7 @@ class ClientSession extends GameSession {
   Future<CommandResult> send(Command cmd) async {
     final ws = _ws;
     if (ws == null || _status != ConnectionStatus.online) {
-      return const CommandResult(false, 'Sin conexión con el máster');
+      return CommandResult(false, tr('Sin conexión con el máster'));
     }
     if (cmd.type == 'character.put') {
       // Actualización optimista: la ficha cambia al instante en pantalla.
@@ -339,7 +339,7 @@ class ClientSession extends GameSession {
       const Duration(seconds: 20),
       onTimeout: () {
         _pending.remove(id);
-        return const CommandResult(false, 'El máster no ha respondido');
+        return CommandResult(false, tr('El máster no ha respondido'));
       },
     );
   }

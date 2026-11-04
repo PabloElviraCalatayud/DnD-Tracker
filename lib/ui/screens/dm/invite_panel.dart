@@ -110,10 +110,10 @@ class InvitePanel extends StatelessWidget {
                         tr('Relay {0}: {1}', [
                           s.relayUrl,
                           switch (s.relayState) {
-                            RelayState.online => 'conectado',
-                            RelayState.connecting => 'conectando…',
-                            RelayState.error => 'error (${s.relayError})',
-                            RelayState.disabled => 'desactivado',
+                            RelayState.online => tr('conectado'),
+                            RelayState.connecting => tr('conectando…'),
+                            RelayState.error => tr('error ({0})', [s.relayError]),
+                            RelayState.disabled => tr('desactivado'),
                           },
                         ]),
                         style: t.bodySmall,

@@ -7,6 +7,7 @@ import '../domain/character.dart';
 import '../domain/chat.dart';
 import '../domain/roll.dart';
 import '../engine/commands.dart';
+import '../core/i18n.dart';
 
 enum ConnectionStatus {
   hosting('Anfitrión activo'),
@@ -16,8 +17,9 @@ enum ConnectionStatus {
   denied('Acceso denegado'),
   kicked('Expulsado de la partida');
 
-  const ConnectionStatus(this.label);
-  final String label;
+  const ConnectionStatus(this._label);
+  final String _label;
+  String get label => tr(_label);
 }
 
 class CommandResult {
@@ -113,7 +115,7 @@ abstract class GameSession extends ChangeNotifier {
   /// Edita una copia del personaje y la guarda.
   Future<CommandResult> editCharacter(String id, void Function(Character c) edit) {
     final current = campaign.character(id);
-    if (current == null) return Future.value(const CommandResult(false, 'El personaje no existe'));
+    if (current == null) return Future.value(CommandResult(false, tr('El personaje no existe')));
     final copy = current.copy();
     edit(copy);
     return saveCharacter(copy);

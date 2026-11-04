@@ -14,13 +14,16 @@ class DndTrackerApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
+    // El idioma es global para tr(); al cambiarlo se reconstruye toda la app.
+    I18n.language = profile.language;
     return MaterialApp(
-      title: tr('DnD Tracker'),
+      key: ValueKey(profile.language),
+      title: 'DnD Tracker',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       darkTheme: buildTheme(),
       themeMode: ThemeMode.dark,
-      locale: const Locale('es'),
+      locale: Locale(profile.language.name),
       supportedLocales: [const Locale('es'), const Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: profile.isComplete ? const HomeScreen() : const OnboardingScreen(),

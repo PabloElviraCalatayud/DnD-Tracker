@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../core/json.dart';
 import 'protocol.dart';
+import '../core/i18n.dart';
 
 /// Invitación a una partida. Se comparte como texto (por WhatsApp, por
 /// ejemplo) con el prefijo DNDT1: y contiene todo lo necesario para conectar:
@@ -99,6 +100,6 @@ class Invite {
 
   /// Texto listo para pegar en un chat.
   String shareText() =>
-      '¡Únete a "$campaignName" en DnD Tracker!\n'
-      'Abre la app → Unirse a partida → pega este mensaje.\n\n${encode()}';
+      '${tr('¡Únete a "{0}" en DnD Tracker!', [campaignName])}\n'
+      '${tr('Abre la app → Unirse a partida → pega este mensaje.')}\n\n${encode()}';
 }

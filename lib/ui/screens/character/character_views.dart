@@ -191,7 +191,7 @@ class _Header extends StatelessWidget {
                       if (c.species.isNotEmpty)
                         '${rs.speciesLabel}: ${c.species}${c.subspecies.isNotEmpty ? ' (${c.subspecies})' : ''}',
                       if (c.background.isNotEmpty) tr('Trasfondo: {0}', [c.background]),
-                      if (c.alignment.isNotEmpty) c.alignment,
+                      if (c.alignment.isNotEmpty) tr(c.alignment),
                       tr('Nivel {0} · {1} PX', [c.level, c.xp]),
                     ].join(' · '),
                     style: t.bodySmall,
@@ -364,7 +364,7 @@ class _DeathSaves extends StatelessWidget {
     final dead = c.deathFailures >= 3;
     final stable = c.deathSuccesses >= 3;
     return SectionCard(
-      title: dead ? tr('Muerto') : (stable ? 'Estable' : 'Tiradas de salvación contra la muerte'),
+      title: dead ? tr('Muerto') : (stable ? tr('Estable') : tr('Tiradas de salvación contra la muerte')),
       icon: 'skull',
       trailing: editable
           ? TextButton(
@@ -374,8 +374,8 @@ class _DeathSaves extends StatelessWidget {
           : null,
       child: Column(
         children: [
-          _row(context, 'Éxitos', c.deathSuccesses, AppColors.success, (x, v) => x.deathSuccesses = v),
-          _row(context, 'Fallos', c.deathFailures, AppColors.danger, (x, v) => x.deathFailures = v),
+          _row(context, tr('Éxitos'), c.deathSuccesses, AppColors.success, (x, v) => x.deathSuccesses = v),
+          _row(context, tr('Fallos'), c.deathFailures, AppColors.danger, (x, v) => x.deathFailures = v),
         ],
       ),
     );
@@ -861,7 +861,7 @@ class _Proficiencies extends StatelessWidget {
                   style: t.bodyMedium,
                   children: [
                     TextSpan(
-                      text: '${r.$1}: ',
+                      text: '${tr(r.$1)}: ',
                       style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
                     ),
                     TextSpan(text: r.$2),
@@ -900,7 +900,7 @@ class _Personality extends StatelessWidget {
           for (final r in rows)
             ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              title: Text(r.$1),
+              title: Text(tr(r.$1)),
               childrenPadding: const EdgeInsets.only(bottom: 8),
               expandedCrossAxisAlignment: CrossAxisAlignment.start,
               children: [Text(r.$2)],

@@ -383,7 +383,7 @@ class SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: hint),
+      decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: tr(hint)),
       onChanged: onChanged,
     );
   }
@@ -445,7 +445,7 @@ Future<bool> confirm(
         FilledButton(
           style: danger ? FilledButton.styleFrom(backgroundColor: AppColors.crimson) : null,
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(ok),
+          child: Text(tr(ok)),
         ),
       ],
     ),
@@ -479,7 +479,7 @@ Future<String?> promptText(
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
-        FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(ok)),
+        FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(tr(ok))),
       ],
     ),
   );
@@ -519,5 +519,23 @@ Future<int?> promptNumber(
 
 Future<void> copyToClipboard(BuildContext context, String text, {String message = 'Copiado'}) async {
   await Clipboard.setData(ClipboardData(text: text));
-  if (context.mounted) showSnack(context, message);
+  if (context.mounted) showSnack(context, tr(message));
+}
+
+/// Selector de idioma de la interfaz.
+class LanguageSelector extends StatelessWidget {
+  const LanguageSelector({super.key, required this.value, required this.onChanged});
+  final AppLanguage value;
+  final ValueChanged<AppLanguage> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SegmentedButton<AppLanguage>(
+      segments: [
+        for (final l in AppLanguage.values) ButtonSegment(value: l, label: Text(l.nativeName), icon: const Icon(Icons.translate)),
+      ],
+      selected: {value},
+      onSelectionChanged: (v) => onChanged(v.first),
+    );
+  }
 }

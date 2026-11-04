@@ -46,7 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final s = SessionScope.read(context);
     final c = s.campaign;
     final people = <String, String>{
-      if (c.dmUserId != s.myUserId) c.dmUserId: '${c.dmName} (máster)',
+      if (c.dmUserId != s.myUserId) c.dmUserId: tr('{0} (máster)', [c.dmName]),
       for (final m in c.members.where((m) => !m.banned && m.userId != s.myUserId)) m.userId: m.name,
     };
     if (people.isEmpty) {

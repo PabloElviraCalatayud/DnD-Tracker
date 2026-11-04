@@ -206,7 +206,7 @@ class MonsterDetailScreen extends StatelessWidget {
             if (v == 'copy') {
               final copy = m.copy()
                 ..id = newId()
-                ..name = m.custom ? '${m.name} (copia)' : m.name
+                ..name = m.custom ? tr('{0} (copia)', [m.name]) : m.name
                 ..custom = true;
               await openMonsterEditor(context, copy);
             } else if (v == 'edit') {
@@ -613,32 +613,32 @@ class _MonsterEditorState extends State<_MonsterEditor> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _f(tr('name'), tr('Nombre'), _m.name),
+          _f('name', tr('Nombre'), _m.name),
           Row(
             children: [
-              Expanded(child: _f(tr('size'), tr('Tamaño'), _m.size, hint: tr('Medium'))),
+              Expanded(child: _f('size', tr('Tamaño'), _m.size, hint: 'Medium')),
               Gap.s,
-              Expanded(child: _f(tr('type'), tr('Tipo'), _m.type, hint: tr('humanoid'))),
+              Expanded(child: _f('type', tr('Tipo'), _m.type, hint: 'humanoid')),
               Gap.s,
-              Expanded(child: _f(tr('alignment'), tr('Alineamiento'), _m.alignment)),
+              Expanded(child: _f('alignment', tr('Alineamiento'), _m.alignment)),
             ],
           ),
           Row(
             children: [
-              Expanded(child: _f(tr('ac'), tr('CA'), '${_m.ac}')),
+              Expanded(child: _f('ac', tr('CA'), '${_m.ac}')),
               Gap.s,
-              Expanded(child: _f(tr('acNote'), tr('Armadura'), _m.acNote)),
+              Expanded(child: _f('acNote', tr('Armadura'), _m.acNote)),
               Gap.s,
-              Expanded(child: _f(tr('hp'), tr('PG'), '${_m.hp}')),
+              Expanded(child: _f('hp', tr('PG'), '${_m.hp}')),
               Gap.s,
-              Expanded(child: _f(tr('hitDice'), tr('Dados de golpe'), _m.hitDice, hint: tr('4d8+4'))),
+              Expanded(child: _f('hitDice', tr('Dados de golpe'), _m.hitDice, hint: '4d8+4')),
             ],
           ),
           Row(
             children: [
-              Expanded(flex: 2, child: _f(tr('speed'), tr('Velocidad'), _m.speed, hint: tr('30 ft., fly 60 ft.'))),
+              Expanded(flex: 2, child: _f('speed', tr('Velocidad'), _m.speed, hint: '30 ft., fly 60 ft.')),
               Gap.s,
-              Expanded(child: _f(tr('cr'), tr('VD'), _m.crText, hint: '1/4')),
+              Expanded(child: _f('cr', tr('VD'), _m.crText, hint: '1/4')),
             ],
           ),
           Text(tr('Características'), style: t.titleSmall),
@@ -663,31 +663,31 @@ class _MonsterEditorState extends State<_MonsterEditor> {
             ],
           ),
           Gap.s,
-          _f(tr('saves'), tr('Salvaciones'), _m.saves, hint: tr('DEX +4, WIS +2')),
-          _f(tr('skills'), tr('Habilidades'), _m.skills, hint: tr('Stealth +6')),
-          _f(tr('res'), tr('Resistencias'), _m.resistances),
-          _f(tr('imm'), tr('Inmunidades'), _m.immunities),
-          _f(tr('vuln'), tr('Vulnerabilidades'), _m.vulnerabilities),
-          _f(tr('condImm'), tr('Inmune a estados'), _m.conditionImmunities),
-          _f(tr('senses'), tr('Sentidos'), _m.senses),
-          _f(tr('languages'), tr('Idiomas'), _m.languages),
+          _f('saves', tr('Salvaciones'), _m.saves, hint: 'DEX +4, WIS +2'),
+          _f('skills', tr('Habilidades'), _m.skills, hint: 'Stealth +6'),
+          _f('res', tr('Resistencias'), _m.resistances),
+          _f('imm', tr('Inmunidades'), _m.immunities),
+          _f('vuln', tr('Vulnerabilidades'), _m.vulnerabilities),
+          _f('condImm', tr('Inmune a estados'), _m.conditionImmunities),
+          _f('senses', tr('Sentidos'), _m.senses),
+          _f('languages', tr('Idiomas'), _m.languages),
           Text(
             tr('Separa cada rasgo o acción con una línea en blanco. Formato: «Nombre. Descripción».'),
             style: t.bodySmall,
           ),
           Gap.s,
-          _f(tr('traits'), tr('Rasgos'), _blocks(_m.traits), lines: 3),
+          _f('traits', tr('Rasgos'), _blocks(_m.traits), lines: 3),
           _f(
-            tr('actions'),
+            'actions',
             tr('Acciones'),
             _blocks(_m.actions),
             lines: 4,
-            hint: tr('Mordisco. Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d10 + 2) Piercing damage.'),
+            hint: 'Mordisco. Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d10 + 2) Piercing damage.',
           ),
-          _f(tr('bonus'), tr('Acciones adicionales'), _blocks(_m.bonusActions), lines: 2),
-          _f(tr('reactions'), tr('Reacciones'), _blocks(_m.reactions), lines: 2),
-          _f(tr('legendary'), tr('Acciones legendarias'), _blocks(_m.legendary), lines: 2),
-          _f(tr('desc'), tr('Notas / descripción'), _m.description, lines: 3),
+          _f('bonus', tr('Acciones adicionales'), _blocks(_m.bonusActions), lines: 2),
+          _f('reactions', tr('Reacciones'), _blocks(_m.reactions), lines: 2),
+          _f('legendary', tr('Acciones legendarias'), _blocks(_m.legendary), lines: 2),
+          _f('desc', tr('Notas / descripción'), _m.description, lines: 3),
           FilledButton(onPressed: _save, child: Text(tr('Guardar en el grimorio'))),
         ],
       ),

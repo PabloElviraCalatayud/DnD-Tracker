@@ -17,13 +17,15 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _name = TextEditingController();
   UnitSystem _units = UnitSystem.metric;
+  late AppLanguage _language = ref.read(profileProvider).language;
 
   Future<void> _continue() async {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final p = ref.read(profileProvider).copy()
       ..displayName = name
-      ..units = _units;
+      ..units = _units
+      ..language = _language;
     await ref.read(profileProvider.notifier).save(p);
   }
 
@@ -38,6 +40,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
               child: Column(
+                // Selector de idioma arriba del todo.
+                key: ValueKey(_language),
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Center(child: GameIcon('dragon', size: 110, color: AppColors.gold)),
@@ -64,6 +68,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(hintText: tr('Tu nombre (lo verán los demás jugadores)')),
                     onSubmitted: (_) => _continue(),
+                  ),
+                  Gap.l,
+                  Text(tr('Idioma'), style: t.titleLarge),
+                  Gap.s,
+                  LanguageSelector(
+                    value: _language,
+                    onChanged: (v) => setState(() {
+                      _language = v;
+                      I18n.language = v;
+                    }),
                   ),
                   Gap.l,
                   Text(tr('Unidades'), style: t.titleLarge),

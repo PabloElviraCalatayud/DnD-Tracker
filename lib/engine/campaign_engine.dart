@@ -76,7 +76,7 @@ class CampaignEngine {
     } on EngineError catch (e) {
       return EngineResult.failure(e.message);
     } on Object catch (e) {
-      return EngineResult.failure('Comando no válido: $e');
+      return EngineResult.failure(tr('Comando no válido: {0}', [e]));
     }
   }
 

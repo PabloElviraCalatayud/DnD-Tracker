@@ -73,8 +73,7 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
                 child: _rulesetCard(
                   Ruleset.v2014,
                   'scroll',
-                  'SRD 5.1 · Manual del Jugador 2014.\nRazas, '
-                      'aumentos de característica por raza, cansancio clásico.',
+                  tr('SRD 5.1 · Manual del Jugador 2014.\nRazas, aumentos de característica por raza, cansancio clásico.'),
                 ),
               ),
               Gap.m,
@@ -82,8 +81,7 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
                 child: _rulesetCard(
                   Ruleset.v2024,
                   'spell_book',
-                  'SRD 5.2 · Manual del Jugador 2024.\n'
-                      'Especies, trasfondos con características, maestrías de armas.',
+                  tr('SRD 5.2 · Manual del Jugador 2024.\nEspecies, trasfondos con características, maestrías de armas.'),
                 ),
               ),
             ],

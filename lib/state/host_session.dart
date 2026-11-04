@@ -129,10 +129,10 @@ class HostSession extends GameSession {
       await _server.start(port);
       port = _server.port ?? port;
       _serverOk = true;
-      _statusMessage = 'Escuchando en el puerto $port';
+      _statusMessage = tr('Escuchando en el puerto {0}', [port]);
     } on Object catch (e) {
       _serverOk = false;
-      _statusMessage = 'No se pudo abrir el puerto $port: $e';
+      _statusMessage = tr('No se pudo abrir el puerto {0}: {1}', [port, e]);
     }
     _subs.add(_server.onPeer.listen(_onPeer));
     if (enableLanBeacon && _serverOk) {

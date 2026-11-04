@@ -53,7 +53,10 @@ const alignments = [
   'Caótico malvado',
 ];
 
-const artisanToolSuggestions = [
+/// Herramientas habituales (en el idioma de la interfaz).
+List<String> get artisanToolSuggestions => [for (final t in _artisanTools) tr(t)];
+
+const _artisanTools = [
   'Útiles de alquimista',
   'Útiles de cervecero',
   'Útiles de calígrafo',
@@ -338,7 +341,7 @@ class _BasicTab extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 initialValue: alignments.contains(c.alignment) ? c.alignment : '',
                 decoration: InputDecoration(labelText: tr('Alineamiento')),
-                items: [for (final a in alignments) DropdownMenuItem(value: a, child: Text(a.isEmpty ? '—' : a))],
+                items: [for (final a in alignments) DropdownMenuItem(value: a, child: Text(a.isEmpty ? '—' : tr(a)))],
                 onChanged: (v) => set(() => c.alignment = v ?? ''),
               ),
             ),
@@ -815,7 +818,7 @@ class _FeaturesTab extends StatelessWidget {
     if (chosen != null) {
       set(
         () => c.features.add(
-          Feature(name: chosen.name, description: chosen.description, source: 'Dote', recharge: Recharge.none),
+          Feature(name: chosen.name, description: chosen.description, source: tr('Dote'), recharge: Recharge.none),
         ),
       );
     }

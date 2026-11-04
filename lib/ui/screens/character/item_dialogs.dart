@@ -404,13 +404,13 @@ Future<(SrdItem, int)?> pickSrdItem(
   Ruleset ruleset, {
   bool includeMagic = true,
   bool includeMundane = true,
-  String title = 'Añadir objeto del SRD',
+  String? title,
 }) {
   return Navigator.push<(SrdItem, int)>(
     context,
     MaterialPageRoute(
       builder: (_) =>
-          _SrdItemPicker(ruleset: ruleset, includeMagic: includeMagic, includeMundane: includeMundane, title: title),
+          _SrdItemPicker(ruleset: ruleset, includeMagic: includeMagic, includeMundane: includeMundane, title: title ?? tr('Añadir objeto del SRD')),
     ),
   );
 }
@@ -481,7 +481,7 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
                         Padding(
                           padding: const EdgeInsets.only(right: 6),
                           child: FilterChip(
-                            label: Text(e.value),
+                            label: Text(tr(e.value)),
                             selected: _cat == e.key,
                             onSelected: (v) => setState(() => _cat = v ? e.key : null),
                           ),
@@ -568,12 +568,12 @@ Future<InventoryItem?> showItemForm(
   BuildContext context, {
   InventoryItem? initial,
   bool dmMode = false,
-  String title = 'Objeto personalizado',
+  String? title,
 }) {
   return Navigator.push<InventoryItem>(
     context,
     MaterialPageRoute(
-      builder: (_) => _ItemForm(initial: initial, dmMode: dmMode, title: title),
+      builder: (_) => _ItemForm(initial: initial, dmMode: dmMode, title: title ?? tr('Objeto personalizado')),
     ),
   );
 }

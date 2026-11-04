@@ -40,10 +40,11 @@ class AboutScreen extends StatelessWidget {
           SectionCard(
             title: tr('Iconos'),
             icon: 'sparkles',
-            child: const RichDescription(
-              'Iconos de **game-icons.net** creados por Lorc, Delapouite, Skoll, Sbed, Carl Olsen, Willdabeast, '
-              'Faithtoken, Zeromancer, Kier Heyl y otros autores, bajo licencia Creative Commons Attribution 3.0 '
-              '(https://creativecommons.org/licenses/by/3.0/). Lista completa en assets/icons/CREDITS.md.',
+            child: RichDescription(
+              tr(
+                'Iconos de **game-icons.net** creados por Lorc, Delapouite, Skoll, Sbed, Carl Olsen, Willdabeast, Faithtoken, Zeromancer, Kier Heyl y otros autores, bajo licencia Creative Commons Attribution 3.0 (https://creativecommons.org/licenses/by/3.0/). Lista completa en {0}.',
+                ['assets/icons/CREDITS.md'],
+              ),
             ),
           ),
           SectionCard(

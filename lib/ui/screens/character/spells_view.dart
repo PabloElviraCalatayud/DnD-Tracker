@@ -14,7 +14,7 @@ import '../shared/dice_roller.dart';
 import 'character_views.dart';
 import '../../../core/i18n.dart';
 
-String spellLevelLabel(int level) => level == 0 ? 'Trucos' : 'Nivel $level';
+String spellLevelLabel(int level) => level == 0 ? tr('Trucos') : tr('Nivel {0}', [level]);
 
 /// Límite sugerido de conjuros preparados según edición y clases.
 int? suggestedPreparedLimit(Character c, Ruleset rs, SrdData? srd) {
@@ -393,7 +393,12 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
       if (sp.concentration) x.spellcasting.concentratingOn = sp.name;
     });
     if (context.mounted) {
-      showSnack(context, tr('{0} lanzado{1}', [sp.name, slotLevel > 0 ? ' con un espacio de nivel $slotLevel' : '']));
+      showSnack(
+        context,
+        slotLevel > 0
+            ? tr('{0} lanzado con un espacio de nivel {1}', [sp.name, slotLevel])
+            : tr('{0} lanzado', [sp.name]),
+      );
     }
   }
 
@@ -553,7 +558,7 @@ class _SlotRow extends StatelessWidget {
                 for (var i = 0; i < max; i++)
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    tooltip: i < max - used ? tr('Disponible (toca para gastar)') : 'Gastado (toca para recuperar)',
+                    tooltip: i < max - used ? tr('Disponible (toca para gastar)') : tr('Gastado (toca para recuperar)'),
                     onPressed: editable
                         ? () => editCharacter(context, character.id, (x) {
                             final available = i < max - used;

@@ -2,11 +2,15 @@
 
 Aplicación para llevar partidas de rol de quinta edición (**5e / 2014** y **5.5e / 2024**)
 muy personalizadas. Hecha con **Flutter + Dart** para **Windows, Linux y Android**
-(iOS más adelante), con tema oscuro y arte de libre uso.
+(iOS más adelante), con tema oscuro y arte de libre uso. Disponible en **castellano e
+inglés** (se cambia en el perfil).
 
 Cualquier usuario puede ser **máster** en unas partidas y **jugador** en otras. El máster
 crea la partida y su dispositivo hace de anfitrión: los jugadores se unen con una
-invitación que se puede mandar por WhatsApp. No hace falta ningún servidor.
+invitación que se puede mandar por WhatsApp. No hace falta ningún servidor. Hasta
+**8 jugadores** por partida.
+
+![Tablero del máster](docs/screenshots/dm_tablero.png)
 
 | Máster: resumen del grupo | Jugador: ficha |
 |---|---|
@@ -15,12 +19,34 @@ invitación que se puede mandar por WhatsApp. No hace falta ningún servidor.
 | ![Combate](docs/screenshots/dm_combate.png) | ![Inventario](docs/screenshots/jugador_inventario.png) |
 
 <p align="center">
+  <img src="docs/screenshots/movil_tablero.png" width="240" alt="Tablero en móvil">
   <img src="docs/screenshots/movil_ficha.png" width="240" alt="Ficha en móvil">
   <img src="docs/screenshots/movil_conjuros.png" width="240" alt="Conjuros en móvil">
   <img src="docs/screenshots/movil_combate.png" width="240" alt="Combate en móvil">
 </p>
 
 ## Qué puede hacer
+
+### Tablero de juego
+La primera pantalla de la partida es el **tablero**, como una mesa real:
+- **Tiradas a la vista**: cada jugador tira sus propios dados y **todos ven el resultado**
+  al momento, con una animación de dados rodando. Los dados se tiran en el dispositivo
+  del máster (anfitrión), así nadie puede inventarse el resultado. Las tiradas del
+  **máster son secretas**: los jugadores no las ven.
+- **Mapa con cuadrícula**: el máster sube una imagen (con o sin cuadrícula dibujada) y
+  ajusta la rejilla, o crea un tablero en blanco. Cada casilla mide **5 pies (1,5 m)** en
+  ambas ediciones; las diagonales cuentan 1 casilla o alternan 5/10 pies (variante),
+  según elija el máster.
+- **Fichas**: los personajes (con su retrato), criaturas del grimorio (con imagen PNG/JPG
+  propia o icono) y marcadores (PNJ, cofres, trampas). Tamaños de 1×1 a 4×4.
+- **Movimiento**: cada jugador mueve sólo a su personaje; el máster mueve a todos. Al
+  moverse se indica la distancia recorrida, y hay una **regla** para medir alcances de
+  conjuros.
+- **Vida y estados**: los PG y estados de los personajes los ve todo el grupo. Los PG de
+  los enemigos **sólo los ve el máster**; para describirlos usa **etiquetas visibles**
+  («Envenenado», «Debilitado», «Se le ve cansado», o las que escriba).
+- Las criaturas ocultas no aparecen en el tablero de los jugadores hasta que el máster
+  las muestra.
 
 ### Máster
 - Elegir la edición de la partida (**5e** o **5.5e**) y cambiarla después.
@@ -54,13 +80,18 @@ invitación que se puede mandar por WhatsApp. No hace falta ningún servidor.
   fabricarlo ×2" / "faltan: 1× Azufre"), fabricación según las reglas de la edición
   (en 2024, con las herramientas de artesano del SRD) y proyectos de varios días.
 - **Cuaderno de notas** privado (sólo en su dispositivo) y diario compartido del máster.
-- **Grupo**: compañeros, sus PG (si el máster lo permite) y los objetos que comparten.
+- **Visibilidad por objeto**: cada objeto puede ser **sólo mío**, **todo el grupo** o
+  **jugadores concretos** («lo ven Ana y Luis, pero no Marta»). El máster siempre lo ve todo.
+- **Grupo**: compañeros, sus PG y los objetos que cada uno decide enseñarle.
 
 ### Para todos
-- **Chat** con canal general, mensajes privados y grupos (cada jugador decide a quién
-  cuenta qué).
+- **Chat** con canal general, mensajes directos y grupos. **El máster puede leer todas las
+  conversaciones** de la partida, aunque no participe en ellas (la app lo avisa).
 - **Dados**: bandeja de dados (`2d6+3`, ventaja `2d20kh1`, `4d6kh3`…) y tiradas desde la
-  ficha con ventaja/desventaja; se pueden compartir en el chat.
+  ficha (pruebas, salvaciones, ataques, iniciativa) con ventaja/desventaja. Todas
+  aparecen en el tablero.
+- **Idioma**: castellano o inglés, se elige al empezar y se cambia en el perfil. Los
+  textos del SRD (criaturas, conjuros, objetos) están en inglés, como el original.
 - **Referencia**: estados, conjuros, objetos, reglas (SRD 5.1) y diferencias 5e/5.5e.
 - Unidades **métricas** (como los manuales en castellano) o imperiales.
 - **Partida de ejemplo** para probar todo sin jugadores (botón en la pantalla de inicio).
@@ -114,8 +145,9 @@ flutter test
 ```
 
 Incluyen el motor de reglas, permisos y filtrado de datos ocultos, artesanía, una partida
-real máster ↔ jugador por WebSocket (directa y a través del relay) y un recorrido por
-todas las pantallas en tamaño escritorio y móvil. Para guardar capturas del recorrido:
+real máster ↔ jugador por WebSocket (directa y a través del relay, con tiradas y
+tablero), que todos los textos tengan traducción al inglés y un recorrido por todas las
+pantallas en los dos idiomas, en tamaño escritorio y móvil. Para guardar capturas del recorrido:
 
 ```bash
 SCREENSHOT_DIR=/tmp/capturas flutter test test/ui_tour_test.dart
@@ -125,8 +157,8 @@ SCREENSHOT_DIR=/tmp/capturas flutter test test/ui_tour_test.dart
 
 ```
 lib/
-  core/      utilidades (dados, ids, JSON)
-  domain/    modelo: personaje, objeto, receta, monstruo, partida, chat, reglas por edición
+  core/      utilidades (dados, ids, JSON, traducciones es/en)
+  domain/    modelo: personaje, objeto, receta, monstruo, partida, chat, tiradas, tablero
   engine/    motor de la partida: comandos, permisos, vistas filtradas, artesanía
   net/       protocolo, servidor del anfitrión, relay, invitaciones, descubrimiento LAN
   data/      almacenamiento local, datos SRD, partida de ejemplo
@@ -164,5 +196,6 @@ DnD Tracker es un proyecto no oficial y no está afiliado a Wizards of the Coast
 - Escanear un QR con la invitación desde el móvil.
 - Importar copias de seguridad desde la app (exportar ya está).
 - Mantener al máster de Android como anfitrión en segundo plano (servicio en primer plano).
-- Cifrado de extremo a extremo del chat privado.
+- Niebla de guerra y líneas de visión en el tablero.
+- Plantillas de área (cono, esfera, línea) para conjuros.
 - Traducción al castellano de los textos del SRD.

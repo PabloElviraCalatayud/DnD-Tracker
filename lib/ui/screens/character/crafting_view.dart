@@ -90,9 +90,9 @@ class CraftingView extends ConsumerWidget {
               : null,
           child: recipes.isEmpty
               ? Text(
-                  tr('Todavía no conoces recetas especiales. El máster puede enseñártelas{0}.', [
-                    canCreateRecipes ? ' o puedes crearlas tú' : '',
-                  ]),
+                  canCreateRecipes
+                      ? tr('Todavía no conoces recetas especiales. El máster puede enseñártelas o puedes crearlas tú.')
+                      : tr('Todavía no conoces recetas especiales. El máster puede enseñártelas.'),
                   style: t.bodySmall,
                 )
               : Column(
@@ -243,7 +243,7 @@ class _RecipeTile extends StatelessWidget {
                 color: check.toolOk ? AppColors.success : AppColors.warning,
               ),
               Gap.s,
-              Expanded(child: Text(tr('Herramienta: {0}{1}', [r.tool, check.toolOk ? '' : ' (no la tienes)']))),
+              Expanded(child: Text(check.toolOk ? tr('Herramienta: {0}', [r.tool]) : tr('Herramienta: {0} (no la tienes)', [r.tool]))),
             ],
           ),
         if (r.days > 0) Text(tr('Tiempo: {0} día(s) de trabajo', [r.days]), style: t.bodySmall),
@@ -299,7 +299,9 @@ class _RecipeTile extends StatelessWidget {
     showSnack(
       context,
       r.ok
-          ? (recipe.days > 0 ? 'Empiezas a trabajar en ${recipe.name}' : '¡${recipe.result.name} fabricado!')
+          ? (recipe.days > 0
+                ? tr('Empiezas a trabajar en {0}', [recipe.name])
+                : tr('¡{0} fabricado!', [recipe.result.name]))
           : r.error ?? tr('Error'),
       error: !r.ok,
     );
@@ -385,10 +387,9 @@ class _StandardCraftingCard extends ConsumerWidget {
             Gap.s,
             if (tools.isNotEmpty)
               Text(
-                tr('Herramienta: {0}{1}', [
-                  tools.map((x) => x.tool).join(' o '),
-                  hasTool == true ? ' ✓' : ' — no tienes competencia',
-                ]),
+                hasTool == true
+                    ? tr('Herramienta: {0} ✓', [tools.map((x) => x.tool).join(tr(' o '))])
+                    : tr('Herramienta: {0} — no tienes competencia', [tools.map((x) => x.tool).join(tr(' o '))]),
                 style: TextStyle(color: hasTool == true ? AppColors.success : AppColors.warning),
               )
             else

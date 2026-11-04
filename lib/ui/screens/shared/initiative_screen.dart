@@ -200,12 +200,13 @@ class InitiativeScreen extends StatelessWidget {
                     style: t.titleMedium?.copyWith(color: AppColors.gold),
                   ),
                   Text(
-                    tr('PX {0}{1} (total {2}, {3} por PJ)', [
-                      rules.is2024 ? '' : 'ajustados ',
-                      adjusted,
-                      totalXp,
-                      totalXp ~/ pcLevels.length,
-                    ]),
+                    rules.is2024
+                        ? tr('PX {0} (total {1}, {2} por PJ)', [adjusted, totalXp, totalXp ~/ pcLevels.length])
+                        : tr('PX ajustados {0} (total {1}, {2} por PJ)', [
+                            adjusted,
+                            totalXp,
+                            totalXp ~/ pcLevels.length,
+                          ]),
                   ),
                   Text(
                     [
@@ -511,7 +512,7 @@ class _PlayerInitiative extends StatelessWidget {
                   backgroundColor: AppColors.surfaceHighest,
                   child: Text('${e.combatants[i].initiative}', style: const TextStyle(color: AppColors.gold)),
                 ),
-                title: Text(e.combatants[i].name + (i == e.turn ? '  ← turno' : '')),
+                title: Text(i == e.turn ? tr('{0}  ← turno', [e.combatants[i].name]) : e.combatants[i].name),
                 subtitle: Text(
                   [
                     if (e.combatants[i].hp != null && e.combatants[i].hpMax != null)

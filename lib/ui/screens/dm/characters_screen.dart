@@ -44,7 +44,7 @@ class CharactersScreen extends StatelessWidget {
                       subtitle: Text(
                         tr('{0} · {1} · PG {2}/{3}', [
                           ch.classSummary,
-                          ch.ownerId == s.myUserId ? 'PNJ (tuyo)' : c.memberName(ch.ownerId),
+                          ch.ownerId == s.myUserId ? tr('PNJ (tuyo)') : c.memberName(ch.ownerId),
                           ch.hpCurrent,
                           ch.hpMax,
                         ]),

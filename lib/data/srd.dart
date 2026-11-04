@@ -5,6 +5,7 @@ import '../domain/character.dart';
 import '../domain/item.dart';
 import '../domain/monster.dart';
 import '../domain/ruleset.dart';
+import '../core/i18n.dart';
 
 class SrdSpell {
   SrdSpell.fromJson(Map<String, dynamic> j)
@@ -106,11 +107,11 @@ class SrdItem {
   String get propertiesText {
     final parts = <String>[
       ...properties,
-      if (damage2h.isNotEmpty) 'a dos manos $damage2h',
-      if (range.isNotEmpty) 'alcance $range',
-      if (mastery.isNotEmpty) 'maestría: $mastery',
-      if (stealthDisadvantage) 'desventaja en Sigilo',
-      if (strMinimum > 0) 'FUE $strMinimum',
+      if (damage2h.isNotEmpty) tr('a dos manos {0}', [damage2h]),
+      if (range.isNotEmpty) tr('alcance {0}', [range]),
+      if (mastery.isNotEmpty) tr('maestría: {0}', [mastery]),
+      if (stealthDisadvantage) tr('desventaja en Sigilo'),
+      if (strMinimum > 0) tr('FUE {0}', [strMinimum]),
     ];
     return parts.join(', ');
   }

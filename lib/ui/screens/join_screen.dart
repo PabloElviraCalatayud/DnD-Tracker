@@ -120,7 +120,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     _join(
       Invite(
         campaignId: '',
-        campaignName: 'Partida',
+        campaignName: tr('Partida'),
         code: _code.text.trim().toUpperCase(),
         hosts: [host],
         port: int.tryParse(_port.text) ?? Proto.defaultPort,

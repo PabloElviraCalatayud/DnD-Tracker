@@ -281,12 +281,12 @@ class _ActionCard extends StatelessWidget {
 }
 
 String _ago(int ms) {
-  if (ms <= 0) return 'nunca';
+  if (ms <= 0) return tr('nunca');
   final d = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ms));
-  if (d.inMinutes < 1) return 'ahora';
-  if (d.inHours < 1) return 'hace ${d.inMinutes} min';
-  if (d.inDays < 1) return 'hace ${d.inHours} h';
-  return 'hace ${d.inDays} d';
+  if (d.inMinutes < 1) return tr('ahora');
+  if (d.inHours < 1) return tr('hace {0} min', [d.inMinutes]);
+  if (d.inDays < 1) return tr('hace {0} h', [d.inHours]);
+  return tr('hace {0} d', [d.inDays]);
 }
 
 class _HostedTile extends ConsumerWidget {

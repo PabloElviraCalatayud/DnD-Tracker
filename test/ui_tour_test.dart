@@ -173,11 +173,18 @@ void main() {
     enableLanBeacon: false,
   );
 
-  for (final (label, size) in [('escritorio', const Size(1280, 800)), ('movil', const Size(412, 892))]) {
+  const sizes = [('escritorio', Size(1280, 800)), ('movil', Size(412, 892))];
+  for (final (lang, sizeName, size) in [
+    for (final l in AppLanguage.values)
+      for (final (n, sz) in sizes) (l, n, sz),
+  ]) {
+    final label = lang == AppLanguage.es ? sizeName : '${lang.name}_$sizeName';
     testWidgets('recorrido del máster ($label)', (tester) async {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
+      I18n.language = lang;
+      addTearDown(() => I18n.language = AppLanguage.es);
       // Sombras reales para que las capturas se parezcan a la app (se restaura al final).
       debugDisableShadows = _shotDir == null;
       addTearDown(() => debugDisableShadows = true);
@@ -204,11 +211,11 @@ void main() {
       }
 
       // Ficha completa de un personaje desde «Personajes».
-      if (label == 'escritorio') {
+      if (sizeName == 'escritorio') {
         await _goTo(tester, tr('Personajes'));
         await _tap(tester, 'Lyra Vientoalba');
         await _shot(tester, 'dm_${label}_20_ficha_lyra');
-        await _tap(tester, 'Inventario');
+        await _tap(tester, tr('Inventario'));
         await _shot(tester, 'dm_${label}_21_inventario_lyra');
       }
       await tester.pumpWidget(const SizedBox());
@@ -220,6 +227,8 @@ void main() {
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
+      I18n.language = lang;
+      addTearDown(() => I18n.language = AppLanguage.es);
       // Sombras reales para que las capturas se parezcan a la app (se restaura al final).
       debugDisableShadows = _shotDir == null;
       addTearDown(() => debugDisableShadows = true);
@@ -246,7 +255,17 @@ void main() {
       expect(host.campaign.rolls.length, before + 1);
       expect(host.campaign.rolls.last.hidden, isFalse);
 
-      final sections = ['Ficha', 'Inventario', 'Conjuros', 'Chat', 'Artesanía', 'Grupo', 'Combate', 'Notas', 'Referencia'];
+      final sections = [
+        'Ficha',
+        'Inventario',
+        'Conjuros',
+        'Chat',
+        'Artesanía',
+        'Grupo',
+        'Combate',
+        'Notas',
+        'Referencia',
+      ];
       var n = 2;
       for (final sec in sections) {
         await _goTo(tester, tr(sec));

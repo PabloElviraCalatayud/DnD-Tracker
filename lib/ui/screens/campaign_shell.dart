@@ -314,7 +314,7 @@ class _PlayerCharacterSection extends StatelessWidget {
         title: waiting ? tr('Conectando con el máster…') : tr('Aún no tienes personaje'),
         message: waiting
             ? tr('En cuanto conecte verás tu ficha. Si ya jugaste antes, se usará la última copia guardada.')
-            : 'Crea tu personaje para esta partida. El máster lo verá al instante.',
+            : tr('Crea tu personaje para esta partida. El máster lo verá al instante.'),
         action: waiting
             ? null
             : FilledButton.icon(

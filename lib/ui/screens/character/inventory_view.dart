@@ -153,11 +153,12 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                   ),
                   Gap.xs,
                   Text(switch (enc) {
-                    Encumbrance.none => 'Sin penalizaciones.',
-                    Encumbrance.encumbered => 'Cargado: −10 pies de velocidad.',
-                    Encumbrance.heavilyEncumbered =>
+                    Encumbrance.none => tr('Sin penalizaciones.'),
+                    Encumbrance.encumbered => tr('Cargado: −10 pies de velocidad.'),
+                    Encumbrance.heavilyEncumbered => tr(
                       'Muy cargado: −20 pies de velocidad y desventaja en pruebas, ataques y salvaciones de FUE, DES y CON.',
-                    Encumbrance.overCapacity => 'Por encima de tu capacidad de carga: velocidad máxima 5 pies.',
+                    ),
+                    Encumbrance.overCapacity => tr('Por encima de tu capacidad de carga: velocidad máxima 5 pies.'),
                   }, style: t.bodySmall),
                   if (anyHidden) Text(tr('Hay objetos cuyo peso conoce sólo el máster.'), style: t.bodySmall),
                 ],

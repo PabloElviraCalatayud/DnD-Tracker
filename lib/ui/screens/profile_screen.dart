@@ -61,6 +61,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: InputDecoration(labelText: tr('Nombre visible')),
                 ),
                 Gap.m,
+                Text(tr('Idioma'), style: t.titleSmall),
+                Gap.s,
+                LanguageSelector(value: _p.language, onChanged: (v) => setState(() => _p.language = v)),
+                Gap.m,
                 Text(tr('Unidades'), style: t.titleSmall),
                 RadioGroup<UnitSystem>(
                   groupValue: _p.units,

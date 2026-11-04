@@ -91,10 +91,17 @@ cambia algo que ese jugador puede ver. Una sesión de varias horas suele quedars
 - En la red local las conexiones van sin cifrar (`ws://`). Con Tailscale van cifradas. Con
   un relay, usad `wss://` (HTTPS) — ver la guía del relay.
 - El **cuaderno de notas del jugador** se guarda sólo en su dispositivo: ni el máster lo ve.
-- El **chat** pasa por el dispositivo del máster, que lo reenvía sólo a los miembros de cada
-  conversación y no muestra en su app las conversaciones en las que no participa. Aun así,
-  técnicamente los mensajes pasan por su dispositivo (en el futuro se puede añadir cifrado
-  de extremo a extremo).
+- El **chat** pasa por el dispositivo del máster. Cada jugador sólo recibe las
+  conversaciones en las que participa, pero **el máster puede leerlas todas** (es una
+  decisión de diseño: en la mesa no hay secretos para el máster). La app avisa de ello al
+  crear una conversación.
+- Las **tiradas de dados** se hacen en el dispositivo del máster y se reenvían a todos, así
+  ningún jugador puede trucar un resultado. Las tiradas del máster no salen de su
+  dispositivo.
+- Las **imágenes del tablero** (mapas, fichas de criaturas) se guardan en el dispositivo del
+  máster y los jugadores las descargan la primera vez que las ven. Se reducen al subirlas
+  (máx. 2048 px para mapas y 256 px para fichas) para no gastar datos.
+- Una partida admite como máximo **8 jugadores** (más el máster).
 
 ## Problemas habituales
 

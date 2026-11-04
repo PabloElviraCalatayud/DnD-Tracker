@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'i18n.dart';
 
 /// Tirador de dados con expresiones del tipo "2d6+3", "1d20+5", "4d6kh3"
 /// (quedarse con los 3 más altos), "2d20kl1" (desventaja) o "d8+1d4-1".
@@ -13,17 +14,17 @@ class DiceRoller {
   /// Lanza una expresión. Lanza [FormatException] si no se entiende.
   DiceResult roll(String expression) {
     final expr = expression.replaceAll(' ', '').toLowerCase();
-    if (expr.isEmpty) throw const FormatException('Expresión vacía');
+    if (expr.isEmpty) throw FormatException(tr('Expresión vacía'));
     var pos = 0;
     final parts = <DicePart>[];
     var total = 0;
     while (pos < expr.length) {
       final m = _term.matchAsPrefix(expr, pos);
       if (m == null || m.end == pos) {
-        throw FormatException('No entiendo "${expr.substring(pos)}"');
+        throw FormatException(tr('No entiendo "{0}"', [expr.substring(pos)]));
       }
       if (parts.isNotEmpty && m.group(1) == null) {
-        throw FormatException('Falta + o - antes de "${m.group(0)}"');
+        throw FormatException(tr('Falta + o - antes de "{0}"', [m.group(0)]));
       }
       final sign = m.group(1) == '-' ? -1 : 1;
       if (m.group(6) != null) {
@@ -33,8 +34,8 @@ class DiceRoller {
       } else {
         final count = m.group(2)!.isEmpty ? 1 : int.parse(m.group(2)!);
         final sides = m.group(3) == '%' ? 100 : int.parse(m.group(3)!);
-        if (count < 1 || count > 100) throw const FormatException('Entre 1 y 100 dados, por favor');
-        if (sides < 2 || sides > 1000) throw const FormatException('Dado no válido');
+        if (count < 1 || count > 100) throw FormatException(tr('Entre 1 y 100 dados, por favor'));
+        if (sides < 2 || sides > 1000) throw FormatException(tr('Dado no válido'));
         final rolls = [for (var i = 0; i < count; i++) die(sides)];
         var kept = List<int>.from(rolls);
         final keepMode = m.group(4);
