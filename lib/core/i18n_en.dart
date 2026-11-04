@@ -1104,4 +1104,10 @@ const Map<String, String> englishStrings = {
   'Hielo, plata y piedra fría': 'Ice, silver and cold stone',
   'Ceniza': 'Ash',
   'Gris neutro y alto contraste': 'Neutral grey, high contrast',
+  'No se pudo colocar': 'Couldn\'t place it',
+  'Acercar': 'Zoom in',
+  'Alejar': 'Zoom out',
+  'Toca el mapa para colocar a {0}': 'Tap the map to place {0}',
+  '{0} · quedan {1}': '{0} · {1} left',
+  'Colocar el resto': 'Place the rest',
 };

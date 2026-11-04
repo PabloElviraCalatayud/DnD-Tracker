@@ -349,6 +349,7 @@ class NumberStepper extends StatelessWidget {
 }
 
 class Pill extends StatelessWidget {
+  // ignore: prefer_initializing_formals
   const Pill(this.text, {super.key, Color? color, this.icon}) : _color = color;
   final String text;
   final Color? _color;

@@ -427,7 +427,14 @@ class _ActionEntry extends StatelessWidget {
 }
 
 /// Diálogo para añadir N copias de una criatura al combate.
-Future<void> addMonsterDialog(BuildContext context, Monster m) async {
+/// Añade criaturas al combate. Si hay un mapa activo también salen como
+/// fichas: con [onPlace] (desde el tablero) el máster elige dónde va cada una;
+/// si no, se colocan solas en casillas libres.
+Future<void> addMonsterDialog(
+  BuildContext context,
+  Monster m, {
+  void Function(List<BoardToken> tokens)? onPlace,
+}) async {
   final s = SessionScope.read(context);
   var count = 1;
   var rollHp = false;
@@ -476,13 +483,9 @@ Future<void> addMonsterDialog(BuildContext context, Monster m) async {
   // Si hay un mapa activo, las criaturas aparecen también como fichas.
   final map = s.campaign.board.activeMap;
   if (map != null) {
-    final size = switch (m.size.toLowerCase()) {
-      'large' => 2,
-      'huge' => 3,
-      'gargantuan' => 4,
-      _ => 1,
-    };
+    final size = monsterTokenSize(m.size);
     final board = s.campaign.board.copy();
+    final tokens = <BoardToken>[];
     for (final c in e.combatants.where((c) => !before.contains(c.id))) {
       final (x, y) = board.freeCell(map, startX: map.cols - 2, startY: 1);
       final token = BoardToken(
@@ -497,7 +500,14 @@ Future<void> addMonsterDialog(BuildContext context, Monster m) async {
         hidden: hidden,
       );
       board.tokens.add(token);
-      await s.send(Command.putToken(token));
+      tokens.add(token);
+    }
+    if (onPlace != null) {
+      onPlace(tokens);
+    } else {
+      for (final t in tokens) {
+        await s.send(Command.putToken(t));
+      }
     }
   }
   if (context.mounted) showSnack(context, tr('{0}× {1} añadido(s) al combate', [count, m.name]));
@@ -696,4 +706,13 @@ class _MonsterEditorState extends State<_MonsterEditor> {
       ),
     );
   }
+}
+
+/// Casillas que ocupa una criatura según su tamaño (en inglés o en castellano).
+int monsterTokenSize(String size) {
+  final v = size.toLowerCase();
+  if (v.startsWith('gargant')) return 4;
+  if (v.startsWith('huge') || v.startsWith('enorme')) return 3;
+  if (v.startsWith('large') || v.startsWith('grande')) return 2;
+  return 1;
 }

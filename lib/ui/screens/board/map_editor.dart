@@ -40,7 +40,7 @@ Future<void> createMapFromImage(BuildContext context) async {
 /// Crea un mapa liso con cuadrícula (para combates sin dibujo).
 Future<void> createBlankMap(BuildContext context) {
   final s = SessionScope.read(context);
-  final map = BoardMap(name: tr('Mapa {0}', [s.campaign.board.maps.length + 1]), cols: 24, rows: 16);
+  final map = BoardMap(name: tr('Mapa {0}', [s.campaign.board.maps.length + 1]), cellPx: 100, cols: 30, rows: 20);
   return openMapEditor(context, map, isNew: true);
 }
 
@@ -159,7 +159,7 @@ class _MapEditorState extends State<_MapEditor> {
                                 ? const Center(child: CircularProgressIndicator())
                                 : Image.memory(snap.data!, fit: BoxFit.fill, gaplessPlayback: true),
                           )
-                        : const ColoredBox(color: Color(0xFF2A2420)),
+                        : ColoredBox(color: AppColors.mapFloor),
                   ),
                   Positioned.fill(child: CustomPaint(painter: GridPainter(_m))),
                 ],

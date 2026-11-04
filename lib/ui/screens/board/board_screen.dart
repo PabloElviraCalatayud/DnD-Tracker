@@ -26,6 +26,7 @@ class BoardScreen extends StatefulWidget {
 }
 
 class _BoardScreenState extends State<BoardScreen> {
+  final _mapKey = GlobalKey<MapViewState>();
   String? _lastSeenRollId;
   RollEntry? _incoming;
   Timer? _incomingTimer;
@@ -67,7 +68,12 @@ class _BoardScreenState extends State<BoardScreen> {
     final mapArea = Stack(
       children: [
         Positioned.fill(
-          child: map == null ? const _NoMap() : MapView(key: ValueKey(map.id), map: map),
+          child: map == null
+              ? const _NoMap()
+              : KeyedSubtree(
+                  key: ValueKey(map.id),
+                  child: MapView(key: _mapKey, map: map, desktop: wide),
+                ),
         ),
         if (_incoming != null)
           Positioned(
@@ -100,7 +106,10 @@ class _BoardScreenState extends State<BoardScreen> {
           ),
       ],
     );
-    final toolbar = _BoardToolbar(map: map);
+    final toolbar = _BoardToolbar(
+      map: map,
+      onPlace: (tokens, label) => _mapKey.currentState?.startPlacing(tokens, label),
+    );
     if (wide) {
       return Row(
         children: [
@@ -254,30 +263,28 @@ class _NoMap extends StatelessWidget {
 }
 
 class _BoardToolbar extends StatelessWidget {
-  const _BoardToolbar({required this.map});
+  const _BoardToolbar({required this.map, required this.onPlace});
   final BoardMap? map;
 
-  Future<void> _addParty(BuildContext context, BoardMap map) async {
+  /// Pasa fichas al mapa para que se coloquen tocando la casilla.
+  final void Function(List<BoardToken> tokens, String label) onPlace;
+
+  void _addParty(BuildContext context, BoardMap map) {
     final s = SessionScope.read(context);
     final tokens = partyTokens(s, map);
     if (tokens.isEmpty) {
       showSnack(context, tr('Todo el grupo está ya en el mapa'));
       return;
     }
-    for (final t in tokens) {
-      await s.send(Command.putToken(t));
-    }
+    onPlace(tokens, tr('Grupo'));
   }
 
-  Future<void> _placeMine(BuildContext context, BoardMap map) async {
+  void _placeMine(BuildContext context, BoardMap map) {
     final s = SessionScope.read(context);
     final c = s.activeCharacter;
     if (c == null) return;
     final (x, y) = s.campaign.board.freeCell(map, startX: map.cols ~/ 2, startY: map.rows ~/ 2);
-    final r = await s.send(
-      Command.putToken(BoardToken(mapId: map.id, kind: TokenKind.pc, characterId: c.id, x: x, y: y)),
-    );
-    if (!r.ok && context.mounted) showSnack(context, r.error ?? '', error: true);
+    onPlace([BoardToken(mapId: map.id, kind: TokenKind.pc, characterId: c.id, x: x, y: y)], c.name);
   }
 
   @override
@@ -323,13 +330,15 @@ class _BoardToolbar extends StatelessWidget {
                 icon: Icon(Icons.person_add_alt_1, color: AppColors.gold),
                 onSelected: (v) async {
                   if (v == 'party') {
-                    await _addParty(context, m);
+                    _addParty(context, m);
                   } else if (v == 'monster') {
                     final monster = await pickMonster(context);
-                    if (monster != null && context.mounted) await addMonsterDialog(context, monster);
+                    if (monster != null && context.mounted) {
+                      await addMonsterDialog(context, monster, onPlace: (tokens) => onPlace(tokens, monster.name));
+                    }
                   } else if (v == 'marker') {
                     final token = await askMarker(context, m);
-                    if (token != null) await s.send(Command.putToken(token));
+                    if (token != null) onPlace([token], token.label);
                   }
                 },
                 itemBuilder: (_) => [

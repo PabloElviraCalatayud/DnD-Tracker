@@ -27,23 +27,24 @@ Future<Uint8List?> pickImageFile() async {
   return file.readAsBytes();
 }
 
-/// Reduce un mapa a 2048 px como máximo y lo guarda como JPEG: así pesa poco
-/// y se envía rápido a los jugadores, incluso a través del relay.
+/// Limita el mapa a 4096 px por lado (suficiente para ampliarlo mucho sin que
+/// se vea borroso) y lo guarda como JPEG de alta calidad, que pesa bastante
+/// menos que un PNG y se envía rápido a los jugadores, incluso por el relay.
 Future<PreparedImage?> prepareMapImage(Uint8List bytes) => Isolate.run(() {
   final decoded = img.decodeImage(bytes);
   if (decoded == null) return null;
   var image = decoded;
-  const maxSide = 2048;
+  const maxSide = 4096;
   if (image.width > maxSide || image.height > maxSide) {
     image = image.width >= image.height
-        ? img.copyResize(image, width: maxSide, interpolation: img.Interpolation.average)
-        : img.copyResize(image, height: maxSide, interpolation: img.Interpolation.average);
+        ? img.copyResize(image, width: maxSide, interpolation: img.Interpolation.cubic)
+        : img.copyResize(image, height: maxSide, interpolation: img.Interpolation.cubic);
   }
-  final jpg = img.encodeJpg(image, quality: 85);
+  final jpg = img.encodeJpg(image, quality: 92);
   return PreparedImage(Uint8List.fromList(jpg), image.width, image.height);
 });
 
-/// Recorta al centro en cuadrado, reduce a 256 px y guarda como PNG
+/// Recorta al centro en cuadrado, reduce a 512 px y guarda como PNG
 /// (conserva la transparencia de las fichas).
 Future<PreparedImage?> prepareTokenImage(Uint8List bytes) => Isolate.run(() {
   final decoded = img.decodeImage(bytes);
@@ -56,7 +57,9 @@ Future<PreparedImage?> prepareTokenImage(Uint8List bytes) => Isolate.run(() {
     width: side,
     height: side,
   );
-  final small = side > 256 ? img.copyResize(square, width: 256, height: 256) : square;
+  final small = side > 512
+      ? img.copyResize(square, width: 512, height: 512, interpolation: img.Interpolation.cubic)
+      : square;
   final png = img.encodePng(small, level: 6);
   return PreparedImage(Uint8List.fromList(png), small.width, small.height);
 });

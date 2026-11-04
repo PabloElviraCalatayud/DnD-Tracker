@@ -3,9 +3,8 @@
 
   assets/images/texture_grain.png  fondo de la app: grano de cuero/papel, en gris,
                                    que cada tema tiñe con su color (multiplicar).
-  assets/images/texture_floor.png  suelo de losas irregulares para los mapas en blanco.
 
-Ambas son mosaicos sin costuras de 1024 px: el ruido se calcula sobre una
+Es un mosaico sin costuras de 1024 px: el ruido se calcula sobre una
 rejilla repetida 3×3 y se recorta el centro.
 """
 import os
@@ -61,31 +60,4 @@ def grain():
     return 0.80 + 0.20 * v
 
 
-def floor():
-    # Losas irregulares: celdas de Voronoi sobre un mosaico 3×3.
-    n = 64
-    pts = rng.random((n, 2)) * SIZE
-    tiles = np.concatenate([pts + np.array([dx, dy]) * SIZE for dx in (-1, 0, 1) for dy in (-1, 0, 1)])
-    yy, xx = np.mgrid[0:SIZE, 0:SIZE].astype(np.float32)
-    d1 = np.full((SIZE, SIZE), 1e9, dtype=np.float32)
-    d2 = np.full((SIZE, SIZE), 1e9, dtype=np.float32)
-    idx = np.zeros((SIZE, SIZE), dtype=np.int32)
-    for i, (px, py) in enumerate(tiles):
-        d = np.hypot(xx - px, yy - py)
-        closer = d < d1
-        d2 = np.where(closer, d1, np.minimum(d2, d))
-        idx = np.where(closer, i % n, idx)
-        d1 = np.where(closer, d, d1)
-    edge = np.clip((d2 - d1) / 6.0, 0, 1)  # 0 en las juntas
-    shade = rng.random(n)[idx] * 0.18
-    rough = fbm([(8, 0.5), (32, 0.3), (128, 0.2)])
-    cracks = normalize(fbm([(24, 0.6), (96, 0.4)]))
-    cracks = np.where(cracks > 0.83, 0.75, 1.0)
-    v = (0.66 + shade + 0.30 * rough) * (0.55 + 0.45 * edge) * cracks
-    v = np.asarray(Image.fromarray((normalize(v) * 255).astype('uint8')).filter(ImageFilter.GaussianBlur(0.7)),
-                   dtype=np.float32) / 255
-    return 0.55 + 0.45 * v
-
-
 save('texture_grain.png', grain())
-save('texture_floor.png', floor())

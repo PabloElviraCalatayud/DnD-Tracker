@@ -507,7 +507,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
     ],
   );
   // Tablero: un mapa liso con el grupo frente al caballero.
-  final map = BoardMap(name: 'Cripta (en blanco)', cols: 18, rows: 12);
+  final map = BoardMap(name: 'Cripta (en blanco)', cellPx: 100, cols: 18, rows: 12);
   c.board = Board(
     maps: [map],
     activeMapId: map.id,
