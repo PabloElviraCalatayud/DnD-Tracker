@@ -9,6 +9,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../character/character_views.dart';
 import '../character/item_dialogs.dart';
+import '../../../core/i18n.dart';
 
 /// Biblioteca de objetos del máster y reparto de botín.
 class ItemsScreen extends StatelessWidget {
@@ -16,7 +17,7 @@ class ItemsScreen extends StatelessWidget {
 
   Future<void> _newItem(BuildContext context) async {
     final s = SessionScope.read(context);
-    final item = await showItemForm(context, dmMode: true, title: 'Nuevo objeto personalizado');
+    final item = await showItemForm(context, dmMode: true, title: tr('Nuevo objeto personalizado'));
     if (item == null) return;
     item.custom = true;
     await s.send(Command.putLibraryItem(item));
@@ -24,7 +25,7 @@ class ItemsScreen extends StatelessWidget {
 
   Future<void> _fromSrd(BuildContext context) async {
     final s = SessionScope.read(context);
-    final picked = await pickSrdItem(context, s.campaign.ruleset, title: 'Repartir objeto del SRD');
+    final picked = await pickSrdItem(context, s.campaign.ruleset, title: tr('Repartir objeto del SRD'));
     if (picked == null || !context.mounted) return;
     final item = picked.$1.toInventoryItem(quantity: picked.$2);
     item.hideWeight = s.campaign.settings.hideItemWeights;
@@ -36,7 +37,7 @@ class ItemsScreen extends StatelessWidget {
     final s = SessionScope.read(context);
     final pcs = s.campaign.characters.where((c) => c.ownerId != s.myUserId).toList();
     if (pcs.isEmpty) {
-      showSnack(context, 'No hay personajes de jugadores', error: true);
+      showSnack(context, tr('No hay personajes de jugadores'), error: true);
       return;
     }
     final selected = pcs.map((c) => c.id).toSet();
@@ -45,14 +46,14 @@ class ItemsScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Repartir dinero'),
+          title: Text(tr('Repartir dinero')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: amount,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: 'Cantidad total', hintText: '250 po'),
+                decoration: InputDecoration(labelText: tr('Cantidad total'), hintText: tr('250 po')),
               ),
               Gap.s,
               for (final c in pcs)
@@ -65,8 +66,8 @@ class ItemsScreen extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Repartir')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr('Repartir'))),
           ],
         ),
       ),
@@ -74,7 +75,7 @@ class ItemsScreen extends StatelessWidget {
     if (ok != true || selected.isEmpty) return;
     final total = parseCost(amount.text);
     if (total == null || total <= 0) {
-      if (context.mounted) showSnack(context, 'Cantidad no válida', error: true);
+      if (context.mounted) showSnack(context, tr('Cantidad no válida'), error: true);
       return;
     }
     final share = total ~/ selected.length;
@@ -85,7 +86,7 @@ class ItemsScreen extends StatelessWidget {
         c.currency.cp += share % 10;
       });
     }
-    if (context.mounted) showSnack(context, 'Cada personaje recibe ${formatCp(share)}');
+    if (context.mounted) showSnack(context, tr('Cada personaje recibe {0}', [formatCp(share)]));
   }
 
   @override
@@ -98,7 +99,7 @@ class ItemsScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _newItem(context),
         icon: const Icon(Icons.add),
-        label: const Text('Objeto personalizado'),
+        label: Text(tr('Objeto personalizado')),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -110,27 +111,27 @@ class ItemsScreen extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () => _fromSrd(context),
                 icon: const GameIcon('book', size: 18),
-                label: const Text('Dar objeto del SRD'),
+                label: Text(tr('Dar objeto del SRD')),
               ),
               OutlinedButton.icon(
                 onPressed: () => _splitGold(context),
                 icon: const GameIcon('coins', size: 18),
-                label: const Text('Repartir dinero'),
+                label: Text(tr('Repartir dinero')),
               ),
             ],
           ),
           Gap.m,
-          Text('Tu biblioteca de objetos', style: t.titleLarge),
+          Text(tr('Tu biblioteca de objetos'), style: t.titleLarge),
           Text(
-            'Crea objetos una vez y entrégalos a quien quieras. Puedes ocultar su peso y valor.',
+            tr('Crea objetos una vez y entrégalos a quien quieras. Puedes ocultar su peso y valor.'),
             style: t.bodySmall,
           ),
           Gap.s,
           if (lib.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: 'open_chest',
-              title: 'Biblioteca vacía',
-              message: 'Pulsa «Objeto personalizado» para crear el primero.',
+              title: tr('Biblioteca vacía'),
+              message: tr('Pulsa «Objeto personalizado» para crear el primero.'),
             )
           else
             Card(
@@ -141,26 +142,32 @@ class ItemsScreen extends StatelessWidget {
                       item: i,
                       showShared: false,
                       onTap: () async {
-                        final edited = await showItemForm(context, initial: i, dmMode: true, title: 'Editar ${i.name}');
+                        final edited = await showItemForm(
+                          context,
+                          initial: i,
+                          dmMode: true,
+                          title: tr('Editar {0}', [i.name]),
+                        );
                         if (edited != null) await s.send(Command.putLibraryItem(edited));
                       },
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            tooltip: 'Entregar',
+                            tooltip: tr('Entregar'),
                             icon: const Icon(Icons.card_giftcard, color: AppColors.gold),
                             onPressed: () => giveItemDialog(context, i.copy()..templateId = i.id),
                           ),
                           IconButton(
-                            tooltip: 'Borrar de la biblioteca',
+                            tooltip: tr('Borrar de la biblioteca'),
                             icon: const Icon(Icons.delete_outline),
                             onPressed: () async {
                               final ok = await confirm(
                                 context,
-                                'Borrar',
-                                '¿Borrar ${i.name} de la biblioteca? '
-                                    'Los que ya tienen los jugadores no cambian.',
+                                tr('Borrar'),
+                                tr('¿Borrar {0} de la biblioteca? Los que ya tienen los jugadores no cambian.', [
+                                  i.name,
+                                ]),
                                 danger: true,
                               );
                               if (ok) await s.send(Command.deleteLibraryItem(i.id));
@@ -183,7 +190,7 @@ Future<void> giveItemDialog(BuildContext context, InventoryItem item) async {
   final s = SessionScope.read(context);
   final chars = s.campaign.characters;
   if (chars.isEmpty) {
-    showSnack(context, 'No hay personajes a los que dar objetos', error: true);
+    showSnack(context, tr('No hay personajes a los que dar objetos'), error: true);
     return;
   }
   final selected = <String>{};
@@ -192,7 +199,7 @@ Future<void> giveItemDialog(BuildContext context, InventoryItem item) async {
     context: context,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AlertDialog(
-        title: Text('Entregar ${item.name}'),
+        title: Text(tr('Entregar {0}', [item.name])),
         content: SizedBox(
           width: 400,
           child: SingleChildScrollView(
@@ -201,7 +208,7 @@ Future<void> giveItemDialog(BuildContext context, InventoryItem item) async {
               children: [
                 Row(
                   children: [
-                    const Text('Cantidad a cada uno'),
+                    Text(tr('Cantidad a cada uno')),
                     const Spacer(),
                     NumberStepper(value: qty, min: 1, onChanged: (v) => setState(() => qty = v)),
                   ],
@@ -220,10 +227,10 @@ Future<void> giveItemDialog(BuildContext context, InventoryItem item) async {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
           FilledButton(
             onPressed: selected.isEmpty ? null : () => Navigator.pop(ctx, true),
-            child: const Text('Entregar'),
+            child: Text(tr('Entregar')),
           ),
         ],
       ),
@@ -232,9 +239,9 @@ Future<void> giveItemDialog(BuildContext context, InventoryItem item) async {
   if (ok != true) return;
   for (final id in selected) {
     final r = await s.send(Command.giveItem(id, item.copy(quantity: qty)));
-    if (!r.ok && context.mounted) showSnack(context, r.error ?? 'Error', error: true);
+    if (!r.ok && context.mounted) showSnack(context, r.error ?? tr('Error'), error: true);
   }
-  if (context.mounted) showSnack(context, '${item.name} entregado a ${selected.length} personaje(s)');
+  if (context.mounted) showSnack(context, tr('{0} entregado a {1} personaje(s)', [item.name, selected.length]));
 }
 
 /// Para abrir la ficha desde otras pantallas del máster.

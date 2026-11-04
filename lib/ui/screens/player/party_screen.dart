@@ -6,6 +6,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../character/item_dialogs.dart';
+import '../../../core/i18n.dart';
 
 /// Lo que un jugador sabe de sus compañeros.
 class PartyScreen extends StatelessWidget {
@@ -22,12 +23,12 @@ class PartyScreen extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       children: [
         SectionCard(
-          title: 'Mesa',
+          title: tr('Mesa'),
           icon: 'castle',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Máster: ${c.dmName}', style: t.titleSmall),
+              Text(tr('Máster: {0}', [c.dmName]), style: t.titleSmall),
               if (c.description.isNotEmpty) Text(c.description, style: t.bodySmall),
               Gap.s,
               Wrap(
@@ -41,7 +42,7 @@ class PartyScreen extends StatelessWidget {
                         size: 10,
                         color: online.contains(m.userId) ? AppColors.success : AppColors.outline,
                       ),
-                      label: Text(m.userId == s.myUserId ? '${m.name} (tú)' : m.name),
+                      label: Text(m.userId == s.myUserId ? tr('{0} (tú)', [m.name]) : m.name),
                     ),
                 ],
               ),
@@ -49,10 +50,10 @@ class PartyScreen extends StatelessWidget {
           ),
         ),
         if (others.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: 'party',
-            title: 'Aún no hay compañeros',
-            message: 'Cuando otros jugadores creen su personaje aparecerán aquí.',
+            title: tr('Aún no hay compañeros'),
+            message: tr('Cuando otros jugadores creen su personaje aparecerán aquí.'),
           ),
         for (final pc in others)
           Card(
@@ -81,7 +82,7 @@ class PartyScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      StatBox(label: 'CA', value: '${pc.armorClass}', width: 60),
+                      StatBox(label: tr('CA'), value: '${pc.armorClass}', width: 60),
                     ],
                   ),
                   if (!pc.hpHidden && pc.hpMax > 0) ...[
@@ -102,14 +103,17 @@ class PartyScreen extends StatelessWidget {
                       spacing: 4,
                       children: [
                         for (final cond in pc.conditions) Pill(conditionLabel(cond), color: AppColors.warning),
-                        if (pc.exhaustion > 0) Pill('Cansancio ${pc.exhaustion}', color: AppColors.danger),
+                        if (pc.exhaustion > 0) Pill(tr('Cansancio {0}', [pc.exhaustion]), color: AppColors.danger),
                       ],
                     ),
                   ],
-                  if (pc.shareCurrency) ...[Gap.s, Text('Bolsa: ${pc.currency}  (≈ ${formatCp(pc.currency.totalCp)})')],
+                  if (pc.shareCurrency) ...[
+                    Gap.s,
+                    Text(tr('Bolsa: {0}  (≈ {1})', [pc.currency, formatCp(pc.currency.totalCp)])),
+                  ],
                   if (pc.inventory.isNotEmpty) ...[
                     const Divider(height: 20),
-                    Text('Objetos que comparte', style: t.titleSmall),
+                    Text(tr('Objetos que comparte'), style: t.titleSmall),
                     for (final i in pc.inventory)
                       ItemTile(
                         item: i,

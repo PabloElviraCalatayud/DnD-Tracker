@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import '../core/json.dart';
 
 /// Monedas: pc (cobre), pp (plata), pe (electro), po (oro), ppt (platino).
@@ -10,8 +11,14 @@ class Currency {
   int gp;
   int pp;
 
-  static const coinLabels = ['pc', 'pp', 'pe', 'po', 'ppt'];
-  static const coinNames = ['Cobre', 'Plata', 'Electro', 'Oro', 'Platino'];
+  static const _labelsEs = ['pc', 'pp', 'pe', 'po', 'ppt'];
+  static const _labelsEn = ['cp', 'sp', 'ep', 'gp', 'pp'];
+  static const _namesEs = ['Cobre', 'Plata', 'Electro', 'Oro', 'Platino'];
+  static const _namesEn = ['Copper', 'Silver', 'Electrum', 'Gold', 'Platinum'];
+
+  /// Abreviaturas de las monedas en el idioma actual (de menor a mayor valor).
+  static List<String> get coinLabels => I18n.isEnglish ? _labelsEn : _labelsEs;
+  static List<String> get coinNames => I18n.isEnglish ? _namesEn : _namesEs;
   static const coinValuesCp = [1, 10, 50, 100, 1000];
 
   List<int> get asList => [cp, sp, ep, gp, pp];
@@ -100,21 +107,22 @@ class Currency {
     for (var i = 4; i >= 0; i--) {
       if (l[i] != 0) parts.add('${l[i]} ${coinLabels[i]}');
     }
-    return parts.isEmpty ? '0 po' : parts.join(' · ');
+    return parts.isEmpty ? '0 ${coinLabels[3]}' : parts.join(' · ');
   }
 }
 
 /// Formatea una cantidad en piezas de cobre como "12 po 5 pp 3 pc".
 String formatCp(int? cp) {
   if (cp == null) return '?';
-  if (cp == 0) return '0 po';
+  final l = Currency.coinLabels;
+  if (cp == 0) return '0 ${l[3]}';
   final neg = cp < 0;
   var v = cp.abs();
   final gp = v ~/ 100;
   v %= 100;
   final sp = v ~/ 10;
   final c = v % 10;
-  final parts = <String>[if (gp > 0) '$gp po', if (sp > 0) '$sp pp', if (c > 0) '$c pc'];
+  final parts = <String>[if (gp > 0) '$gp ${l[3]}', if (sp > 0) '$sp ${l[1]}', if (c > 0) '$c ${l[0]}'];
   return (neg ? '−' : '') + parts.join(' ');
 }
 
@@ -142,7 +150,9 @@ int? parseCost(String text) {
     'pt': 1000,
     'platino': 1000,
   };
-  final m = mult[match.group(2)];
+  // "pp" es plata en castellano y platino en inglés.
+  final unit = match.group(2);
+  final m = unit == 'pp' && I18n.isEnglish ? 1000 : mult[unit];
   if (m == null) return null;
   return (amount * m).round();
 }

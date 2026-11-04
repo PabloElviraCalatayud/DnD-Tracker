@@ -1,4 +1,5 @@
 import '../core/json.dart';
+import '../domain/board.dart';
 import '../domain/campaign.dart';
 import '../domain/character.dart';
 import '../domain/currency.dart';
@@ -70,6 +71,17 @@ class Command {
   static Command kickMember(String userId, {bool ban = true}) => Command('member.kick', {'userId': userId, 'ban': ban});
   static Command unbanMember(String userId) => Command('member.unban', {'userId': userId});
   static Command regenerateJoinCode() => const Command('campaign.newJoinCode');
+
+  // ------------------------------------------------------------ Tiradas y tablero
+  static Command roll(String label, String expression, {String? characterId}) =>
+      Command('roll.make', {'label': label, 'expression': expression, 'characterId': ?characterId});
+  static Command putMap(BoardMap m) => Command('board.putMap', {'map': m.toJson()});
+  static Command deleteMap(String id) => Command('board.deleteMap', {'id': id});
+  static Command setActiveMap(String mapId) => Command('board.setActive', {'mapId': mapId});
+  static Command putToken(BoardToken t) => Command('board.putToken', {'token': t.toJson()});
+  static Command moveToken(String tokenId, int x, int y) =>
+      Command('board.moveToken', {'tokenId': tokenId, 'x': x, 'y': y});
+  static Command removeToken(String id) => Command('board.removeToken', {'id': id});
 
   // ------------------------------------------------------------ Chat
   static Command sendChat(String channelId, String text, {String kind = 'text'}) =>

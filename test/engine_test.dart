@@ -83,7 +83,8 @@ void main() {
       final mine = view.characters.firstWhere((c) => c.ownerId == 'demo-luis');
       final ring = mine.inventory.firstWhere((i) => i.rarity.isNotEmpty);
       ring
-        ..shared = true
+        ..visibility = ItemVisibility.some
+        ..visibleTo = ['demo-ana']
         ..hideValue = false
         ..valueCp = 1;
       expect(engine.apply(Command.putCharacter(mine), luis).ok, isTrue);
@@ -110,7 +111,7 @@ void main() {
       expect(e.combatants.any((c) => c.hidden), isFalse);
       final knight = e.combatants.firstWhere((c) => c.name.startsWith('Caballero'));
       expect(knight.hp, isNull);
-      expect(knight.status, 'Herido');
+      expect(knight.ac, isNull);
     });
   });
 

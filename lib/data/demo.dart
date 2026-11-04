@@ -1,4 +1,5 @@
 import '../domain/abilities.dart';
+import '../domain/board.dart';
 import '../domain/campaign.dart';
 import '../domain/character.dart';
 import '../domain/chat.dart';
@@ -6,6 +7,7 @@ import '../domain/currency.dart';
 import '../domain/item.dart';
 import '../domain/monster.dart';
 import '../domain/recipe.dart';
+import '../domain/roll.dart';
 import '../domain/ruleset.dart';
 
 /// Partida de ejemplo para explorar la app sin jugadores conectados.
@@ -47,7 +49,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         valueCp: 500,
         damage: '1d6 Bludgeoning',
         equipped: true,
-        shared: true,
+        visibility: ItemVisibility.party,
       ),
       InventoryItem(
         name: 'Cota de escamas',
@@ -56,7 +58,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         valueCp: 5000,
         armorClass: '14 + DES (máx. 2)',
         equipped: true,
-        shared: true,
+        visibility: ItemVisibility.party,
       ),
       InventoryItem(
         name: 'Escudo',
@@ -65,7 +67,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         valueCp: 1000,
         armorClass: '+2',
         equipped: true,
-        shared: true,
+        visibility: ItemVisibility.party,
       ),
       InventoryItem(name: 'Símbolo sagrado', category: ItemCategory.gear, weight: 1, valueCp: 500, icon: 'amulet'),
       InventoryItem(name: 'Raciones (1 día)', category: ItemCategory.consumable, quantity: 5, weight: 2, valueCp: 50),
@@ -89,7 +91,8 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
           school: 'Abjuration',
           castingTime: 'Action',
           range: 'Touch',
-          description: 'A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier.',
+          description:
+              'A creature you touch regains a number of Hit Points equal to 2d8 plus your spellcasting ability modifier.',
         ),
         CharacterSpell(
           name: 'Bless',
@@ -148,7 +151,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         valueCp: 1000,
         icon: 'wizard_staff',
         equipped: true,
-        shared: true,
+        visibility: ItemVisibility.party,
       ),
       InventoryItem(
         name: 'Libro de conjuros',
@@ -177,7 +180,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         weight: 0.5,
         valueCp: 5000,
         icon: 'potion',
-        shared: true,
+        visibility: ItemVisibility.party,
       ),
     ],
     spellcasting: Spellcasting(
@@ -261,7 +264,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         valueCp: 2500,
         damage: '1d8 Piercing',
         equipped: true,
-        shared: true,
+        visibility: ItemVisibility.party,
       ),
       InventoryItem(name: 'Útiles de alquimista', category: ItemCategory.tool, weight: 8, valueCp: 5000),
       InventoryItem(
@@ -288,6 +291,9 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         weight: 0.1,
         valueCp: 300,
         tags: ['componente'],
+        // Kesh sólo se lo enseña a Luis (el jugador de Lyra).
+        visibility: ItemVisibility.some,
+        visibleTo: [luis],
       ),
     ],
   );
@@ -423,6 +429,27 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
       ],
     ),
   );
+  final knightCombatant = Combatant(
+    name: 'Caballero de ceniza',
+    kind: CombatantKind.monster,
+    monsterId: ashKnight.id,
+    initiative: 15,
+    hp: 31,
+    hpMax: 52,
+    ac: 17,
+    xp: 700,
+    tags: ['Herido', 'Se le ve cansado'],
+  );
+  final skeleton = Combatant(
+    name: 'Esqueleto emboscado',
+    kind: CombatantKind.monster,
+    initiative: 5,
+    hp: 13,
+    hpMax: 13,
+    ac: 13,
+    hidden: true,
+    xp: 50,
+  );
   c.encounter = Encounter(
     active: true,
     round: 2,
@@ -435,30 +462,88 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         initiative: 18,
         initiativeBonus: 2,
       ),
-      Combatant(
-        name: 'Caballero de ceniza',
-        kind: CombatantKind.monster,
-        monsterId: ashKnight.id,
-        initiative: 15,
-        hp: 31,
-        hpMax: 52,
-        ac: 17,
-        xp: 700,
-      ),
+      knightCombatant,
       Combatant(name: 'Kesh', kind: CombatantKind.pc, characterId: kesh.id, initiative: 12, initiativeBonus: 3),
       Combatant(name: 'Brom Yunquehondo', kind: CombatantKind.pc, characterId: brom.id, initiative: 7),
-      Combatant(
-        name: 'Esqueleto emboscado',
-        kind: CombatantKind.monster,
-        initiative: 5,
-        hp: 13,
-        hpMax: 13,
-        ac: 13,
-        hidden: true,
-        xp: 50,
-      ),
+      skeleton,
     ],
   );
+  // Tablero: un mapa liso con el grupo frente al caballero.
+  final map = BoardMap(name: 'Cripta (en blanco)', cols: 18, rows: 12);
+  c.board = Board(
+    maps: [map],
+    activeMapId: map.id,
+    tokens: [
+      BoardToken(mapId: map.id, kind: TokenKind.pc, characterId: brom.id, x: 4, y: 6),
+      BoardToken(mapId: map.id, kind: TokenKind.pc, characterId: lyra.id, x: 2, y: 8),
+      BoardToken(mapId: map.id, kind: TokenKind.pc, characterId: kesh.id, x: 6, y: 4),
+      BoardToken(
+        mapId: map.id,
+        kind: TokenKind.monster,
+        combatantId: knightCombatant.id,
+        monsterId: ashKnight.id,
+        icon: ashKnight.iconName,
+        x: 10,
+        y: 5,
+      ),
+      BoardToken(
+        mapId: map.id,
+        kind: TokenKind.monster,
+        combatantId: skeleton.id,
+        icon: 'skull',
+        x: 14,
+        y: 2,
+        hidden: true,
+      ),
+      BoardToken(mapId: map.id, kind: TokenKind.object, label: 'Sarcófago', icon: 'chest', x: 15, y: 8, size: 2),
+    ],
+  );
+  // Algunas tiradas para que el tablero no empiece vacío.
+  final now = DateTime.now().millisecondsSinceEpoch;
+  c.rolls = [
+    RollEntry(
+      userId: ana,
+      authorName: 'Ana',
+      characterId: brom.id,
+      characterName: brom.name,
+      portrait: brom.portrait,
+      label: 'Perspicacia',
+      expression: '1d20+5',
+      total: 17,
+      dice: const [RollDie(sides: 20, value: 12)],
+      modifier: 5,
+      breakdown: '1d20 [12] +5',
+      ts: now - 120000,
+    ),
+    RollEntry(
+      userId: luis,
+      authorName: 'Luis',
+      characterId: lyra.id,
+      characterName: lyra.name,
+      portrait: lyra.portrait,
+      label: 'Magic Missile',
+      expression: '3d4+3',
+      total: 11,
+      dice: const [RollDie(sides: 4, value: 3), RollDie(sides: 4, value: 1), RollDie(sides: 4, value: 4)],
+      modifier: 3,
+      breakdown: '3d4 [3, 1, 4] +3',
+      ts: now - 60000,
+    ),
+    RollEntry(
+      userId: marta,
+      authorName: 'Marta',
+      characterId: kesh.id,
+      characterName: kesh.name,
+      portrait: kesh.portrait,
+      label: 'Sigilo (ventaja)',
+      expression: '2d20kh1+7',
+      total: 27,
+      dice: const [RollDie(sides: 20, value: 20), RollDie(sides: 20, value: 6, kept: false)],
+      modifier: 7,
+      breakdown: '2d20kh1 [20, 6 → 20] +7',
+      ts: now - 30000,
+    ),
+  ];
   c.addLog('Partida de demostración creada', actor: dmName);
   c.addLog('Lyra Vientoalba: PG 17 → 9', actor: 'Luis', characterId: lyra.id);
   c.addLog('Máster entregó 1× Anillo de plata con runas a Lyra Vientoalba', actor: dmName, characterId: lyra.id);

@@ -10,6 +10,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import 'invite_panel.dart';
+import '../../../core/i18n.dart';
 
 /// Ajustes de la partida, conexión, jugadores y registro.
 class CampaignSettingsScreen extends ConsumerWidget {
@@ -33,18 +34,15 @@ class CampaignSettingsScreen extends ConsumerWidget {
       children: [
         const InvitePanel(),
         SectionCard(
-          title: 'Jugar por internet / datos móviles',
+          title: tr('Jugar por internet / datos móviles'),
           icon: 'globe',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const RichDescription(
-                '- **Misma wifi** (o el máster comparte datos con su móvil y los demás se conectan a esa zona '
-                'wifi): funciona tal cual, sin gastar datos.\n'
-                '- **Cada uno en su casa o con datos móviles**: instalad **Tailscale** (gratis) en todos los '
-                'dispositivos e iniciad sesión en la misma red. La invitación incluirá la IP 100.x del máster.\n'
-                '- **Sin instalar nada más**: usad un **relay** (un pequeño servidor que reenvía mensajes, ver '
-                'la carpeta relay/ del proyecto). Escribe aquí su dirección.',
+              RichDescription(
+                tr(
+                  '- **Misma wifi** (o el máster comparte datos con su móvil y los demás se conectan a esa zona wifi): funciona tal cual, sin gastar datos.\n- **Cada uno en su casa o con datos móviles**: instalad **Tailscale** (gratis) en todos los dispositivos e iniciad sesión en la misma red. La invitación incluirá la IP 100.x del máster.\n- **Sin instalar nada más**: usad un **relay** (un pequeño servidor que reenvía mensajes, ver la carpeta relay/ del proyecto). Escribe aquí su dirección.',
+                ),
               ),
               Gap.m,
               _RelayField(session: s),
@@ -52,7 +50,7 @@ class CampaignSettingsScreen extends ConsumerWidget {
           ),
         ),
         SectionCard(
-          title: 'Partida',
+          title: tr('Partida'),
           icon: 'castle',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -60,16 +58,16 @@ class CampaignSettingsScreen extends ConsumerWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(c.name),
-                subtitle: Text(c.description.isEmpty ? 'Sin descripción' : c.description),
+                subtitle: Text(c.description.isEmpty ? tr('Sin descripción') : c.description),
                 trailing: const Icon(Icons.edit),
                 onTap: () async {
-                  final name = await promptText(context, 'Nombre de la partida', initial: c.name);
+                  final name = await promptText(context, tr('Nombre de la partida'), initial: c.name);
                   if (name == null || !context.mounted) return;
-                  final desc = await promptText(context, 'Descripción', initial: c.description, multiline: true);
+                  final desc = await promptText(context, tr('Descripción'), initial: c.description, multiline: true);
                   await s.send(Command.putSettings(st.copy(), name: name, description: desc ?? c.description));
                 },
               ),
-              Text('Edición de reglas', style: t.titleSmall),
+              Text(tr('Edición de reglas'), style: t.titleSmall),
               Gap.s,
               SegmentedButton<Ruleset>(
                 segments: [for (final r in Ruleset.values) ButtonSegment(value: r, label: Text(r.label))],
@@ -77,9 +75,11 @@ class CampaignSettingsScreen extends ConsumerWidget {
                 onSelectionChanged: (v) async {
                   final ok = await confirm(
                     context,
-                    'Cambiar edición',
-                    'Las fichas se conservan, pero las reglas automáticas (descansos, cansancio, artesanía, '
-                        'conjuros preparados) y los datos SRD pasarán a ${v.first.label}.',
+                    tr('Cambiar edición'),
+                    tr(
+                      'Las fichas se conservan, pero las reglas automáticas (descansos, cansancio, artesanía, conjuros preparados) y los datos SRD pasarán a {0}.',
+                      [v.first.label],
+                    ),
                   );
                   if (ok) await s.send(Command.putSettings(st.copy(), ruleset: v.first));
                 },
@@ -88,79 +88,81 @@ class CampaignSettingsScreen extends ConsumerWidget {
           ),
         ),
         SectionCard(
-          title: 'Qué ven los jugadores',
+          title: tr('Qué ven los jugadores'),
           icon: 'eye_target',
           child: Column(
             children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Ocultar el peso de todos los objetos'),
-                subtitle: const Text('También puedes ocultarlo objeto a objeto'),
+                title: Text(tr('Ocultar el peso de todos los objetos')),
+                subtitle: Text(tr('También puedes ocultarlo objeto a objeto')),
                 value: st.hideItemWeights,
                 onChanged: (v) => _update(context, (x) => x.hideItemWeights = v),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Ocultar el valor de todos los objetos'),
+                title: Text(tr('Ocultar el valor de todos los objetos')),
                 value: st.hideItemValues,
                 onChanged: (v) => _update(context, (x) => x.hideItemValues = v),
               ),
-              SwitchListTile(
+              ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Ven los PG de sus compañeros'),
-                value: st.showPartyHp,
-                onChanged: (v) => _update(context, (x) => x.showPartyHp = v),
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Ven los PG exactos de los monstruos'),
-                subtitle: const Text('Si no, sólo «Ileso», «Herido», «Malherido»…'),
-                value: st.showMonsterHp,
-                onChanged: (v) => _update(context, (x) => x.showMonsterHp = v),
+                leading: const Icon(Icons.favorite_outline, color: AppColors.gold),
+                title: Text(tr('Los PG y estados de los personajes jugadores los ve todo el grupo.')),
+                subtitle: Text(
+                  tr('Los PG de los enemigos sólo los ves tú: describe su estado con etiquetas desde el tablero.'),
+                ),
               ),
             ],
           ),
         ),
         SectionCard(
-          title: 'Reglas de la mesa',
+          title: tr('Reglas de la mesa'),
           icon: 'scroll',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DropdownButtonFormField<EncumbranceRule>(
                 initialValue: st.encumbrance,
-                decoration: const InputDecoration(labelText: 'Carga'),
+                decoration: InputDecoration(labelText: tr('Carga')),
                 items: [for (final e in EncumbranceRule.values) DropdownMenuItem(value: e, child: Text(e.label))],
                 onChanged: (v) => _update(context, (x) => x.encumbrance = v ?? x.encumbrance),
               ),
+              Gap.s,
+              DropdownButtonFormField<DiagonalRule>(
+                initialValue: st.diagonals,
+                decoration: InputDecoration(labelText: tr('Diagonales en el tablero (1 casilla = 5 pies)')),
+                items: [for (final d in DiagonalRule.values) DropdownMenuItem(value: d, child: Text(d.label))],
+                onChanged: (v) => _update(context, (x) => x.diagonals = v ?? x.diagonals),
+              ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Las monedas pesan (50 = 1 lb)'),
+                title: Text(tr('Las monedas pesan (50 = 1 lb)')),
                 value: st.countCoinWeight,
                 onChanged: (v) => _update(context, (x) => x.countCoinWeight = v),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Permitir fabricar objetos mágicos con las reglas estándar'),
+                title: Text(tr('Permitir fabricar objetos mágicos con las reglas estándar')),
                 value: st.allowMagicCrafting,
                 onChanged: (v) => _update(context, (x) => x.allowMagicCrafting = v),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Los jugadores pueden crear sus propias recetas'),
+                title: Text(tr('Los jugadores pueden crear sus propias recetas')),
                 value: st.playersCanCreateRecipes,
                 onChanged: (v) => _update(context, (x) => x.playersCanCreateRecipes = v),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Los jugadores pueden darse objetos y dinero'),
+                title: Text(tr('Los jugadores pueden darse objetos y dinero')),
                 value: st.playersCanTrade,
                 onChanged: (v) => _update(context, (x) => x.playersCanTrade = v),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Admitir jugadores nuevos'),
-                subtitle: const Text('Desactívalo cuando el grupo esté completo'),
+                title: Text(tr('Admitir jugadores nuevos')),
+                subtitle: Text(tr('Desactívalo cuando el grupo esté completo')),
                 value: st.allowNewPlayers,
                 onChanged: (v) => _update(context, (x) => x.allowNewPlayers = v),
               ),
@@ -168,10 +170,10 @@ class CampaignSettingsScreen extends ConsumerWidget {
           ),
         ),
         SectionCard(
-          title: 'Jugadores',
+          title: tr('Jugadores ({0}/{1})', [c.members.where((m) => !m.banned).length, Campaign.maxPlayers]),
           icon: 'party',
           child: c.members.isEmpty
-              ? Text('Nadie se ha unido todavía.', style: t.bodySmall)
+              ? Text(tr('Nadie se ha unido todavía.'), style: t.bodySmall)
               : Column(
                   children: [
                     for (final m in c.members)
@@ -185,50 +187,52 @@ class CampaignSettingsScreen extends ConsumerWidget {
                               : (s.onlineUserIds.contains(m.userId) ? AppColors.success : AppColors.outline),
                         ),
                         title: Text(m.name),
-                        subtitle: Text(m.banned ? 'Expulsado' : c.charactersOf(m.userId).map((x) => x.name).join(', ')),
+                        subtitle: Text(
+                          m.banned ? tr('Expulsado') : c.charactersOf(m.userId).map((x) => x.name).join(', '),
+                        ),
                         trailing: m.banned
                             ? TextButton(
                                 onPressed: () => s.send(Command.unbanMember(m.userId)),
-                                child: const Text('Readmitir'),
+                                child: Text(tr('Readmitir')),
                               )
                             : TextButton(
                                 style: TextButton.styleFrom(foregroundColor: AppColors.danger),
                                 onPressed: () async {
                                   final ok = await confirm(
                                     context,
-                                    'Expulsar',
-                                    '¿Expulsar a ${m.name}? Sus personajes se conservan.',
-                                    ok: 'Expulsar',
+                                    tr('Expulsar'),
+                                    tr('¿Expulsar a {0}? Sus personajes se conservan.', [m.name]),
+                                    ok: tr('Expulsar'),
                                     danger: true,
                                   );
                                   if (ok) await s.send(Command.kickMember(m.userId));
                                 },
-                                child: const Text('Expulsar'),
+                                child: Text(tr('Expulsar')),
                               ),
                       ),
                   ],
                 ),
         ),
         SectionCard(
-          title: 'Copias de seguridad',
+          title: tr('Copias de seguridad'),
           icon: 'backup',
           child: Wrap(
             spacing: 8,
             children: [
               OutlinedButton.icon(
                 icon: const Icon(Icons.save_alt),
-                label: const Text('Exportar partida'),
+                label: Text(tr('Exportar partida')),
                 onPressed: () async {
                   await s.saveNow();
                   final path = await ref.read(storageProvider).exportCampaign(c);
-                  if (context.mounted) showSnack(context, 'Guardada en $path');
+                  if (context.mounted) showSnack(context, tr('Guardada en {0}', [path]));
                 },
               ),
             ],
           ),
         ),
         SectionCard(
-          title: 'Registro completo',
+          title: tr('Registro completo'),
           icon: 'scroll',
           child: SizedBox(
             height: 300,
@@ -266,7 +270,7 @@ class _RelayFieldState extends State<_RelayField> {
         Expanded(
           child: TextField(
             controller: _ctrl,
-            decoration: const InputDecoration(labelText: 'URL del relay', hintText: 'wss://mi-relay.ejemplo.com'),
+            decoration: InputDecoration(labelText: tr('URL del relay'), hintText: tr('wss://mi-relay.ejemplo.com')),
           ),
         ),
         Gap.s,
@@ -276,11 +280,13 @@ class _RelayFieldState extends State<_RelayField> {
             if (context.mounted) {
               showSnack(
                 context,
-                _ctrl.text.trim().isEmpty ? 'Relay desactivado' : 'Conectando al relay… Vuelve a copiar la invitación.',
+                _ctrl.text.trim().isEmpty
+                    ? tr('Relay desactivado')
+                    : tr('Conectando al relay… Vuelve a copiar la invitación.'),
               );
             }
           },
-          child: const Text('Aplicar'),
+          child: Text(tr('Aplicar')),
         ),
       ],
     );

@@ -6,6 +6,7 @@ import 'state/providers.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/theme.dart';
+import 'core/i18n.dart';
 
 class DndTrackerApp extends ConsumerWidget {
   const DndTrackerApp({super.key});
@@ -14,13 +15,13 @@ class DndTrackerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileProvider);
     return MaterialApp(
-      title: 'DnD Tracker',
+      title: tr('DnD Tracker'),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       darkTheme: buildTheme(),
       themeMode: ThemeMode.dark,
       locale: const Locale('es'),
-      supportedLocales: const [Locale('es'), Locale('en')],
+      supportedLocales: [const Locale('es'), const Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: profile.isComplete ? const HomeScreen() : const OnboardingScreen(),
     );

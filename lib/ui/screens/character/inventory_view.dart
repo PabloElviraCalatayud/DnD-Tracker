@@ -13,6 +13,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import 'character_views.dart';
 import 'item_dialogs.dart';
+import '../../../core/i18n.dart';
 
 class InventoryView extends ConsumerStatefulWidget {
   const InventoryView({super.key, required this.character});
@@ -36,18 +37,18 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
           children: [
             ListTile(
               leading: const GameIcon('book', size: 26),
-              title: const Text('Del SRD (armas, armaduras, equipo, objetos mágicos…)'),
+              title: Text(tr('Del SRD (armas, armaduras, equipo, objetos mágicos…)')),
               onTap: () => Navigator.pop(ctx, 'srd'),
             ),
             ListTile(
               leading: const GameIcon('quill', size: 26),
-              title: const Text('Objeto personalizado'),
+              title: Text(tr('Objeto personalizado')),
               onTap: () => Navigator.pop(ctx, 'custom'),
             ),
             if (s.isDm && s.campaign.itemLibrary.isNotEmpty)
               ListTile(
                 leading: const GameIcon('open_chest', size: 26),
-                title: const Text('De la biblioteca del máster'),
+                title: Text(tr('De la biblioteca del máster')),
                 onTap: () => Navigator.pop(ctx, 'library'),
               ),
           ],
@@ -69,7 +70,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
     if (s.isDm) {
       // El máster entrega el objeto: respeta sus opciones de ocultación.
       final r = await s.send(Command.giveItem(widget.character.id, added));
-      if (!r.ok && mounted) showSnack(context, r.error ?? 'Error', error: true);
+      if (!r.ok && mounted) showSnack(context, r.error ?? tr('Error'), error: true);
     } else {
       await editCharacter(context, widget.character.id, (c) => c.inventory.add(added));
     }
@@ -78,7 +79,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
   Future<InventoryItem?> _pickLibrary(Campaign campaign) => showDialog<InventoryItem>(
     context: context,
     builder: (ctx) => SimpleDialog(
-      title: const Text('Biblioteca del máster'),
+      title: Text(tr('Biblioteca del máster')),
       children: [
         for (final i in campaign.itemLibrary)
           SimpleDialogOption(onPressed: () => Navigator.pop(ctx, i.copy()), child: Text(i.name)),
@@ -120,7 +121,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: editable
-          ? FloatingActionButton.extended(onPressed: _add, icon: const Icon(Icons.add), label: const Text('Añadir'))
+          ? FloatingActionButton.extended(onPressed: _add, icon: const Icon(Icons.add), label: Text(tr('Añadir')))
           : null,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -128,7 +129,7 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
           _CurrencyCard(character: c, editable: editable),
           if (settings.encumbrance != EncumbranceRule.none)
             SectionCard(
-              title: 'Carga',
+              title: tr('Carga'),
               icon: 'knapsack',
               trailing: Text(
                 '${units.weight(totalWeight)}${anyHidden ? '+?' : ''} / ${units.weight(capacity)}',
@@ -154,23 +155,24 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                   Text(switch (enc) {
                     Encumbrance.none => 'Sin penalizaciones.',
                     Encumbrance.encumbered => 'Cargado: −10 pies de velocidad.',
-                    Encumbrance.heavilyEncumbered => 'Muy cargado: −20 pies de velocidad y desventaja en pruebas, ataques y salvaciones de FUE, DES y CON.',
+                    Encumbrance.heavilyEncumbered =>
+                      'Muy cargado: −20 pies de velocidad y desventaja en pruebas, ataques y salvaciones de FUE, DES y CON.',
                     Encumbrance.overCapacity => 'Por encima de tu capacidad de carga: velocidad máxima 5 pies.',
                   }, style: t.bodySmall),
-                  if (anyHidden) Text('Hay objetos cuyo peso conoce sólo el máster.', style: t.bodySmall),
+                  if (anyHidden) Text(tr('Hay objetos cuyo peso conoce sólo el máster.'), style: t.bodySmall),
                 ],
               ),
             ),
           if (c.inventory.isNotEmpty) ...[
             Gap.s,
-            SearchField(onChanged: (v) => setState(() => _query = v), hint: 'Buscar en el inventario'),
+            SearchField(onChanged: (v) => setState(() => _query = v), hint: tr('Buscar en el inventario')),
             Gap.s,
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
                 ChoiceChip(
-                  label: const Text('Todo'),
+                  label: Text(tr('Todo')),
                   selected: _category == null,
                   onSelected: (_) => setState(() => _category = null),
                 ),
@@ -185,10 +187,10 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
           ],
           Gap.s,
           if (c.inventory.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: 'backpack',
-              title: 'Inventario vacío',
-              message: 'Añade objetos del SRD o crea los tuyos.',
+              title: tr('Inventario vacío'),
+              message: tr('Añade objetos del SRD o crea los tuyos.'),
             )
           else
             Card(
@@ -200,15 +202,9 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
                       onTap: () => showItemDetail(context, c, i, editable: editable),
                       trailing: editable
                           ? IconButton(
-                              tooltip: i.shared ? 'Visible para el grupo' : 'Oculto al grupo',
-                              icon: Icon(
-                                i.shared ? Icons.visibility : Icons.visibility_off,
-                                color: i.shared ? AppColors.gold : AppColors.muted,
-                              ),
-                              onPressed: () => editCharacter(context, c.id, (x) {
-                                final it = x.itemById(i.id);
-                                if (it != null) it.shared = !it.shared;
-                              }),
+                              tooltip: visibilityText(context, i),
+                              icon: VisibilityIcon(item: i),
+                              onPressed: () => showVisibilityPicker(context, c, i),
                             )
                           : null,
                     ),
@@ -219,8 +215,11 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
             Padding(
               padding: const EdgeInsets.all(8),
               child: Text(
-                'Valor total conocido: ${formatCp(totalValue)} · ${c.inventory.length} objetos · '
-                '${c.inventory.where((i) => i.shared).length} visibles para el grupo',
+                tr('Valor total conocido: {0} · {1} objetos · {2} visibles para otros jugadores', [
+                  formatCp(totalValue),
+                  c.inventory.length,
+                  c.inventory.where((i) => i.shared).length,
+                ]),
                 style: t.bodySmall,
               ),
             ),
@@ -241,23 +240,23 @@ class _CurrencyCard extends StatelessWidget {
     final result = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Monedas de ${Currency.coinNames[index].toLowerCase()} (${Currency.coinLabels[index]})'),
+        title: Text(tr('Monedas de {0} ({1})', [Currency.coinNames[index].toLowerCase(), Currency.coinLabels[index]])),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Ahora: $current'),
+            Text(tr('Ahora: {0}', [current])),
             Gap.s,
             TextField(
               controller: controller,
               autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(signed: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[-+0-9]'))],
-              decoration: const InputDecoration(hintText: '+50 para sumar, -20 para restar, 120 para fijar'),
+              decoration: InputDecoration(hintText: tr('+50 para sumar, -20 para restar, 120 para fijar')),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
           FilledButton(
             onPressed: () {
               final txt = controller.text.trim();
@@ -266,7 +265,7 @@ class _CurrencyCard extends StatelessWidget {
               final isDelta = txt.startsWith('+') || txt.startsWith('-');
               Navigator.pop(ctx, isDelta ? current + n : n);
             },
-            child: const Text('Aplicar'),
+            child: Text(tr('Aplicar')),
           ),
         ],
       ),
@@ -285,7 +284,7 @@ class _CurrencyCard extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Dar dinero'),
+          title: Text(tr('Dar dinero')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -310,8 +309,8 @@ class _CurrencyCard extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Dar')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr('Dar'))),
           ],
         ),
       ),
@@ -320,7 +319,7 @@ class _CurrencyCard extends StatelessWidget {
     final c = Currency(cp: amounts[0], sp: amounts[1], ep: amounts[2], gp: amounts[3], pp: amounts[4]);
     if (c.isZero) return;
     final r = await s.send(Command.transferCurrency(character.id, target, c));
-    if (context.mounted && !r.ok) showSnack(context, r.error ?? 'Error', error: true);
+    if (context.mounted && !r.ok) showSnack(context, r.error ?? tr('Error'), error: true);
   }
 
   @override
@@ -330,7 +329,7 @@ class _CurrencyCard extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final coins = c.currency.asList;
     return SectionCard(
-      title: 'Bolsa',
+      title: tr('Bolsa'),
       icon: 'coins',
       trailing: Text('≈ ${formatCp(c.currency.totalCp)}', style: t.titleSmall?.copyWith(color: AppColors.gold)),
       child: Column(
@@ -366,7 +365,7 @@ class _CurrencyCard extends StatelessWidget {
                   child: SwitchListTile(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('El grupo ve mi dinero'),
+                    title: Text(tr('El grupo ve mi dinero')),
                     value: c.shareCurrency,
                     onChanged: (v) => editCharacter(context, c.id, (x) => x.shareCurrency = v),
                   ),
@@ -375,7 +374,7 @@ class _CurrencyCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => _giveMoney(context),
                     icon: const Icon(Icons.payments),
-                    label: const Text('Dar'),
+                    label: Text(tr('Dar')),
                   ),
               ],
             ),

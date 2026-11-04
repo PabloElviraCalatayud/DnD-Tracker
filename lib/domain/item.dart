@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import '../core/ids.dart';
 import '../core/json.dart';
 
@@ -13,9 +14,11 @@ enum ItemCategory {
   magic('Objeto mágico', 'sparkles'),
   other('Otro', 'swap_bag');
 
-  const ItemCategory(this.label, this.icon);
-  final String label;
+  const ItemCategory(this._label, this.icon);
+  final String _label;
   final String icon;
+
+  String get label => tr(_label);
 
   static ItemCategory fromSrd(String cat) => switch (cat) {
     'weapon' => ItemCategory.weapon,
@@ -26,6 +29,18 @@ enum ItemCategory {
     'focus' || 'pack' || 'gear' || 'mount' => ItemCategory.gear,
     _ => ItemCategory.other,
   };
+}
+
+/// Quién puede ver un objeto del inventario (además de su dueño y del máster).
+enum ItemVisibility {
+  /// Sólo el dueño (y el máster, que lo ve todo).
+  private,
+
+  /// Todos los jugadores de la partida.
+  party,
+
+  /// Sólo los jugadores elegidos en [InventoryItem.visibleTo].
+  some,
 }
 
 /// Objeto en un inventario (o plantilla de la biblioteca del máster).
@@ -45,7 +60,8 @@ class InventoryItem {
     this.requiresAttunement = false,
     this.attuned = false,
     this.equipped = false,
-    this.shared = false,
+    this.visibility = ItemVisibility.private,
+    List<String>? visibleTo,
     this.hideWeight = false,
     this.hideValue = false,
     this.dmNote = '',
@@ -61,7 +77,8 @@ class InventoryItem {
     this.maxCharges,
     this.notes = '',
   }) : id = id ?? newId(),
-       tags = tags ?? <String>[];
+       tags = tags ?? <String>[],
+       visibleTo = visibleTo ?? <String>[];
 
   String id;
   String name;
@@ -80,8 +97,23 @@ class InventoryItem {
   bool attuned;
   bool equipped;
 
-  /// El jugador decide si el resto del grupo puede ver este objeto.
-  bool shared;
+  /// El jugador decide quién del grupo puede ver este objeto.
+  ItemVisibility visibility;
+
+  /// Jugadores (userId) que lo ven cuando [visibility] es [ItemVisibility.some].
+  List<String> visibleTo;
+
+  /// ¿Lo ve alguien más aparte del dueño?
+  bool get shared => visibility == ItemVisibility.party || (visibility == ItemVisibility.some && visibleTo.isNotEmpty);
+
+  /// ¿Puede verlo el jugador [userId] (que no es el dueño)?
+  bool isVisibleTo(String userId) =>
+      visibility == ItemVisibility.party || (visibility == ItemVisibility.some && visibleTo.contains(userId));
+
+  void hideFromEveryone() {
+    visibility = ItemVisibility.private;
+    visibleTo = [];
+  }
 
   /// Controlados por el máster.
   bool hideWeight;
@@ -137,7 +169,8 @@ class InventoryItem {
     if (requiresAttunement) 'requiresAttunement': true,
     if (attuned) 'attuned': true,
     if (equipped) 'equipped': true,
-    if (shared) 'shared': true,
+    if (visibility != ItemVisibility.private) 'visibility': visibility.name,
+    if (visibleTo.isNotEmpty) 'visibleTo': visibleTo,
     if (hideWeight) 'hideWeight': true,
     if (hideValue) 'hideValue': true,
     if (dmNote.isNotEmpty) 'dmNote': dmNote,
@@ -166,7 +199,11 @@ class InventoryItem {
     requiresAttunement: asBool(j['requiresAttunement']),
     attuned: asBool(j['attuned']),
     equipped: asBool(j['equipped']),
-    shared: asBool(j['shared']),
+    // Las versiones anteriores sólo tenían "shared" (todo el grupo o nadie).
+    visibility: j['visibility'] != null
+        ? enumByName(ItemVisibility.values, j['visibility'], ItemVisibility.private)
+        : (asBool(j['shared']) ? ItemVisibility.party : ItemVisibility.private),
+    visibleTo: asStringList(j['visibleTo']),
     hideWeight: asBool(j['hideWeight']),
     hideValue: asBool(j['hideValue']),
     dmNote: asString(j['dmNote']),
@@ -188,12 +225,12 @@ class InventoryItem {
 const List<String> rarities = ['', 'Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary', 'Artifact'];
 
 String rarityLabel(String r) => switch (r.toLowerCase()) {
-  '' => 'Sin rareza',
-  'common' => 'Común',
-  'uncommon' => 'Poco común',
-  'rare' => 'Raro',
-  'very rare' => 'Muy raro',
-  'legendary' => 'Legendario',
-  'artifact' => 'Artefacto',
+  '' => tr('Sin rareza'),
+  'common' => tr('Común'),
+  'uncommon' => tr('Poco común'),
+  'rare' => tr('Raro'),
+  'very rare' => tr('Muy raro'),
+  'legendary' => tr('Legendario'),
+  'artifact' => tr('Artefacto'),
   _ => r,
 };

@@ -7,6 +7,7 @@ import '../../domain/ruleset.dart';
 import '../../state/providers.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../../core/i18n.dart';
 
 class CreateCampaignScreen extends ConsumerStatefulWidget {
   const CreateCampaignScreen({super.key});
@@ -24,7 +25,7 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
   Future<void> _create() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      showSnack(context, 'Ponle un nombre a la partida', error: true);
+      showSnack(context, tr('Ponle un nombre a la partida'), error: true);
       return;
     }
     final profile = ref.read(profileProvider);
@@ -37,7 +38,7 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
       settings: _settings,
       chat: ChatState(),
     );
-    c.addLog('Partida creada (${_ruleset.label})', actor: profile.displayName);
+    c.addLog(tr('Partida creada ({0})', [_ruleset.label]), actor: profile.displayName);
     await ref.read(storageProvider).saveHosted(c);
     if (mounted) Navigator.pop(context, c);
   }
@@ -46,7 +47,7 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return AppScaffold(
-      title: 'Nueva partida',
+      title: tr('Nueva partida'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -54,17 +55,17 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
             controller: _name,
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'Nombre de la partida', hintText: 'La maldición de Strahd'),
+            decoration: InputDecoration(labelText: tr('Nombre de la partida'), hintText: tr('La maldición de Strahd')),
           ),
           Gap.m,
           TextField(
             controller: _description,
             minLines: 2,
             maxLines: 5,
-            decoration: const InputDecoration(labelText: 'Descripción (opcional)'),
+            decoration: InputDecoration(labelText: tr('Descripción (opcional)')),
           ),
           Gap.l,
-          Text('Edición de reglas', style: t.titleLarge),
+          Text(tr('Edición de reglas'), style: t.titleLarge),
           Gap.s,
           Row(
             children: [
@@ -88,26 +89,21 @@ class _CreateCampaignScreenState extends ConsumerState<CreateCampaignScreen> {
             ],
           ),
           Gap.s,
-          Text('Podrás cambiarla más adelante desde los ajustes de la partida.', style: t.bodySmall),
+          Text(tr('Podrás cambiarla más adelante desde los ajustes de la partida.'), style: t.bodySmall),
           Gap.l,
-          Text('Opciones iniciales', style: t.titleLarge),
+          Text(tr('Opciones iniciales'), style: t.titleLarge),
           SwitchListTile(
-            title: const Text('Ocultar el peso de los objetos a los jugadores'),
+            title: Text(tr('Ocultar el peso de los objetos a los jugadores')),
             value: _settings.hideItemWeights,
             onChanged: (v) => setState(() => _settings.hideItemWeights = v),
           ),
           SwitchListTile(
-            title: const Text('Ocultar el valor de los objetos a los jugadores'),
+            title: Text(tr('Ocultar el valor de los objetos a los jugadores')),
             value: _settings.hideItemValues,
             onChanged: (v) => setState(() => _settings.hideItemValues = v),
           ),
-          SwitchListTile(
-            title: const Text('Los jugadores ven los PG de sus compañeros'),
-            value: _settings.showPartyHp,
-            onChanged: (v) => setState(() => _settings.showPartyHp = v),
-          ),
           Gap.l,
-          FilledButton.icon(onPressed: _create, icon: const Icon(Icons.check), label: const Text('Crear partida')),
+          FilledButton.icon(onPressed: _create, icon: const Icon(Icons.check), label: Text(tr('Crear partida'))),
         ],
       ),
     );

@@ -13,6 +13,7 @@ import '../../../state/providers.dart';
 import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../../core/i18n.dart';
 
 /// Iconos que se pueden elegir para objetos personalizados.
 const itemIconChoices = [
@@ -96,23 +97,23 @@ class ItemTile extends ConsumerWidget {
         children: [
           Flexible(child: Text(i.quantity == 1 ? i.name : '${i.name} ×${i.quantity}', overflow: TextOverflow.ellipsis)),
           if (i.equipped)
-            const Padding(
-              padding: EdgeInsets.only(left: 6),
-              child: Pill('equipado', color: AppColors.success),
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Pill(tr('equipado'), color: AppColors.success),
             ),
           if (i.attuned)
-            const Padding(
-              padding: EdgeInsets.only(left: 6),
-              child: Pill('vinculado', color: AppColors.arcane),
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Pill(tr('vinculado'), color: AppColors.arcane),
             ),
         ],
       ),
       subtitle: Text(
         [
-          i.weight == null ? 'peso oculto' : '${units.weight(i.totalWeight)}${hiddenW ? ' (oculto)' : ''}',
-          i.valueCp == null ? 'valor oculto' : '${formatCp(i.totalValueCp)}${hiddenV ? ' (oculto)' : ''}',
+          i.weight == null ? tr('peso oculto') : '${units.weight(i.totalWeight)}${hiddenW ? ' (oculto)' : ''}',
+          i.valueCp == null ? tr('valor oculto') : '${formatCp(i.totalValueCp)}${hiddenV ? ' (oculto)' : ''}',
           if (i.rarity.isNotEmpty) rarityLabel(i.rarity),
-          if (i.charges != null) 'cargas ${i.charges}${i.maxCharges != null ? '/${i.maxCharges}' : ''}',
+          if (i.charges != null) tr('cargas {0}{1}', [i.charges, i.maxCharges != null ? '/${i.maxCharges}' : '']),
         ].join(' · '),
         style: t.bodySmall,
       ),
@@ -120,12 +121,8 @@ class ItemTile extends ConsumerWidget {
           trailing ??
           (showShared
               ? Tooltip(
-                  message: i.shared ? 'Visible para el grupo' : 'Sólo lo ves tú (y el máster)',
-                  child: Icon(
-                    i.shared ? Icons.visibility : Icons.visibility_off,
-                    size: 20,
-                    color: i.shared ? AppColors.gold : AppColors.muted,
-                  ),
+                  message: visibilityText(context, i),
+                  child: VisibilityIcon(item: i, size: 20),
                 )
               : null),
     );
@@ -164,7 +161,7 @@ class _ItemDetail extends ConsumerWidget {
       final it = c.itemById(itemId);
       if (it != null) change(it);
     });
-    if (!r.ok && context.mounted) showSnack(context, r.error ?? 'Error', error: true);
+    if (!r.ok && context.mounted) showSnack(context, r.error ?? tr('Error'), error: true);
   }
 
   @override
@@ -175,8 +172,8 @@ class _ItemDetail extends ConsumerWidget {
     final units = ref.watch(unitsProvider);
     final t = Theme.of(context).textTheme;
     if (c == null || item == null) {
-      return const Center(
-        child: Padding(padding: EdgeInsets.all(32), child: Text('El objeto ya no está aquí.')),
+      return Center(
+        child: Padding(padding: const EdgeInsets.all(32), child: Text(tr('El objeto ya no está aquí.'))),
       );
     }
     final others = s.campaign.characters.where((x) => x.id != c.id).toList();
@@ -197,7 +194,7 @@ class _ItemDetail extends ConsumerWidget {
                     [
                       item.category.label,
                       if (item.rarity.isNotEmpty) rarityLabel(item.rarity),
-                      if (item.requiresAttunement) 'requiere vinculación',
+                      if (item.requiresAttunement) tr('requiere vinculación'),
                     ].join(' · '),
                     style: t.bodySmall,
                   ),
@@ -211,20 +208,20 @@ class _ItemDetail extends ConsumerWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            StatBox(label: 'Cantidad', value: '${item.quantity}'),
+            StatBox(label: tr('Cantidad'), value: '${item.quantity}'),
             StatBox(
-              label: 'Peso ud.',
+              label: tr('Peso ud.'),
               value: units.weight(item.weight),
-              sub: item.hideWeight || item.weight == null ? 'oculto' : null,
+              sub: item.hideWeight || item.weight == null ? tr('oculto') : null,
             ),
             StatBox(
-              label: 'Valor ud.',
+              label: tr('Valor ud.'),
               value: formatCp(item.valueCp),
               width: 110,
-              sub: item.hideValue || item.valueCp == null ? 'oculto' : null,
+              sub: item.hideValue || item.valueCp == null ? tr('oculto') : null,
             ),
-            if (item.damage.isNotEmpty) StatBox(label: 'Daño', value: item.damage, width: 130),
-            if (item.armorClass.isNotEmpty) StatBox(label: 'CA', value: item.armorClass, width: 110),
+            if (item.damage.isNotEmpty) StatBox(label: tr('Daño'), value: item.damage, width: 130),
+            if (item.armorClass.isNotEmpty) StatBox(label: tr('CA'), value: item.armorClass, width: 110),
           ],
         ),
         if (item.properties.isNotEmpty) ...[Gap.s, Text(item.properties, style: t.bodySmall)],
@@ -235,13 +232,13 @@ class _ItemDetail extends ConsumerWidget {
         ],
         if (s.isDm && item.dmNote.isNotEmpty) ...[
           Gap.m,
-          SectionCard(title: 'Nota del máster', icon: 'padlock', child: Text(item.dmNote)),
+          SectionCard(title: tr('Nota del máster'), icon: 'padlock', child: Text(item.dmNote)),
         ],
         if (editable) ...[
           const Divider(height: 28),
           Row(
             children: [
-              Text('Cantidad', style: t.titleSmall),
+              Text(tr('Cantidad'), style: t.titleSmall),
               const Spacer(),
               NumberStepper(value: item.quantity, min: 0, onChanged: (v) => _edit(context, (i) => i.quantity = v)),
             ],
@@ -249,7 +246,7 @@ class _ItemDetail extends ConsumerWidget {
           if (item.maxCharges != null || item.charges != null)
             Row(
               children: [
-                Text('Cargas', style: t.titleSmall),
+                Text(tr('Cargas'), style: t.titleSmall),
                 const Spacer(),
                 NumberStepper(
                   value: item.charges ?? 0,
@@ -258,28 +255,29 @@ class _ItemDetail extends ConsumerWidget {
                 ),
               ],
             ),
-          SwitchListTile(
+          ListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Visible para el grupo'),
-            subtitle: const Text('Los demás jugadores lo verán en tu inventario'),
-            value: item.shared,
-            onChanged: (v) => _edit(context, (i) => i.shared = v),
+            leading: VisibilityIcon(item: item),
+            title: Text(tr('Quién lo ve')),
+            subtitle: Text(visibilityText(context, item)),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showVisibilityPicker(context, c, item),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Equipado'),
+            title: Text(tr('Equipado')),
             value: item.equipped,
             onChanged: (v) => _edit(context, (i) => i.equipped = v),
           ),
           if (item.requiresAttunement)
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Vinculado'),
-              subtitle: Text('${c.attunedCount}/3 objetos vinculados'),
+              title: Text(tr('Vinculado')),
+              subtitle: Text(tr('{0}/3 objetos vinculados', [c.attunedCount])),
               value: item.attuned,
               onChanged: (v) {
                 if (v && c.attunedCount >= 3) {
-                  showSnack(context, 'Máximo 3 objetos vinculados', error: true);
+                  showSnack(context, tr('Máximo 3 objetos vinculados'), error: true);
                   return;
                 }
                 _edit(context, (i) => i.attuned = v);
@@ -287,16 +285,16 @@ class _ItemDetail extends ConsumerWidget {
             ),
           if (s.isDm) ...[
             const Divider(height: 24),
-            Text('Opciones del máster', style: t.titleSmall?.copyWith(color: AppColors.gold)),
+            Text(tr('Opciones del máster'), style: t.titleSmall?.copyWith(color: AppColors.gold)),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Ocultar peso al jugador'),
+              title: Text(tr('Ocultar peso al jugador')),
               value: item.hideWeight,
               onChanged: (v) => _edit(context, (i) => i.hideWeight = v),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Ocultar valor al jugador'),
+              title: Text(tr('Ocultar valor al jugador')),
               value: item.hideValue,
               onChanged: (v) => _edit(context, (i) => i.hideValue = v),
             ),
@@ -309,7 +307,7 @@ class _ItemDetail extends ConsumerWidget {
               if (s.isDm || item.weight != null && item.valueCp != null || item.custom)
                 OutlinedButton.icon(
                   icon: const Icon(Icons.edit),
-                  label: const Text('Editar'),
+                  label: Text(tr('Editar')),
                   onPressed: () async {
                     final edited = await showItemForm(context, initial: item, dmMode: s.isDm);
                     if (edited == null || !context.mounted) return;
@@ -322,19 +320,19 @@ class _ItemDetail extends ConsumerWidget {
               if (others.isNotEmpty && (s.isDm || s.campaign.settings.playersCanTrade))
                 OutlinedButton.icon(
                   icon: const Icon(Icons.card_giftcard),
-                  label: const Text('Dar a…'),
+                  label: Text(tr('Dar a…')),
                   onPressed: () => _give(context, c, item, others),
                 ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
                 icon: const Icon(Icons.delete_outline),
-                label: const Text('Tirar'),
+                label: Text(tr('Tirar')),
                 onPressed: () async {
                   final ok = await confirm(
                     context,
-                    'Tirar objeto',
-                    '¿Quitar ${item.name} del inventario?',
-                    ok: 'Tirar',
+                    tr('Tirar objeto'),
+                    tr('¿Quitar {0} del inventario?', [item.name]),
+                    ok: tr('Tirar'),
                     danger: true,
                   );
                   if (!ok || !context.mounted) return;
@@ -357,13 +355,13 @@ class _ItemDetail extends ConsumerWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: Text('Dar ${item.name}'),
+          title: Text(tr('Dar {0}', [item.name])),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               DropdownButtonFormField<String>(
                 initialValue: targetId,
-                decoration: const InputDecoration(labelText: 'A quién'),
+                decoration: InputDecoration(labelText: tr('A quién')),
                 items: [for (final o in others) DropdownMenuItem(value: o.id, child: Text(o.name))],
                 onChanged: (v) => setState(() => targetId = v),
               ),
@@ -371,7 +369,7 @@ class _ItemDetail extends ConsumerWidget {
                 Gap.m,
                 Row(
                   children: [
-                    const Text('Cantidad'),
+                    Text(tr('Cantidad')),
                     const Spacer(),
                     NumberStepper(value: qty, min: 1, max: item.quantity, onChanged: (v) => setState(() => qty = v)),
                   ],
@@ -380,8 +378,8 @@ class _ItemDetail extends ConsumerWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Dar')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr('Dar'))),
           ],
         ),
       ),
@@ -391,9 +389,9 @@ class _ItemDetail extends ConsumerWidget {
     if (!context.mounted) return;
     if (r.ok) {
       Navigator.pop(context);
-      showSnack(context, 'Entregado');
+      showSnack(context, tr('Entregado'));
     } else {
-      showSnack(context, r.error ?? 'Error', error: true);
+      showSnack(context, r.error ?? tr('Error'), error: true);
     }
   }
 }
@@ -469,7 +467,7 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                 child: SearchField(
                   onChanged: (v) => setState(() => _query = v),
-                  hint: 'Buscar (en inglés: sword, potion…)',
+                  hint: tr('Buscar (en inglés: sword, potion…)'),
                 ),
               ),
               SizedBox(
@@ -509,7 +507,7 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
                           if (i.rarity.isNotEmpty) rarityLabel(i.rarity),
                           if (!i.isMagic) '${formatCp(i.costCp)} · ${units.weight(i.weight)}',
                           if (i.damage.isNotEmpty) i.damage,
-                          if (i.armorClass.isNotEmpty) 'CA ${i.armorClass}',
+                          if (i.armorClass.isNotEmpty) tr('CA {0}', [i.armorClass]),
                         ].join(' · '),
                       ),
                       onTap: () => _choose(i),
@@ -543,7 +541,7 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
                   Gap.m,
                   Row(
                     children: [
-                      const Text('Cantidad'),
+                      Text(tr('Cantidad')),
                       const Spacer(),
                       NumberStepper(value: qty, min: 1, onChanged: (v) => setState(() => qty = v)),
                     ],
@@ -553,8 +551,8 @@ class _SrdItemPickerState extends ConsumerState<_SrdItemPicker> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Elegir')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr('Elegir'))),
           ],
         ),
       ),
@@ -632,12 +630,12 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
   void _save() {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      showSnack(context, 'El objeto necesita un nombre', error: true);
+      showSnack(context, tr('El objeto necesita un nombre'), error: true);
       return;
     }
     final cost = parseCost(_value.text);
     if (cost == null) {
-      showSnack(context, 'No entiendo el valor. Ejemplos: 15 po, 3 pp, 20 pc', error: true);
+      showSnack(context, tr('No entiendo el valor. Ejemplos: 15 po, 3 pp, 20 pc'), error: true);
       return;
     }
     final w = double.tryParse(_weight.text.replaceAll(',', '.'));
@@ -662,7 +660,7 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
     final t = Theme.of(context).textTheme;
     return AppScaffold(
       title: widget.title,
-      actions: [TextButton(onPressed: _save, child: const Text('Guardar'))],
+      actions: [TextButton(onPressed: _save, child: Text(tr('Guardar')))],
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -670,12 +668,12 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
             controller: _name,
             autofocus: widget.initial == null,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'Nombre'),
+            decoration: InputDecoration(labelText: tr('Nombre')),
           ),
           Gap.m,
           DropdownButtonFormField<ItemCategory>(
             initialValue: _item.category,
-            decoration: const InputDecoration(labelText: 'Categoría'),
+            decoration: InputDecoration(labelText: tr('Categoría')),
             items: [for (final c in ItemCategory.values) DropdownMenuItem(value: c, child: Text(c.label))],
             onChanged: (v) => setState(() => _item.category = v ?? _item.category),
           ),
@@ -687,14 +685,14 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
                   controller: _weight,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-                  decoration: InputDecoration(labelText: 'Peso por unidad (${_units.weightUnit})'),
+                  decoration: InputDecoration(labelText: tr('Peso por unidad ({0})', [_units.weightUnit])),
                 ),
               ),
               Gap.m,
               Expanded(
                 child: TextField(
                   controller: _value,
-                  decoration: const InputDecoration(labelText: 'Valor por unidad', hintText: '15 po · 3 pp · 20 pc'),
+                  decoration: InputDecoration(labelText: tr('Valor por unidad'), hintText: tr('15 po · 3 pp · 20 pc')),
                 ),
               ),
             ],
@@ -702,7 +700,7 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
           Gap.m,
           Row(
             children: [
-              Text('Cantidad', style: t.titleSmall),
+              Text(tr('Cantidad'), style: t.titleSmall),
               const Spacer(),
               NumberStepper(value: _item.quantity, min: 1, onChanged: (v) => setState(() => _item.quantity = v)),
             ],
@@ -712,18 +710,18 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
             controller: _desc,
             minLines: 3,
             maxLines: 10,
-            decoration: const InputDecoration(labelText: 'Descripción', alignLabelWithHint: true),
+            decoration: InputDecoration(labelText: tr('Descripción'), alignLabelWithHint: true),
           ),
           Gap.m,
           DropdownButtonFormField<String>(
             initialValue: rarities.contains(_item.rarity) ? _item.rarity : '',
-            decoration: const InputDecoration(labelText: 'Rareza'),
+            decoration: InputDecoration(labelText: tr('Rareza')),
             items: [for (final r in rarities) DropdownMenuItem(value: r, child: Text(rarityLabel(r)))],
             onChanged: (v) => setState(() => _item.rarity = v ?? ''),
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Requiere vinculación'),
+            title: Text(tr('Requiere vinculación')),
             value: _item.requiresAttunement,
             onChanged: (v) => setState(() => _item.requiresAttunement = v),
           ),
@@ -732,14 +730,14 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
               Expanded(
                 child: TextField(
                   controller: _damage,
-                  decoration: const InputDecoration(labelText: 'Daño (1d8 cortante)'),
+                  decoration: InputDecoration(labelText: tr('Daño (1d8 cortante)')),
                 ),
               ),
               Gap.m,
               Expanded(
                 child: TextField(
                   controller: _ac,
-                  decoration: const InputDecoration(labelText: 'CA (armaduras)'),
+                  decoration: InputDecoration(labelText: tr('CA (armaduras)')),
                 ),
               ),
             ],
@@ -747,26 +745,26 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
           Gap.m,
           TextField(
             controller: _props,
-            decoration: const InputDecoration(labelText: 'Propiedades'),
+            decoration: InputDecoration(labelText: tr('Propiedades')),
           ),
           Gap.m,
           TextField(
             controller: _charges,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(labelText: 'Cargas máximas (vacío si no tiene)'),
+            decoration: InputDecoration(labelText: tr('Cargas máximas (vacío si no tiene)')),
           ),
           Gap.m,
           TextField(
             controller: _tags,
-            decoration: const InputDecoration(
-              labelText: 'Etiquetas para recetas',
-              hintText: 'hierba, metal, componente…',
-              helperText: 'Una receta que pida «hierba» aceptará cualquier objeto con esa etiqueta.',
+            decoration: InputDecoration(
+              labelText: tr('Etiquetas para recetas'),
+              hintText: tr('hierba, metal, componente…'),
+              helperText: tr('Una receta que pida «hierba» aceptará cualquier objeto con esa etiqueta.'),
             ),
           ),
           Gap.m,
-          Text('Icono', style: t.titleSmall),
+          Text(tr('Icono'), style: t.titleSmall),
           Gap.s,
           Wrap(
             spacing: 6,
@@ -790,16 +788,16 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
           ),
           if (widget.dmMode) ...[
             const Divider(height: 32),
-            Text('Opciones del máster', style: t.titleMedium?.copyWith(color: AppColors.gold)),
+            Text(tr('Opciones del máster'), style: t.titleMedium?.copyWith(color: AppColors.gold)),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Ocultar peso a los jugadores'),
+              title: Text(tr('Ocultar peso a los jugadores')),
               value: _item.hideWeight,
               onChanged: (v) => setState(() => _item.hideWeight = v),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Ocultar valor a los jugadores'),
+              title: Text(tr('Ocultar valor a los jugadores')),
               value: _item.hideValue,
               onChanged: (v) => setState(() => _item.hideValue = v),
             ),
@@ -807,16 +805,131 @@ class _ItemFormState extends ConsumerState<_ItemForm> {
               controller: _dmNote,
               minLines: 2,
               maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: 'Nota secreta del máster',
-                helperText: 'P. ej. la verdadera naturaleza del objeto. Los jugadores nunca la ven.',
+              decoration: InputDecoration(
+                labelText: tr('Nota secreta del máster'),
+                helperText: tr('P. ej. la verdadera naturaleza del objeto. Los jugadores nunca la ven.'),
               ),
             ),
           ],
           Gap.l,
-          FilledButton(onPressed: _save, child: const Text('Guardar')),
+          FilledButton(onPressed: _save, child: Text(tr('Guardar'))),
         ],
       ),
     );
   }
+}
+
+// ------------------------------------------------------------------ Visibilidad
+
+/// Icono según quién puede ver el objeto.
+class VisibilityIcon extends StatelessWidget {
+  const VisibilityIcon({super.key, required this.item, this.size = 24});
+  final InventoryItem item;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Icon(
+    switch (item.visibility) {
+      ItemVisibility.private => Icons.visibility_off,
+      ItemVisibility.party => Icons.visibility,
+      ItemVisibility.some => item.visibleTo.isEmpty ? Icons.visibility_off : Icons.group,
+    },
+    size: size,
+    color: item.shared ? AppColors.gold : AppColors.muted,
+  );
+}
+
+/// Descripción de quién ve el objeto ("Sólo tú", "Todo el grupo", "Ana y Luis").
+String visibilityText(BuildContext context, InventoryItem item) {
+  final s = SessionScope.read(context);
+  switch (item.visibility) {
+    case ItemVisibility.private:
+      return tr('Sólo tú (y el máster)');
+    case ItemVisibility.party:
+      return tr('Todo el grupo');
+    case ItemVisibility.some:
+      if (item.visibleTo.isEmpty) return tr('Sólo tú (y el máster)');
+      return tr('Tú, el máster y {0}', [item.visibleTo.map(s.campaign.memberName).join(', ')]);
+  }
+}
+
+/// Elige quién puede ver un objeto: nadie, todo el grupo o jugadores concretos.
+Future<void> showVisibilityPicker(BuildContext context, Character owner, InventoryItem item) async {
+  final s = SessionScope.read(context);
+  final others = s.campaign.members.where((m) => !m.banned && m.userId != owner.ownerId).toList();
+  var mode = item.visibility;
+  final chosen = {...item.visibleTo};
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) {
+        final t = Theme.of(ctx).textTheme;
+        return AlertDialog(
+          title: Text(tr('¿Quién puede ver «{0}»?', [item.name])),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RadioGroup<ItemVisibility>(
+                    groupValue: mode,
+                    onChanged: (v) => setState(() => mode = v ?? mode),
+                    child: Column(
+                      children: [
+                        RadioListTile<ItemVisibility>(
+                          contentPadding: EdgeInsets.zero,
+                          value: ItemVisibility.private,
+                          title: Text(tr('Sólo yo')),
+                        ),
+                        RadioListTile<ItemVisibility>(
+                          contentPadding: EdgeInsets.zero,
+                          value: ItemVisibility.party,
+                          title: Text(tr('Todo el grupo')),
+                        ),
+                        RadioListTile<ItemVisibility>(
+                          contentPadding: EdgeInsets.zero,
+                          value: ItemVisibility.some,
+                          title: Text(tr('Jugadores concretos')),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (mode == ItemVisibility.some) ...[
+                    if (others.isEmpty) Text(tr('Todavía no hay más jugadores en la partida.'), style: t.bodySmall),
+                    for (final m in others)
+                      CheckboxListTile(
+                        contentPadding: const EdgeInsets.only(left: 16),
+                        value: chosen.contains(m.userId),
+                        title: Text(m.name),
+                        subtitle: Text(
+                          s.campaign.charactersOf(m.userId).map((c) => c.name).join(', '),
+                          style: t.bodySmall,
+                        ),
+                        onChanged: (v) => setState(() => v == true ? chosen.add(m.userId) : chosen.remove(m.userId)),
+                      ),
+                  ],
+                  Gap.s,
+                  Text(tr('El máster siempre ve todo tu inventario.'), style: t.bodySmall),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(tr('Guardar'))),
+          ],
+        );
+      },
+    ),
+  );
+  if (result != true || !context.mounted) return;
+  final r = await s.editCharacter(owner.id, (c) {
+    final it = c.itemById(item.id);
+    if (it == null) return;
+    it.visibility = mode;
+    it.visibleTo = mode == ItemVisibility.some ? chosen.toList() : [];
+  });
+  if (!r.ok && context.mounted) showSnack(context, r.error ?? '', error: true);
 }

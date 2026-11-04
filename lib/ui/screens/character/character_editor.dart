@@ -11,6 +11,7 @@ import '../../../state/providers.dart';
 import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../../core/i18n.dart';
 
 const portraitChoices = [
   'hood',
@@ -115,7 +116,7 @@ class _CharacterEditorState extends ConsumerState<CharacterEditor> {
 
   Future<void> _save() async {
     if (_c.name.trim().isEmpty) {
-      showSnack(context, 'El personaje necesita un nombre', error: true);
+      showSnack(context, tr('El personaje necesita un nombre'), error: true);
       return;
     }
     setState(() => _saving = true);
@@ -125,7 +126,7 @@ class _CharacterEditorState extends ConsumerState<CharacterEditor> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (!r.ok) {
-      showSnack(context, r.error ?? 'No se pudo guardar', error: true);
+      showSnack(context, r.error ?? tr('No se pudo guardar'), error: true);
       return;
     }
     if (_isNew) s.selectCharacter(_c.id);
@@ -139,22 +140,18 @@ class _CharacterEditorState extends ConsumerState<CharacterEditor> {
     return DefaultTabController(
       length: 5,
       child: AppScaffold(
-        title: _isNew ? 'Nuevo personaje' : 'Editar ${_c.name}',
+        title: _isNew ? tr('Nuevo personaje') : tr('Editar {0}', [_c.name]),
         actions: [
-          TextButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: const Icon(Icons.save),
-            label: const Text('Guardar'),
-          ),
+          TextButton.icon(onPressed: _saving ? null : _save, icon: const Icon(Icons.save), label: Text(tr('Guardar'))),
         ],
-        bottom: const TabBar(
+        bottom: TabBar(
           isScrollable: true,
           tabs: [
-            Tab(text: 'Básico'),
-            Tab(text: 'Características'),
-            Tab(text: 'Competencias'),
-            Tab(text: 'Rasgos y ataques'),
-            Tab(text: 'Historia'),
+            Tab(text: tr('Básico')),
+            Tab(text: tr('Características')),
+            Tab(text: tr('Competencias')),
+            Tab(text: tr('Rasgos y ataques')),
+            Tab(text: tr('Historia')),
           ],
         ),
         body: TabBarView(
@@ -279,9 +276,9 @@ class _BasicTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _Field(label: 'Nombre', value: c.name, onChanged: (v) => c.name = v),
+        _Field(label: tr('Nombre'), value: c.name, onChanged: (v) => c.name = v),
         Gap.m,
-        Text('Retrato', style: t.titleSmall),
+        Text(tr('Retrato'), style: t.titleSmall),
         Gap.s,
         Wrap(
           spacing: 6,
@@ -310,7 +307,7 @@ class _BasicTab extends StatelessWidget {
               child: _Field(
                 label: ruleset.speciesLabel,
                 value: c.species,
-                suggestions: srd?.species ?? const [],
+                suggestions: srd?.species ?? [],
                 onChanged: (v) => c.species = v,
               ),
             ),
@@ -319,7 +316,7 @@ class _BasicTab extends StatelessWidget {
               child: _Field(
                 label: ruleset.subspeciesLabel,
                 value: c.subspecies,
-                suggestions: srd?.subspecies ?? const [],
+                suggestions: srd?.subspecies ?? [],
                 onChanged: (v) => c.subspecies = v,
               ),
             ),
@@ -330,9 +327,9 @@ class _BasicTab extends StatelessWidget {
           children: [
             Expanded(
               child: _Field(
-                label: 'Trasfondo',
+                label: tr('Trasfondo'),
                 value: c.background,
-                suggestions: srd?.backgrounds ?? const [],
+                suggestions: srd?.backgrounds ?? [],
                 onChanged: (v) => c.background = v,
               ),
             ),
@@ -340,7 +337,7 @@ class _BasicTab extends StatelessWidget {
             Expanded(
               child: DropdownButtonFormField<String>(
                 initialValue: alignments.contains(c.alignment) ? c.alignment : '',
-                decoration: const InputDecoration(labelText: 'Alineamiento'),
+                decoration: InputDecoration(labelText: tr('Alineamiento')),
                 items: [for (final a in alignments) DropdownMenuItem(value: a, child: Text(a.isEmpty ? '—' : a))],
                 onChanged: (v) => set(() => c.alignment = v ?? ''),
               ),
@@ -349,7 +346,7 @@ class _BasicTab extends StatelessWidget {
         ),
         Gap.m,
         _Field(
-          label: 'Puntos de experiencia',
+          label: tr('Puntos de experiencia'),
           value: '${c.xp}',
           number: true,
           onChanged: (v) => c.xp = int.tryParse(v) ?? 0,
@@ -357,12 +354,12 @@ class _BasicTab extends StatelessWidget {
         Gap.l,
         Row(
           children: [
-            Text('Clases (nivel total ${c.level})', style: t.titleMedium),
+            Text(tr('Clases (nivel total {0})', [c.level]), style: t.titleMedium),
             const Spacer(),
             TextButton.icon(
               onPressed: () => set(() => c.classes.add(ClassLevel(name: ''))),
               icon: const Icon(Icons.add),
-              label: Text(c.classes.isEmpty ? 'Añadir clase' : 'Multiclase'),
+              label: Text(c.classes.isEmpty ? tr('Añadir clase') : tr('Multiclase')),
             ),
           ],
         ),
@@ -377,33 +374,33 @@ class _BasicTab extends StatelessWidget {
                       Expanded(
                         child: _Field(
                           key: ValueKey('class-${c.classes.indexOf(cl)}'),
-                          label: 'Clase',
+                          label: tr('Clase'),
                           value: cl.name,
                           suggestions: [
                             ...?srd?.classes.map((x) => x.name),
-                            'Bárbaro',
-                            'Bardo',
-                            'Clérigo',
-                            'Druida',
-                            'Guerrero',
-                            'Monje',
-                            'Paladín',
-                            'Explorador',
-                            'Pícaro',
-                            'Hechicero',
-                            'Brujo',
-                            'Mago',
-                            'Artífice',
+                            tr('Bárbaro'),
+                            tr('Bardo'),
+                            tr('Clérigo'),
+                            tr('Druida'),
+                            tr('Guerrero'),
+                            tr('Monje'),
+                            tr('Paladín'),
+                            tr('Explorador'),
+                            tr('Pícaro'),
+                            tr('Hechicero'),
+                            tr('Brujo'),
+                            tr('Mago'),
+                            tr('Artífice'),
                           ],
                           onChanged: (v) => set(() => _onClassChosen(cl, v)),
                         ),
                       ),
                       Gap.s,
                       Expanded(
-                        child: _Field(label: 'Subclase', value: cl.subclass, onChanged: (v) => cl.subclass = v),
+                        child: _Field(label: tr('Subclase'), value: cl.subclass, onChanged: (v) => cl.subclass = v),
                       ),
                       IconButton(
-                        tooltip: 'Quitar clase',
+                        tooltip: tr('Quitar clase'),
                         onPressed: () => set(() => c.classes.remove(cl)),
                         icon: const Icon(Icons.close),
                       ),
@@ -411,14 +408,14 @@ class _BasicTab extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      const Text('Nivel'),
+                      Text(tr('Nivel')),
                       NumberStepper(value: cl.level, min: 1, max: 20, onChanged: (v) => set(() => cl.level = v)),
                       const Spacer(),
-                      const Text('Dado de golpe '),
+                      Text(tr('Dado de golpe ')),
                       DropdownButton<int>(
                         value: cl.hitDie,
                         items: [
-                          for (final d in [6, 8, 10, 12]) DropdownMenuItem(value: d, child: Text('d$d')),
+                          for (final d in [6, 8, 10, 12]) DropdownMenuItem(value: d, child: Text(tr('d{0}', [d]))),
                         ],
                         onChanged: (v) => set(() => cl.hitDie = v ?? cl.hitDie),
                       ),
@@ -429,14 +426,14 @@ class _BasicTab extends StatelessWidget {
             ),
           ),
         Gap.l,
-        Text('Combate', style: t.titleMedium),
+        Text(tr('Combate'), style: t.titleMedium),
         Gap.s,
         Row(
           children: [
             Expanded(
               child: _Field(
                 key: ValueKey('hp-${c.hpMax}'),
-                label: 'PG máximos',
+                label: tr('PG máximos'),
                 value: '${c.hpMax}',
                 number: true,
                 onChanged: (v) => c.hpMax = int.tryParse(v) ?? c.hpMax,
@@ -444,7 +441,7 @@ class _BasicTab extends StatelessWidget {
             ),
             TextButton(
               onPressed: c.classes.isEmpty ? null : () => set(() => c.hpMax = _averageHp()),
-              child: const Text('Media por nivel'),
+              child: Text(tr('Media por nivel')),
             ),
           ],
         ),
@@ -453,7 +450,7 @@ class _BasicTab extends StatelessWidget {
           children: [
             Expanded(
               child: _Field(
-                label: 'CA',
+                label: tr('CA'),
                 value: '${c.armorClass}',
                 number: true,
                 onChanged: (v) => c.armorClass = int.tryParse(v) ?? 10,
@@ -462,7 +459,7 @@ class _BasicTab extends StatelessWidget {
             Gap.m,
             Expanded(
               child: _Field(
-                label: 'Velocidad (pies)',
+                label: tr('Velocidad (pies)'),
                 value: '${c.speed}',
                 number: true,
                 onChanged: (v) => c.speed = int.tryParse(v) ?? 30,
@@ -475,17 +472,17 @@ class _BasicTab extends StatelessWidget {
           children: [
             Expanded(
               child: _Field(
-                label: 'Bonif. extra iniciativa',
+                label: tr('Bonif. extra iniciativa'),
                 value: '${c.initiativeBonus}',
                 number: true,
-                hint: 'Además de DES',
+                hint: tr('Además de DES'),
                 onChanged: (v) => c.initiativeBonus = int.tryParse(v) ?? 0,
               ),
             ),
             Gap.m,
             Expanded(
               child: _Field(
-                label: 'Bonif. extra Percepción pasiva',
+                label: tr('Bonif. extra Percepción pasiva'),
                 value: '${c.passivePerceptionBonus}',
                 number: true,
                 onChanged: (v) => c.passivePerceptionBonus = int.tryParse(v) ?? 0,
@@ -513,11 +510,11 @@ class _AbilitiesTab extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Puntuaciones', style: t.titleMedium),
+            Text(tr('Puntuaciones'), style: t.titleMedium),
             const Spacer(),
             TextButton.icon(
               icon: const GameIcon('dice', size: 18),
-              label: const Text('Tirar 4d6 ×6'),
+              label: Text(tr('Tirar 4d6 ×6')),
               onPressed: () {
                 final roller = DiceRoller();
                 final values = [for (var i = 0; i < 6; i++) roller.roll('4d6kh3').total]
@@ -525,12 +522,12 @@ class _AbilitiesTab extends StatelessWidget {
                 showDialog<void>(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Tus tiradas'),
+                    title: Text(tr('Tus tiradas')),
                     content: Text(
-                      '${values.join(' · ')}\n\nAsígnalas como quieras a cada característica.',
+                      tr('{0}\n\nAsígnalas como quieras a cada característica.', [values.join(' · ')]),
                       style: t.titleMedium,
                     ),
-                    actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Vale'))],
+                    actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Vale')))],
                   ),
                 );
               },
@@ -541,14 +538,14 @@ class _AbilitiesTab extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(a.label),
-            subtitle: Text('Modificador ${signed(c.mod(a))}'),
+            subtitle: Text(tr('Modificador {0}', [signed(c.mod(a))])),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 NumberStepper(value: c.score(a), min: 1, max: 30, onChanged: (v) => set(() => c.abilities[a] = v)),
                 Gap.s,
                 FilterChip(
-                  label: const Text('Salv.'),
+                  label: Text(tr('Salv.')),
                   selected: c.saveProficiencies.contains(a),
                   onSelected: (v) => set(() => v ? c.saveProficiencies.add(a) : c.saveProficiencies.remove(a)),
                 ),
@@ -556,8 +553,8 @@ class _AbilitiesTab extends StatelessWidget {
             ),
           ),
         const Divider(height: 32),
-        Text('Habilidades', style: t.titleMedium),
-        Text('Toca para cambiar: sin competencia → ½ → competente → pericia', style: t.bodySmall),
+        Text(tr('Habilidades'), style: t.titleMedium),
+        Text(tr('Toca para cambiar: sin competencia → ½ → competente → pericia'), style: t.bodySmall),
         Gap.s,
         for (final sk in List.of(Skill.values)..sort((a, b) => a.label.compareTo(b.label)))
           ListTile(
@@ -602,32 +599,32 @@ class _ProficienciesTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         _Field(
-          label: 'Armaduras',
+          label: tr('Armaduras'),
           value: c.armorProficiencies,
-          hint: 'Ligeras, medias, escudos…',
+          hint: tr('Ligeras, medias, escudos…'),
           onChanged: (v) => c.armorProficiencies = v,
         ),
         Gap.m,
         _Field(
-          label: 'Armas',
+          label: tr('Armas'),
           value: c.weaponProficiencies,
-          hint: 'Sencillas, marciales…',
+          hint: tr('Sencillas, marciales…'),
           onChanged: (v) => c.weaponProficiencies = v,
         ),
         Gap.m,
-        _Field(label: 'Idiomas', value: c.languages, onChanged: (v) => c.languages = v),
+        _Field(label: tr('Idiomas'), value: c.languages, onChanged: (v) => c.languages = v),
         if (ruleset == Ruleset.v2024) ...[
           Gap.m,
           _Field(
-            label: 'Maestrías de armas',
+            label: tr('Maestrías de armas'),
             value: c.weaponMasteries,
-            hint: 'Espada larga (Sap), Arco largo (Slow)…',
+            hint: tr('Espada larga (Sap), Arco largo (Slow)…'),
             onChanged: (v) => c.weaponMasteries = v,
           ),
         ],
         Gap.l,
-        Text('Herramientas', style: t.titleMedium),
-        Text('Se usan para la artesanía: escribe el nombre en castellano o en inglés.', style: t.bodySmall),
+        Text(tr('Herramientas'), style: t.titleMedium),
+        Text(tr('Se usan para la artesanía: escribe el nombre en castellano o en inglés.'), style: t.bodySmall),
         Gap.s,
         Wrap(
           spacing: 6,
@@ -637,19 +634,19 @@ class _ProficienciesTab extends StatelessWidget {
               InputChip(label: Text(tool), onDeleted: () => set(() => c.toolProficiencies.remove(tool))),
             ActionChip(
               avatar: const Icon(Icons.add, size: 18),
-              label: const Text('Añadir'),
+              label: Text(tr('Añadir')),
               onPressed: () async {
                 final chosen = await showDialog<String>(
                   context: context,
                   builder: (ctx) => SimpleDialog(
-                    title: const Text('Herramienta'),
+                    title: Text(tr('Herramienta')),
                     children: [
                       SimpleDialogOption(
                         onPressed: () async {
-                          final v = await promptText(ctx, 'Otra herramienta');
+                          final v = await promptText(ctx, tr('Otra herramienta'));
                           if (ctx.mounted) Navigator.pop(ctx, v);
                         },
-                        child: const Text('Escribir otra…'),
+                        child: Text(tr('Escribir otra…')),
                       ),
                       for (final s in artisanToolSuggestions)
                         SimpleDialogOption(onPressed: () => Navigator.pop(ctx, s), child: Text(s)),
@@ -685,7 +682,7 @@ class _FeaturesTab extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: Text(initial == null ? 'Nuevo rasgo' : 'Editar rasgo'),
+          title: Text(initial == null ? tr('Nuevo rasgo') : tr('Editar rasgo')),
           content: SizedBox(
             width: 460,
             child: SingleChildScrollView(
@@ -694,23 +691,23 @@ class _FeaturesTab extends StatelessWidget {
                 children: [
                   TextField(
                     controller: name,
-                    decoration: const InputDecoration(labelText: 'Nombre'),
+                    decoration: InputDecoration(labelText: tr('Nombre')),
                   ),
                   Gap.s,
                   TextField(
                     controller: source,
-                    decoration: const InputDecoration(labelText: 'Origen (clase, dote, especie…)'),
+                    decoration: InputDecoration(labelText: tr('Origen (clase, dote, especie…)')),
                   ),
                   Gap.s,
                   TextField(
                     controller: uses,
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Usos máximos (vacío = sin límite)'),
+                    decoration: InputDecoration(labelText: tr('Usos máximos (vacío = sin límite)')),
                   ),
                   Gap.s,
                   DropdownButtonFormField<Recharge>(
                     initialValue: recharge,
-                    decoration: const InputDecoration(labelText: 'Se recupera con'),
+                    decoration: InputDecoration(labelText: tr('Se recupera con')),
                     items: [for (final r in Recharge.values) DropdownMenuItem(value: r, child: Text(r.label))],
                     onChanged: (v) => setState(() => recharge = v ?? recharge),
                   ),
@@ -719,14 +716,14 @@ class _FeaturesTab extends StatelessWidget {
                     controller: desc,
                     minLines: 3,
                     maxLines: 10,
-                    decoration: const InputDecoration(labelText: 'Descripción'),
+                    decoration: InputDecoration(labelText: tr('Descripción')),
                   ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
             FilledButton(
               onPressed: () {
                 if (name.text.trim().isEmpty) return;
@@ -739,7 +736,7 @@ class _FeaturesTab extends StatelessWidget {
                 if (f.maxUses != null && f.used > f.maxUses!) f.used = f.maxUses!;
                 Navigator.pop(ctx, f);
               },
-              child: const Text('Guardar'),
+              child: Text(tr('Guardar')),
             ),
           ],
         ),
@@ -756,7 +753,7 @@ class _FeaturesTab extends StatelessWidget {
     return showDialog<Attack>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ataque'),
+        title: Text(tr('Ataque')),
         content: SizedBox(
           width: 420,
           child: Column(
@@ -764,28 +761,28 @@ class _FeaturesTab extends StatelessWidget {
             children: [
               TextField(
                 controller: name,
-                decoration: const InputDecoration(labelText: 'Nombre'),
+                decoration: InputDecoration(labelText: tr('Nombre')),
               ),
               Gap.s,
               TextField(
                 controller: bonus,
-                decoration: const InputDecoration(labelText: 'Bonificador de ataque', hintText: '+5'),
+                decoration: InputDecoration(labelText: tr('Bonificador de ataque'), hintText: '+5'),
               ),
               Gap.s,
               TextField(
                 controller: damage,
-                decoration: const InputDecoration(labelText: 'Daño', hintText: '1d8+3 cortante'),
+                decoration: InputDecoration(labelText: tr('Daño'), hintText: tr('1d8+3 cortante')),
               ),
               Gap.s,
               TextField(
                 controller: notes,
-                decoration: const InputDecoration(labelText: 'Notas'),
+                decoration: InputDecoration(labelText: tr('Notas')),
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
           FilledButton(
             onPressed: () {
               if (name.text.trim().isEmpty) return;
@@ -796,7 +793,7 @@ class _FeaturesTab extends StatelessWidget {
                 ..notes = notes.text.trim();
               Navigator.pop(ctx, a);
             },
-            child: const Text('Guardar'),
+            child: Text(tr('Guardar')),
           ),
         ],
       ),
@@ -804,12 +801,12 @@ class _FeaturesTab extends StatelessWidget {
   }
 
   Future<void> _addFeat(BuildContext context) async {
-    final feats = srd?.feats ?? const <Feat>[];
+    final feats = srd?.feats ?? <Feat>[];
     if (feats.isEmpty) return;
     final chosen = await showDialog<Feat>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Dotes del SRD'),
+        title: Text(tr('Dotes del SRD')),
         children: [
           for (final f in feats) SimpleDialogOption(onPressed: () => Navigator.pop(ctx, f), child: Text(f.name)),
         ],
@@ -832,10 +829,10 @@ class _FeaturesTab extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Rasgos, dotes y recursos', style: t.titleMedium),
+            Text(tr('Rasgos, dotes y recursos'), style: t.titleMedium),
             const Spacer(),
-            if ((srd?.feats ?? const []).isNotEmpty)
-              TextButton(onPressed: () => _addFeat(context), child: const Text('Dote SRD')),
+            if ((srd?.feats ?? []).isNotEmpty)
+              TextButton(onPressed: () => _addFeat(context), child: Text(tr('Dote SRD'))),
             IconButton(
               icon: const Icon(Icons.add),
               onPressed: () async {
@@ -852,7 +849,7 @@ class _FeaturesTab extends StatelessWidget {
             subtitle: Text(
               [
                 f.source,
-                if (f.maxUses != null) '${f.maxUses} usos · ${f.recharge.label}',
+                if (f.maxUses != null) tr('{0} usos · {1}', [f.maxUses, f.recharge.label]),
               ].where((x) => x.isNotEmpty).join(' · '),
             ),
             onTap: () async {
@@ -867,7 +864,7 @@ class _FeaturesTab extends StatelessWidget {
         const Divider(height: 32),
         Row(
           children: [
-            Text('Ataques', style: t.titleMedium),
+            Text(tr('Ataques'), style: t.titleMedium),
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.add),
@@ -878,7 +875,7 @@ class _FeaturesTab extends StatelessWidget {
             ),
           ],
         ),
-        Text('Las armas equipadas con daño también aparecen en la ficha.', style: t.bodySmall),
+        Text(tr('Las armas equipadas con daño también aparecen en la ficha.'), style: t.bodySmall),
         for (final a in c.attacks)
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -910,17 +907,22 @@ class _StoryTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _Field(label: 'Rasgos de personalidad', value: c.personality, lines: 2, onChanged: (v) => c.personality = v),
+        _Field(
+          label: tr('Rasgos de personalidad'),
+          value: c.personality,
+          lines: 2,
+          onChanged: (v) => c.personality = v,
+        ),
         Gap.m,
-        _Field(label: 'Ideales', value: c.ideals, lines: 2, onChanged: (v) => c.ideals = v),
+        _Field(label: tr('Ideales'), value: c.ideals, lines: 2, onChanged: (v) => c.ideals = v),
         Gap.m,
-        _Field(label: 'Vínculos', value: c.bonds, lines: 2, onChanged: (v) => c.bonds = v),
+        _Field(label: tr('Vínculos'), value: c.bonds, lines: 2, onChanged: (v) => c.bonds = v),
         Gap.m,
-        _Field(label: 'Defectos', value: c.flaws, lines: 2, onChanged: (v) => c.flaws = v),
+        _Field(label: tr('Defectos'), value: c.flaws, lines: 2, onChanged: (v) => c.flaws = v),
         Gap.m,
-        _Field(label: 'Apariencia', value: c.appearance, lines: 2, onChanged: (v) => c.appearance = v),
+        _Field(label: tr('Apariencia'), value: c.appearance, lines: 2, onChanged: (v) => c.appearance = v),
         Gap.m,
-        _Field(label: 'Historia', value: c.backstory, lines: 6, onChanged: (v) => c.backstory = v),
+        _Field(label: tr('Historia'), value: c.backstory, lines: 6, onChanged: (v) => c.backstory = v),
       ],
     );
   }

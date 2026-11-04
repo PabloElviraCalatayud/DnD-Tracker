@@ -1,3 +1,4 @@
+import '../domain/board.dart';
 import '../domain/campaign.dart';
 import '../domain/character.dart';
 import '../domain/chat.dart';
@@ -27,8 +28,10 @@ class ViewFilter {
     return c;
   }
 
-  /// Resumen que ven los compañeros de grupo.
-  static Character partySummary(Character full, CampaignSettings s) {
+  /// Resumen que ven los compañeros de grupo ([viewerId]). Los PG y estados
+  /// de los personajes jugadores son públicos; los objetos, sólo los que su
+  /// dueño ha decidido enseñar a ese jugador.
+  static Character partySummary(Character full, CampaignSettings s, String viewerId) {
     return Character(
       id: full.id,
       ownerId: full.ownerId,
@@ -44,11 +47,10 @@ class ViewFilter {
       inspiration: full.inspiration,
       armorClass: full.armorClass,
       speed: full.speed,
-      hpMax: s.showPartyHp ? full.hpMax : 0,
-      hpCurrent: s.showPartyHp ? full.hpCurrent : 0,
-      hpTemp: s.showPartyHp ? full.hpTemp : 0,
-      hpHidden: !s.showPartyHp,
-      inventory: full.inventory.where((i) => i.shared).map((i) => redactItem(i, s)).toList(),
+      hpMax: full.hpMax,
+      hpCurrent: full.hpCurrent,
+      hpTemp: full.hpTemp,
+      inventory: full.inventory.where((i) => i.isVisibleTo(viewerId)).map((i) => redactItem(i, s)).toList(),
       currency: full.shareCurrency ? full.currency.copy() : Currency(),
       shareCurrency: full.shareCurrency,
       isSummary: true,
@@ -56,6 +58,8 @@ class ViewFilter {
     );
   }
 
+  /// Combate visto por un jugador: sin criaturas ocultas y sin PG ni CA de
+  /// los enemigos (sólo las etiquetas que ponga el máster).
   static Encounter encounterFor(Campaign full, String userId) {
     final e = full.encounter;
     if (!e.visibleToPlayers) return Encounter(visibleToPlayers: false);
@@ -67,18 +71,13 @@ class ViewFilter {
       copy.notes = '';
       if (copy.kind == CombatantKind.pc) {
         final ch = copy.characterId == null ? null : full.character(copy.characterId!);
-        final own = ch != null && ch.ownerId == userId;
-        if (ch != null) copy.conditions = List.of(ch.conditions);
-        if (ch != null && (own || full.settings.showPartyHp)) {
+        if (ch != null) {
+          copy.conditions = List.of(ch.conditions);
           copy.hp = ch.hpCurrent;
           copy.hpMax = ch.hpMax;
           copy.ac = ch.armorClass;
-        } else {
-          copy.hp = null;
-          copy.hpMax = null;
         }
-      } else if (!full.settings.showMonsterHp) {
-        copy.status = Combatant.healthStatus(c.hp ?? 0, c.hpMax ?? 0);
+      } else {
         copy.hp = null;
         copy.hpMax = null;
         copy.ac = null;
@@ -103,6 +102,17 @@ class ViewFilter {
     return Encounter(active: e.active, round: e.round, turn: turn, combatants: visible, visibleToPlayers: true);
   }
 
+  /// Tablero visto por un jugador: sin fichas ocultas.
+  static Board boardFor(Campaign full) {
+    final hiddenCombatants = {
+      for (final c in full.encounter.combatants)
+        if (c.hidden) c.id,
+    };
+    final b = full.board.copy();
+    b.tokens.removeWhere((t) => t.hidden || (t.combatantId != null && hiddenCombatants.contains(t.combatantId)));
+    return b;
+  }
+
   /// Vista de la partida para un jugador.
   static Campaign forPlayer(Campaign full, String userId, {Iterable<String> online = const []}) {
     final s = full.settings;
@@ -122,7 +132,9 @@ class ViewFilter {
             (m) => Member(userId: m.userId, name: m.name, role: m.role, joinedAt: m.joinedAt, lastSeenAt: m.lastSeenAt),
           )
           .toList(),
-      characters: [for (final c in full.characters) ownIds.contains(c.id) ? ownCharacter(c, s) : partySummary(c, s)],
+      characters: [
+        for (final c in full.characters) ownIds.contains(c.id) ? ownCharacter(c, s) : partySummary(c, s, userId),
+      ],
       recipes: full.recipes.where((r) => r.availableToAll || r.characterIds.any(ownIds.contains)).map((r) {
         final copy = r.copy();
         copy.result = redactItem(r.result, s);
@@ -131,6 +143,7 @@ class ViewFilter {
         return copy;
       }).toList(),
       encounter: encounterFor(full, userId),
+      board: boardFor(full),
       notes: full.notes.where((n) => n.shared).map((n) => CampaignNote.fromJson(n.toJson())).toList(),
       chat: ChatState(channels: [], messages: []),
       createdAt: full.createdAt,

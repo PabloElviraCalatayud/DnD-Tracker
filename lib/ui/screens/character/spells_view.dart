@@ -12,6 +12,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../shared/dice_roller.dart';
 import 'character_views.dart';
+import '../../../core/i18n.dart';
 
 String spellLevelLabel(int level) => level == 0 ? 'Trucos' : 'Nivel $level';
 
@@ -76,14 +77,14 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
           ? FloatingActionButton.extended(
               onPressed: () => _addSpell(context, c, srd),
               icon: const Icon(Icons.add),
-              label: const Text('Conjuro'),
+              label: Text(tr('Conjuro')),
             )
           : null,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
         children: [
           SectionCard(
-            title: 'Lanzamiento de conjuros',
+            title: tr('Lanzamiento de conjuros'),
             icon: 'magic_swirl',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +99,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                         width: 190,
                         child: DropdownButtonFormField<Ability?>(
                           initialValue: sc.ability,
-                          decoration: const InputDecoration(labelText: 'Característica'),
+                          decoration: InputDecoration(labelText: tr('Característica')),
                           items: [
                             const DropdownMenuItem(value: null, child: Text('—')),
                             for (final a in [Ability.intl, Ability.wis, Ability.cha])
@@ -109,20 +110,24 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                       )
                     else if (sc.ability != null)
                       Text(sc.ability!.label, style: t.titleSmall),
-                    StatBox(label: 'CD salvación', value: sc.ability == null ? '—' : '${c.spellSaveDc}', width: 100),
                     StatBox(
-                      label: 'Ataque',
+                      label: tr('CD salvación'),
+                      value: sc.ability == null ? '—' : '${c.spellSaveDc}',
+                      width: 100,
+                    ),
+                    StatBox(
+                      label: tr('Ataque'),
                       value: sc.ability == null ? '—' : signed(c.spellAttackBonus),
                       onTap: sc.ability == null
                           ? null
                           : () => showD20Roll(
                               context,
-                              'Ataque de conjuro',
+                              tr('Ataque de conjuro'),
                               c.spellAttackBonus + s.campaign.rules.exhaustionD20Penalty(c.exhaustion),
                             ),
                     ),
                     StatBox(
-                      label: 'Preparados',
+                      label: tr('Preparados'),
                       value: '${sc.preparedCount}${limit != null ? '/$limit' : ''}',
                       highlight: limit != null && sc.preparedCount > limit,
                       width: 100,
@@ -134,7 +139,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                   Gap.s,
                   InputChip(
                     avatar: const GameIcon('brain', size: 18, color: AppColors.arcane),
-                    label: Text('Concentrado en: ${sc.concentratingOn}'),
+                    label: Text(tr('Concentrado en: {0}', [sc.concentratingOn])),
                     onDeleted: editable
                         ? () => editCharacter(context, c.id, (x) => x.spellcasting.concentratingOn = '')
                         : null,
@@ -144,13 +149,13 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
             ),
           ),
           SectionCard(
-            title: 'Espacios de conjuro',
+            title: tr('Espacios de conjuro'),
             icon: 'crystal_ball',
             trailing: editable
-                ? TextButton(onPressed: () => _autoSlots(context, c, rs, srd), child: const Text('Calcular por clase'))
+                ? TextButton(onPressed: () => _autoSlots(context, c, rs, srd), child: Text(tr('Calcular por clase')))
                 : null,
             child: !sc.hasSlots
-                ? Text('Sin espacios. Pulsa «Calcular por clase» o edítalos a mano.', style: t.bodySmall)
+                ? Text(tr('Sin espacios. Pulsa «Calcular por clase» o edítalos a mano.'), style: t.bodySmall)
                 : Column(
                     children: [
                       for (var i = 0; i < 9; i++)
@@ -162,12 +167,12 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
           ),
           Row(
             children: [
-              Text('Conjuros (${sc.spells.length})', style: t.titleLarge),
+              Text(tr('Conjuros ({0})', [sc.spells.length]), style: t.titleLarge),
               const Spacer(),
               SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('Todos')),
-                  ButtonSegment(value: true, label: Text('Preparados')),
+                segments: [
+                  ButtonSegment(value: false, label: Text(tr('Todos'))),
+                  ButtonSegment(value: true, label: Text(tr('Preparados'))),
                 ],
                 selected: {_onlyReady},
                 onSelectionChanged: (v) => setState(() => _onlyReady = v.first),
@@ -178,8 +183,8 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
           if (spells.isEmpty)
             EmptyState(
               icon: 'spell_book',
-              title: _onlyReady ? 'Nada preparado' : 'Libro de conjuros vacío',
-              message: 'Añade conjuros del SRD (filtrados por tu clase) o crea los tuyos.',
+              title: _onlyReady ? tr('Nada preparado') : tr('Libro de conjuros vacío'),
+              message: tr('Añade conjuros del SRD (filtrados por tu clase) o crea los tuyos.'),
             ),
           for (final lvl in levels)
             SectionCard(
@@ -204,13 +209,13 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                         children: [
                           Flexible(child: Text(sp.name)),
                           if (sp.concentration)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 6),
-                              child: Pill('C', color: AppColors.arcane),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Pill(tr('C'), color: AppColors.arcane),
                             ),
-                          if (sp.ritual) const Padding(padding: EdgeInsets.only(left: 4), child: Pill('R')),
+                          if (sp.ritual) Padding(padding: const EdgeInsets.only(left: 4), child: Pill(tr('R'))),
                           if (sp.alwaysPrepared)
-                            const Padding(padding: EdgeInsets.only(left: 4), child: Pill('siempre')),
+                            Padding(padding: const EdgeInsets.only(left: 4), child: Pill(tr('siempre'))),
                         ],
                       ),
                       subtitle: Text(
@@ -230,9 +235,9 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
   Future<void> _editLimit(BuildContext context, Character c, int? suggested) async {
     final v = await promptNumber(
       context,
-      'Límite de conjuros preparados',
+      tr('Límite de conjuros preparados'),
       initial: c.spellcasting.preparedLimit ?? suggested,
-      hint: 'Vacío = usar el sugerido por la edición (${suggested ?? '—'})',
+      hint: tr('Vacío = usar el sugerido por la edición ({0})', [suggested ?? '—']),
     );
     if (!context.mounted) return;
     await editCharacter(context, c.id, (x) => x.spellcasting.preparedLimit = v);
@@ -279,17 +284,20 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (sp.castingTime.isNotEmpty) StatBox(label: 'Tiempo', value: sp.castingTime, width: 130),
-                if (sp.range.isNotEmpty) StatBox(label: 'Alcance', value: sp.range, width: 130),
-                if (sp.duration.isNotEmpty) StatBox(label: 'Duración', value: sp.duration, width: 150),
+                if (sp.castingTime.isNotEmpty) StatBox(label: tr('Tiempo'), value: sp.castingTime, width: 130),
+                if (sp.range.isNotEmpty) StatBox(label: tr('Alcance'), value: sp.range, width: 130),
+                if (sp.duration.isNotEmpty) StatBox(label: tr('Duración'), value: sp.duration, width: 150),
               ],
             ),
-            if (sp.components.isNotEmpty) ...[Gap.s, Text('Componentes: ${sp.components}', style: t.bodySmall)],
+            if (sp.components.isNotEmpty) ...[
+              Gap.s,
+              Text(tr('Componentes: {0}', [sp.components]), style: t.bodySmall),
+            ],
             Gap.m,
             if (sp.description.isNotEmpty) RichDescription(sp.description),
             if (sp.higherLevels.isNotEmpty) ...[
               Gap.s,
-              Text('A niveles superiores', style: t.titleSmall?.copyWith(color: AppColors.gold)),
+              Text(tr('A niveles superiores'), style: t.titleSmall?.copyWith(color: AppColors.gold)),
               RichDescription(sp.higherLevels),
             ],
             if (editable) ...[
@@ -300,7 +308,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                 children: [
                   FilledButton.icon(
                     icon: const GameIcon('fire_spell', size: 18, color: AppColors.background),
-                    label: const Text('Lanzar'),
+                    label: Text(tr('Lanzar')),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       await _cast(context, c, sp);
@@ -309,7 +317,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Quitar'),
+                    label: Text(tr('Quitar')),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       await s.editCharacter(c.id, (x) => x.spellcasting.spells.removeWhere((y) => y.id == sp.id));
@@ -337,26 +345,26 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
       if (options.isEmpty) {
         final ok = await confirm(
           context,
-          'Sin espacios',
-          'No te quedan espacios de nivel ${sp.level} o superior. ¿Lanzarlo igualmente (ritual, objeto…)?',
-          ok: 'Lanzar',
+          tr('Sin espacios'),
+          tr('No te quedan espacios de nivel {0} o superior. ¿Lanzarlo igualmente (ritual, objeto…)?', [sp.level]),
+          ok: tr('Lanzar'),
         );
         if (!ok) return;
       } else {
         final chosen = await showDialog<(int, bool)>(
           context: context,
           builder: (ctx) => SimpleDialog(
-            title: Text('Lanzar ${sp.name}'),
+            title: Text(tr('Lanzar {0}', [sp.name])),
             children: [
               for (final o in options)
                 SimpleDialogOption(
                   onPressed: () => Navigator.pop(ctx, o),
-                  child: Text(o.$2 ? 'Espacio de pacto (nivel ${o.$1})' : 'Espacio de nivel ${o.$1}'),
+                  child: Text(o.$2 ? tr('Espacio de pacto (nivel {0})', [o.$1]) : tr('Espacio de nivel {0}', [o.$1])),
                 ),
               if (sp.ritual)
                 SimpleDialogOption(
                   onPressed: () => Navigator.pop(ctx, (0, false)),
-                  child: const Text('Como ritual (sin espacio)'),
+                  child: Text(tr('Como ritual (sin espacio)')),
                 ),
             ],
           ),
@@ -370,9 +378,9 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
     if (sp.concentration && sc.concentratingOn.isNotEmpty && sc.concentratingOn != sp.name) {
       final ok = await confirm(
         context,
-        'Concentración',
-        'Ya te estás concentrando en ${sc.concentratingOn}. Si lanzas ${sp.name} perderás ese efecto.',
-        ok: 'Lanzar',
+        tr('Concentración'),
+        tr('Ya te estás concentrando en {0}. Si lanzas {1} perderás ese efecto.', [sc.concentratingOn, sp.name]),
+        ok: tr('Lanzar'),
       );
       if (!ok || !context.mounted) return;
     }
@@ -385,7 +393,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
       if (sp.concentration) x.spellcasting.concentratingOn = sp.name;
     });
     if (context.mounted) {
-      showSnack(context, '${sp.name} lanzado${slotLevel > 0 ? ' con un espacio de nivel $slotLevel' : ''}');
+      showSnack(context, tr('{0} lanzado{1}', [sp.name, slotLevel > 0 ? ' con un espacio de nivel $slotLevel' : '']));
     }
   }
 
@@ -399,12 +407,12 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
           children: [
             ListTile(
               leading: const GameIcon('spell_book', size: 26),
-              title: Text('Del ${s.campaign.ruleset.srdName}'),
+              title: Text(tr('Del {0}', [s.campaign.ruleset.srdName])),
               onTap: () => Navigator.pop(ctx, 'srd'),
             ),
             ListTile(
               leading: const GameIcon('quill', size: 26),
-              title: const Text('Conjuro personalizado'),
+              title: Text(tr('Conjuro personalizado')),
               onTap: () => Navigator.pop(ctx, 'custom'),
             ),
           ],
@@ -437,16 +445,16 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
   Future<CharacterSpell?> _customSpellDialog(BuildContext context) async {
     final name = TextEditingController();
     final desc = TextEditingController();
-    final time = TextEditingController(text: '1 acción');
+    final time = TextEditingController(text: tr('1 acción'));
     final range = TextEditingController();
-    final duration = TextEditingController(text: 'Instantáneo');
+    final duration = TextEditingController(text: tr('Instantáneo'));
     var level = 1;
     var conc = false;
     return showDialog<CharacterSpell>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Conjuro personalizado'),
+          title: Text(tr('Conjuro personalizado')),
           content: SizedBox(
             width: 460,
             child: SingleChildScrollView(
@@ -455,48 +463,48 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                 children: [
                   TextField(
                     controller: name,
-                    decoration: const InputDecoration(labelText: 'Nombre'),
+                    decoration: InputDecoration(labelText: tr('Nombre')),
                   ),
                   Gap.s,
                   Row(
                     children: [
-                      const Text('Nivel'),
+                      Text(tr('Nivel')),
                       const Spacer(),
                       NumberStepper(value: level, max: 9, onChanged: (v) => setState(() => level = v)),
                     ],
                   ),
                   TextField(
                     controller: time,
-                    decoration: const InputDecoration(labelText: 'Tiempo de lanzamiento'),
+                    decoration: InputDecoration(labelText: tr('Tiempo de lanzamiento')),
                   ),
                   Gap.s,
                   TextField(
                     controller: range,
-                    decoration: const InputDecoration(labelText: 'Alcance'),
+                    decoration: InputDecoration(labelText: tr('Alcance')),
                   ),
                   Gap.s,
                   TextField(
                     controller: duration,
-                    decoration: const InputDecoration(labelText: 'Duración'),
+                    decoration: InputDecoration(labelText: tr('Duración')),
                   ),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: conc,
-                    title: const Text('Concentración'),
+                    title: Text(tr('Concentración')),
                     onChanged: (v) => setState(() => conc = v ?? false),
                   ),
                   TextField(
                     controller: desc,
                     minLines: 3,
                     maxLines: 8,
-                    decoration: const InputDecoration(labelText: 'Descripción'),
+                    decoration: InputDecoration(labelText: tr('Descripción')),
                   ),
                 ],
               ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
             FilledButton(
               onPressed: () {
                 if (name.text.trim().isEmpty) return;
@@ -513,7 +521,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
                   ),
                 );
               },
-              child: const Text('Añadir'),
+              child: Text(tr('Añadir')),
             ),
           ],
         ),
@@ -538,14 +546,14 @@ class _SlotRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          SizedBox(width: 110, child: Text(pact ? 'Pacto (niv. $level)' : 'Nivel $level')),
+          SizedBox(width: 110, child: Text(pact ? tr('Pacto (niv. {0})', [level]) : tr('Nivel {0}', [level]))),
           Expanded(
             child: Wrap(
               children: [
                 for (var i = 0; i < max; i++)
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    tooltip: i < max - used ? 'Disponible (toca para gastar)' : 'Gastado (toca para recuperar)',
+                    tooltip: i < max - used ? tr('Disponible (toca para gastar)') : 'Gastado (toca para recuperar)',
                     onPressed: editable
                         ? () => editCharacter(context, character.id, (x) {
                             final available = i < max - used;
@@ -609,21 +617,21 @@ class _SpellBrowserState extends State<SpellBrowser> {
       return q.isEmpty || sp.name.toLowerCase().contains(q);
     }).toList();
     return AppScaffold(
-      title: widget.picking ? 'Añadir conjuros' : 'Conjuros (${widget.srd.ruleset.srdName})',
+      title: widget.picking ? tr('Añadir conjuros') : tr('Conjuros ({0})', [widget.srd.ruleset.srdName]),
       actions: [
         if (widget.picking)
           TextButton(
             onPressed: _selected.isEmpty
                 ? null
                 : () => Navigator.pop(context, widget.srd.spells.where((s) => _selected.contains(s.id)).toList()),
-            child: Text('Añadir (${_selected.length})'),
+            child: Text(tr('Añadir ({0})', [_selected.length])),
           ),
       ],
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: SearchField(onChanged: (v) => setState(() => _query = v), hint: 'Buscar conjuro (en inglés)'),
+            child: SearchField(onChanged: (v) => setState(() => _query = v), hint: tr('Buscar conjuro (en inglés)')),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -632,9 +640,9 @@ class _SpellBrowserState extends State<SpellBrowser> {
                 Expanded(
                   child: DropdownButtonFormField<String?>(
                     initialValue: _class,
-                    decoration: const InputDecoration(labelText: 'Clase'),
+                    decoration: InputDecoration(labelText: tr('Clase')),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Todas')),
+                      DropdownMenuItem(value: null, child: Text(tr('Todas'))),
                       for (final n in classNames) DropdownMenuItem(value: n, child: Text(n)),
                     ],
                     onChanged: (v) => setState(() => _class = v),
@@ -644,9 +652,9 @@ class _SpellBrowserState extends State<SpellBrowser> {
                 Expanded(
                   child: DropdownButtonFormField<int?>(
                     initialValue: _level,
-                    decoration: const InputDecoration(labelText: 'Nivel'),
+                    decoration: InputDecoration(labelText: tr('Nivel')),
                     items: [
-                      const DropdownMenuItem(value: null, child: Text('Todos')),
+                      DropdownMenuItem(value: null, child: Text(tr('Todos'))),
                       for (var l = 0; l <= 9; l++) DropdownMenuItem(value: l, child: Text(spellLevelLabel(l))),
                     ],
                     onChanged: (v) => setState(() => _level = v),
@@ -692,19 +700,19 @@ class _SpellBrowserState extends State<SpellBrowser> {
                             children: [
                               Text('${spellLevelLabel(sp.level)} · ${sp.school}', style: t.bodySmall),
                               Text('${sp.time} · ${sp.range} · ${sp.duration}', style: t.bodySmall),
-                              Text('Componentes: ${sp.componentsFull}', style: t.bodySmall),
-                              Text('Clases: ${sp.classes.join(', ')}', style: t.bodySmall),
+                              Text(tr('Componentes: {0}', [sp.componentsFull]), style: t.bodySmall),
+                              Text(tr('Clases: {0}', [sp.classes.join(', ')]), style: t.bodySmall),
                               Gap.s,
                               RichDescription(sp.description),
                               if (sp.higher.isNotEmpty) ...[
                                 Gap.s,
-                                RichDescription('**A niveles superiores.** ${sp.higher}'),
+                                RichDescription(tr('**A niveles superiores.** {0}', [sp.higher])),
                               ],
                             ],
                           ),
                         ),
                       ),
-                      actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar'))],
+                      actions: [FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cerrar')))],
                     ),
                   ),
                 );

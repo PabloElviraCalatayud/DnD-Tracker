@@ -17,6 +17,8 @@ dependencies:
   path_provider: ^2.1.6
   flutter_svg: ^2.3.2
   flutter_markdown_plus: ^1.0.12
+  file_selector: ^1.1.0
+  image: ^4.12.0
 
 dev_dependencies:
   flutter_test:

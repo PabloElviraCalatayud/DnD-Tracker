@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import '../core/json.dart';
 import '../domain/campaign.dart';
@@ -167,6 +168,19 @@ class AppStorage {
 
   Future<void> saveNotes(String campaignId, List<PlayerNote> notes) =>
       _writeJson(_file('notes', '${_safe(campaignId)}.json'), {'notes': notes.map((n) => n.toJson()).toList()});
+
+  // ------------------------------------------------------------ Imágenes
+
+  /// Imágenes de mapas y fichas. Los ids son únicos y el contenido no cambia,
+  /// así que el mismo directorio sirve de almacén (máster) y de caché (jugador).
+  Future<void> saveAsset(String id, List<int> bytes) =>
+      _file('assets', '${_safe(id)}.bin').writeAsBytes(bytes, flush: true);
+
+  Future<Uint8List?> loadAsset(String id) async {
+    final f = _file('assets', '${_safe(id)}.bin');
+    if (!await f.exists()) return null;
+    return f.readAsBytes();
+  }
 
   // ------------------------------------------------------------ Copias
 

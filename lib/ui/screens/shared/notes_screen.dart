@@ -9,6 +9,7 @@ import '../../../state/providers.dart';
 import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../../core/i18n.dart';
 
 String _date(int ms) {
   final d = DateTime.fromMillisecondsSinceEpoch(ms);
@@ -23,17 +24,17 @@ class NotesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = SessionScope.of(context);
     if (s.isDm) return const _DmNotes();
-    return const DefaultTabController(
+    return DefaultTabController(
       length: 2,
       child: Column(
         children: [
           TabBar(
             tabs: [
-              Tab(text: 'Mi cuaderno'),
-              Tab(text: 'Diario de la partida'),
+              Tab(text: tr('Mi cuaderno')),
+              Tab(text: tr('Diario de la partida')),
             ],
           ),
-          Expanded(child: TabBarView(children: [_PlayerNotebook(), _SharedJournal()])),
+          const Expanded(child: TabBarView(children: [_PlayerNotebook(), _SharedJournal()])),
         ],
       ),
     );
@@ -53,7 +54,7 @@ class _DmNotes extends StatelessWidget {
         builder: (_) => _NoteEditor(
           title: note?.title ?? '',
           body: note?.body ?? '',
-          extraSwitchLabel: 'Compartida con los jugadores',
+          extraSwitchLabel: tr('Compartida con los jugadores'),
           extraSwitch: note?.shared ?? false,
         ),
       ),
@@ -78,15 +79,15 @@ class _DmNotes extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(context, null),
         icon: const Icon(Icons.add),
-        label: const Text('Nota'),
+        label: Text(tr('Nota')),
       ),
       body: notes.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               icon: 'quill',
-              title: 'Notas del máster',
-              message:
-                  'Apunta tramas, PNJ, pistas… Las notas son privadas, salvo que las compartas: entonces '
-                  'aparecen en el «Diario de la partida» de los jugadores (handouts, cartas, mapas descritos…).',
+              title: tr('Notas del máster'),
+              message: tr(
+                'Apunta tramas, PNJ, pistas… Las notas son privadas, salvo que las compartas: entonces aparecen en el «Diario de la partida» de los jugadores (handouts, cartas, mapas descritos…).',
+              ),
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -95,14 +96,14 @@ class _DmNotes extends StatelessWidget {
                   Card(
                     child: ListTile(
                       leading: Icon(n.pinned ? Icons.push_pin : Icons.sticky_note_2_outlined, color: AppColors.gold),
-                      title: Text(n.title.isEmpty ? 'Sin título' : n.title),
+                      title: Text(n.title.isEmpty ? tr('Sin título') : n.title),
                       subtitle: Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis, style: t.bodySmall),
                       onTap: () => _edit(context, n),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            tooltip: n.shared ? 'Compartida con los jugadores' : 'Privada',
+                            tooltip: n.shared ? tr('Compartida con los jugadores') : tr('Privada'),
                             icon: Icon(
                               n.shared ? Icons.visibility : Icons.visibility_off,
                               color: n.shared ? AppColors.gold : AppColors.muted,
@@ -115,13 +116,18 @@ class _DmNotes extends StatelessWidget {
                               if (v == 'pin') {
                                 await s.send(Command.putNote(CampaignNote.fromJson(n.toJson())..pinned = !n.pinned));
                               } else if (v == 'delete') {
-                                final ok = await confirm(context, 'Borrar nota', '¿Borrar «${n.title}»?', danger: true);
+                                final ok = await confirm(
+                                  context,
+                                  tr('Borrar nota'),
+                                  tr('¿Borrar «{0}»?', [n.title]),
+                                  danger: true,
+                                );
                                 if (ok) await s.send(Command.deleteNote(n.id));
                               }
                             },
                             itemBuilder: (_) => [
-                              PopupMenuItem(value: 'pin', child: Text(n.pinned ? 'Desfijar' : 'Fijar arriba')),
-                              const PopupMenuItem(value: 'delete', child: Text('Borrar')),
+                              PopupMenuItem(value: 'pin', child: Text(n.pinned ? tr('Desfijar') : tr('Fijar arriba'))),
+                              PopupMenuItem(value: 'delete', child: Text(tr('Borrar'))),
                             ],
                           ),
                         ],
@@ -145,10 +151,10 @@ class _SharedJournal extends StatelessWidget {
     final notes = List.of(s.campaign.notes)
       ..sort((a, b) => a.pinned != b.pinned ? (a.pinned ? -1 : 1) : b.updatedAt.compareTo(a.updatedAt));
     if (notes.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: 'scroll',
-        title: 'Diario vacío',
-        message: 'Aquí aparecerán los documentos y notas que el máster comparta con el grupo.',
+        title: tr('Diario vacío'),
+        message: tr('Aquí aparecerán los documentos y notas que el máster comparta con el grupo.'),
       );
     }
     return ListView(
@@ -156,7 +162,7 @@ class _SharedJournal extends StatelessWidget {
       children: [
         for (final n in notes)
           SectionCard(
-            title: n.title.isEmpty ? 'Sin título' : n.title,
+            title: n.title.isEmpty ? tr('Sin título') : n.title,
             icon: n.pinned ? 'key' : 'scroll',
             trailing: Text(_date(n.updatedAt), style: Theme.of(context).textTheme.bodySmall),
             child: RichDescription(n.body),
@@ -199,7 +205,7 @@ class _PlayerNotebookState extends ConsumerState<_PlayerNotebook> {
         builder: (_) => _NoteEditor(
           title: note?.title ?? '',
           body: note?.body ?? '',
-          extraSwitchLabel: 'Fijar arriba',
+          extraSwitchLabel: tr('Fijar arriba'),
           extraSwitch: note?.pinned ?? false,
         ),
       ),
@@ -233,7 +239,7 @@ class _PlayerNotebookState extends ConsumerState<_PlayerNotebook> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(null),
         icon: const Icon(Icons.edit),
-        label: const Text('Nueva nota'),
+        label: Text(tr('Nueva nota')),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -244,25 +250,26 @@ class _PlayerNotebookState extends ConsumerState<_PlayerNotebook> {
               Gap.s,
               Expanded(
                 child: Text(
-                  'Tu cuaderno se guarda sólo en este dispositivo. Ni el máster lo ve.',
+                  tr('Tu cuaderno se guarda sólo en este dispositivo. Ni el máster lo ve.'),
                   style: t.bodySmall?.copyWith(color: AppColors.muted),
                 ),
               ),
             ],
           ),
           Gap.s,
-          if (notes.isNotEmpty) SearchField(onChanged: (v) => setState(() => _query = v), hint: 'Buscar en tus notas'),
+          if (notes.isNotEmpty)
+            SearchField(onChanged: (v) => setState(() => _query = v), hint: tr('Buscar en tus notas')),
           if (notes.isEmpty)
-            const EmptyState(
+            EmptyState(
               icon: 'notebook',
-              title: 'Cuaderno en blanco',
-              message: 'Apunta nombres, pistas, deudas, sospechas…',
+              title: tr('Cuaderno en blanco'),
+              message: tr('Apunta nombres, pistas, deudas, sospechas…'),
             ),
           for (final n in visible)
             Card(
               child: ListTile(
                 leading: Icon(n.pinned ? Icons.push_pin : Icons.description_outlined, color: AppColors.gold),
-                title: Text(n.title.isEmpty ? 'Sin título' : n.title),
+                title: Text(n.title.isEmpty ? tr('Sin título') : n.title),
                 subtitle: Text('${_date(n.updatedAt)} · ${n.body}', maxLines: 2, overflow: TextOverflow.ellipsis),
                 onTap: () => _edit(n),
                 trailing: PopupMenuButton<String>(
@@ -271,18 +278,23 @@ class _PlayerNotebookState extends ConsumerState<_PlayerNotebook> {
                       final s = SessionScope.read(context);
                       final r = await s.send(Command.sendChat(ChatChannel.generalId, '📜 **${n.title}**\n${n.body}'));
                       if (context.mounted) {
-                        showSnack(context, r.ok ? 'Compartida en la taberna' : r.error ?? '', error: !r.ok);
+                        showSnack(context, r.ok ? tr('Compartida en la taberna') : r.error ?? '', error: !r.ok);
                       }
                     } else if (v == 'delete') {
-                      final ok = await confirm(context, 'Borrar nota', '¿Borrar «${n.title}»?', danger: true);
+                      final ok = await confirm(
+                        context,
+                        tr('Borrar nota'),
+                        tr('¿Borrar «{0}»?', [n.title]),
+                        danger: true,
+                      );
                       if (!ok) return;
                       setState(() => _notes!.remove(n));
                       await _persist();
                     }
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'share', child: Text('Compartir en el chat')),
-                    PopupMenuItem(value: 'delete', child: Text('Borrar')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'share', child: Text(tr('Compartir en el chat'))),
+                    PopupMenuItem(value: 'delete', child: Text(tr('Borrar'))),
                   ],
                 ),
               ),
@@ -334,14 +346,14 @@ class _NoteEditorState extends State<_NoteEditor> {
         if (!didPop) _done();
       },
       child: AppScaffold(
-        title: 'Nota',
+        title: tr('Nota'),
         actions: [
           IconButton(
-            tooltip: _preview ? 'Editar' : 'Vista previa',
+            tooltip: _preview ? tr('Editar') : tr('Vista previa'),
             icon: Icon(_preview ? Icons.edit : Icons.visibility),
             onPressed: () => setState(() => _preview = !_preview),
           ),
-          TextButton(onPressed: _done, child: const Text('Guardar')),
+          TextButton(onPressed: _done, child: Text(tr('Guardar'))),
         ],
         body: Padding(
           padding: const EdgeInsets.all(16),
@@ -349,7 +361,7 @@ class _NoteEditorState extends State<_NoteEditor> {
             children: [
               TextField(
                 controller: _title,
-                decoration: const InputDecoration(labelText: 'Título'),
+                decoration: InputDecoration(labelText: tr('Título')),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
@@ -365,8 +377,8 @@ class _NoteEditorState extends State<_NoteEditor> {
                         expands: true,
                         maxLines: null,
                         textAlignVertical: TextAlignVertical.top,
-                        decoration: const InputDecoration(
-                          hintText: 'Escribe… (admite **negrita**, *cursiva*, listas con -)',
+                        decoration: InputDecoration(
+                          hintText: tr('Escribe… (admite **negrita**, *cursiva*, listas con -)'),
                           alignLabelWithHint: true,
                         ),
                       ),

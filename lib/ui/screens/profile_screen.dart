@@ -6,6 +6,7 @@ import '../../domain/profile.dart';
 import '../../state/providers.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../../core/i18n.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -35,7 +36,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _p.relayUrl = _relay.text.trim();
     await ref.read(profileProvider.notifier).save(_p);
     if (mounted) {
-      showSnack(context, 'Perfil guardado');
+      showSnack(context, tr('Perfil guardado'));
       Navigator.pop(context);
     }
   }
@@ -44,23 +45,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return AppScaffold(
-      title: 'Perfil y ajustes',
-      actions: [TextButton(onPressed: _save, child: const Text('Guardar'))],
+      title: tr('Perfil y ajustes'),
+      actions: [TextButton(onPressed: _save, child: Text(tr('Guardar')))],
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SectionCard(
-            title: 'Tú',
+            title: tr('Tú'),
             icon: 'person',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextField(
                   controller: _name,
-                  decoration: const InputDecoration(labelText: 'Nombre visible'),
+                  decoration: InputDecoration(labelText: tr('Nombre visible')),
                 ),
                 Gap.m,
-                Text('Unidades', style: t.titleSmall),
+                Text(tr('Unidades'), style: t.titleSmall),
                 RadioGroup<UnitSystem>(
                   groupValue: _p.units,
                   onChanged: (v) => setState(() => _p.units = v ?? _p.units),
@@ -75,7 +76,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           SectionCard(
-            title: 'Cuando eres máster (anfitrión)',
+            title: tr('Cuando eres máster (anfitrión)'),
             icon: 'wifi',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,18 +85,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   controller: _port,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(
-                    labelText: 'Puerto',
-                    helperText: 'Por defecto 4040. Cámbialo sólo si está ocupado.',
+                  decoration: InputDecoration(
+                    labelText: tr('Puerto'),
+                    helperText: tr('Por defecto 4040. Cámbialo sólo si está ocupado.'),
                   ),
                 ),
                 Gap.m,
                 TextField(
                   controller: _relay,
-                  decoration: const InputDecoration(
-                    labelText: 'Relay para jugar por internet (opcional)',
-                    hintText: 'wss://mi-relay.ejemplo.com',
-                    helperText: 'Déjalo vacío si jugáis en la misma wifi o con Tailscale.',
+                  decoration: InputDecoration(
+                    labelText: tr('Relay para jugar por internet (opcional)'),
+                    hintText: tr('wss://mi-relay.ejemplo.com'),
+                    helperText: tr('Déjalo vacío si jugáis en la misma wifi o con Tailscale.'),
                     helperMaxLines: 2,
                   ),
                 ),
@@ -103,12 +104,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           SectionCard(
-            title: 'Identidad del dispositivo',
+            title: tr('Identidad del dispositivo'),
             icon: 'key',
             child: Text(
-              'Tu identificador: ${_p.userId}\n'
-              'Con él y una clave secreta guardada en este dispositivo el máster te reconoce al volver a '
-              'conectar. Si cambias de dispositivo, el máster puede reasignarte tu personaje.',
+              tr(
+                'Tu identificador: {0}\nCon él y una clave secreta guardada en este dispositivo el máster te reconoce al volver a conectar. Si cambias de dispositivo, el máster puede reasignarte tu personaje.',
+                [_p.userId],
+              ),
               style: t.bodySmall?.copyWith(color: AppColors.muted),
             ),
           ),

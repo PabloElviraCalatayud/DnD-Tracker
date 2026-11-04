@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 
 import '../domain/campaign.dart';
 import '../domain/character.dart';
 import '../domain/chat.dart';
+import '../domain/roll.dart';
 import '../engine/commands.dart';
 
 enum ConnectionStatus {
@@ -18,9 +21,12 @@ enum ConnectionStatus {
 }
 
 class CommandResult {
-  const CommandResult(this.ok, [this.error]);
+  const CommandResult(this.ok, [this.error, this.data]);
   final bool ok;
   final String? error;
+
+  /// Datos de respuesta del anfitrión (p. ej. la tirada hecha).
+  final Map<String, dynamic>? data;
 }
 
 /// Sesión de juego activa. La interfaz trabaja siempre contra esta clase,
@@ -40,6 +46,29 @@ abstract class GameSession extends ChangeNotifier {
 
   Future<CommandResult> send(Command cmd);
   Future<void> close();
+
+  /// Tiradas visibles para este usuario (el máster ve también las suyas).
+  List<RollEntry> get rolls;
+
+  /// Imagen guardada por el anfitrión (mapa o ficha). Null si no existe.
+  Future<Uint8List?> loadAsset(String id);
+
+  /// Sube una imagen y devuelve su id (null si falla).
+  Future<String?> uploadAsset(Uint8List bytes);
+
+  final Map<String, Future<Uint8List?>> _assetFutures = {};
+
+  /// Igual que [loadAsset] pero comparte la petición entre widgets.
+  Future<Uint8List?> asset(String id) => _assetFutures.putIfAbsent(id, () => loadAsset(id));
+
+  /// Hace una tirada registrada en el tablero. El resultado lo genera el
+  /// anfitrión. Devuelve null y el error si no se pudo.
+  Future<(RollEntry?, String?)> roll(String label, String expression, {String? characterId}) async {
+    final r = await send(Command.roll(label, expression, characterId: characterId));
+    final data = r.data?['roll'];
+    if (!r.ok || data is! Map) return (null, r.error);
+    return (RollEntry.fromJson(data.cast<String, dynamic>()), null);
+  }
 
   bool get canEdit => isDm || status == ConnectionStatus.online;
 

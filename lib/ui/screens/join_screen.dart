@@ -12,6 +12,7 @@ import '../../state/providers.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'campaign_shell.dart';
+import '../../core/i18n.dart';
 
 class JoinScreen extends ConsumerStatefulWidget {
   const JoinScreen({super.key});
@@ -53,7 +54,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       _inviteText.text = text;
       _onInviteChanged(text);
     } else if (!silent && mounted) {
-      showSnack(context, 'El portapapeles no contiene una invitación', error: true);
+      showSnack(context, tr('El portapapeles no contiene una invitación'), error: true);
     }
   }
 
@@ -96,9 +97,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
   Future<void> _joinDiscovered(DiscoveredGame g) async {
     final code = await promptText(
       context,
-      'Código de "${g.name}"',
-      hint: 'Código de 6 letras (si ya jugabas en ella, déjalo vacío)',
-      ok: 'Unirse',
+      tr('Código de "{0}"', [g.name]),
+      hint: tr('Código de 6 letras (si ya jugabas en ella, déjalo vacío)'),
+      ok: tr('Unirse'),
     );
     if (code == null) return;
     await _join(
@@ -132,17 +133,17 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     final t = Theme.of(context).textTheme;
     final p = _parsed;
     return AppScaffold(
-      title: 'Unirse a una partida',
+      title: tr('Unirse a una partida'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           SectionCard(
-            title: 'Invitación del máster',
+            title: tr('Invitación del máster'),
             icon: 'scroll_quill',
             trailing: TextButton.icon(
               onPressed: _pasteFromClipboard,
               icon: const Icon(Icons.content_paste),
-              label: const Text('Pegar'),
+              label: Text(tr('Pegar')),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,7 +152,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                   controller: _inviteText,
                   minLines: 2,
                   maxLines: 4,
-                  decoration: const InputDecoration(hintText: 'Pega aquí el mensaje que empieza por DNDT1:…'),
+                  decoration: InputDecoration(hintText: tr('Pega aquí el mensaje que empieza por DNDT1:…')),
                   onChanged: _onInviteChanged,
                 ),
                 if (p != null) ...[
@@ -167,9 +168,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                             Text(p.campaignName, style: t.titleMedium),
                             Text(
                               [
-                                if (p.dmName.isNotEmpty) 'Máster: ${p.dmName}',
+                                if (p.dmName.isNotEmpty) tr('Máster: {0}', [p.dmName]),
                                 if (p.hosts.isNotEmpty) p.hosts.join(', '),
-                                if (p.hasRelay) 'relay',
+                                if (p.hasRelay) tr('relay'),
                               ].join(' · '),
                               style: t.bodySmall,
                             ),
@@ -182,24 +183,25 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                   TextField(
                     controller: _code,
                     textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(labelText: 'Código de la partida'),
+                    decoration: InputDecoration(labelText: tr('Código de la partida')),
                   ),
                   Gap.m,
-                  FilledButton.icon(onPressed: _joinParsed, icon: const Icon(Icons.login), label: const Text('Unirse')),
+                  FilledButton.icon(onPressed: _joinParsed, icon: const Icon(Icons.login), label: Text(tr('Unirse'))),
                 ],
               ],
             ),
           ),
           SectionCard(
-            title: 'Partidas en tu red',
+            title: tr('Partidas en tu red'),
             icon: 'radar',
             trailing: const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
             child: _games.isEmpty
                 ? Text(
                     _scanner.error != null
-                        ? 'No se puede buscar en esta red (${_scanner.error}). Usa la invitación.'
-                        : 'Buscando partidas en la misma wifi… Si el máster comparte datos (zona wifi) '
-                              'conéctate a ella.',
+                        ? tr('No se puede buscar en esta red ({0}). Usa la invitación.', [_scanner.error])
+                        : tr(
+                            'Buscando partidas en la misma wifi… Si el máster comparte datos (zona wifi) conéctate a ella.',
+                          ),
                     style: t.bodySmall,
                   )
                 : Column(
@@ -209,7 +211,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                           contentPadding: EdgeInsets.zero,
                           leading: const GameIcon('tower_flag', size: 30),
                           title: Text(g.name),
-                          subtitle: Text('Máster: ${g.dmName} · ${g.ruleset} · ${g.address}'),
+                          subtitle: Text(tr('Máster: {0} · {1} · {2}', [g.dmName, g.ruleset, g.address])),
                           trailing: const Icon(Icons.login),
                           onTap: () => _joinDiscovered(g),
                         ),
@@ -217,8 +219,8 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                   ),
           ),
           ExpansionTile(
-            title: Text('Conexión manual', style: t.titleMedium),
-            subtitle: const Text('IP y puerto del máster (p. ej. su IP de Tailscale)'),
+            title: Text(tr('Conexión manual'), style: t.titleMedium),
+            subtitle: Text(tr('IP y puerto del máster (p. ej. su IP de Tailscale)')),
             childrenPadding: const EdgeInsets.all(12),
             children: [
               Row(
@@ -227,7 +229,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                     flex: 3,
                     child: TextField(
                       controller: _host,
-                      decoration: const InputDecoration(labelText: 'IP del máster'),
+                      decoration: InputDecoration(labelText: tr('IP del máster')),
                     ),
                   ),
                   Gap.s,
@@ -235,7 +237,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                     child: TextField(
                       controller: _port,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Puerto'),
+                      decoration: InputDecoration(labelText: tr('Puerto')),
                     ),
                   ),
                 ],
@@ -244,19 +246,20 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
               TextField(
                 controller: _code,
                 textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(labelText: 'Código de la partida'),
+                decoration: InputDecoration(labelText: tr('Código de la partida')),
               ),
               Gap.m,
               Align(
                 alignment: Alignment.centerRight,
-                child: FilledButton(onPressed: _joinManual, child: const Text('Conectar')),
+                child: FilledButton(onPressed: _joinManual, child: Text(tr('Conectar'))),
               ),
             ],
           ),
           Gap.m,
           Text(
-            '¿No estáis en la misma red? El máster puede usar Tailscale (gratis) o un relay. '
-            'Mira «Partida → Conexión» en la app del máster.',
+            tr(
+              '¿No estáis en la misma red? El máster puede usar Tailscale (gratis) o un relay. Mira «Partida → Conexión» en la app del máster.',
+            ),
             style: t.bodySmall?.copyWith(color: AppColors.muted),
           ),
         ],

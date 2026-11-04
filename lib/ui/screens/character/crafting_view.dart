@@ -15,6 +15,7 @@ import '../../widgets/common.dart';
 import '../dm/recipes_screen.dart';
 import 'character_views.dart';
 import 'item_dialogs.dart';
+import '../../../core/i18n.dart';
 
 /// Palabras clave (inglés y castellano) para reconocer las herramientas de
 /// artesano del SRD en las competencias escritas por el jugador.
@@ -71,26 +72,27 @@ class CraftingView extends ConsumerWidget {
       children: [
         if (c.projects.isNotEmpty)
           SectionCard(
-            title: 'En el taller',
+            title: tr('En el taller'),
             icon: 'hourglass',
             child: Column(
               children: [for (final p in c.projects) _ProjectTile(character: c, project: p, editable: editable)],
             ),
           ),
         SectionCard(
-          title: 'Recetas que conoces',
+          title: tr('Recetas que conoces'),
           icon: 'scroll_quill',
           trailing: canCreateRecipes && editable
               ? TextButton.icon(
                   icon: const Icon(Icons.add),
-                  label: const Text('Nueva'),
+                  label: Text(tr('Nueva')),
                   onPressed: () => openRecipeEditor(context, null, forCharacterId: c.id),
                 )
               : null,
           child: recipes.isEmpty
               ? Text(
-                  'Todavía no conoces recetas especiales. El máster puede enseñártelas'
-                  '${canCreateRecipes ? ' o puedes crearlas tú' : ''}.',
+                  tr('Todavía no conoces recetas especiales. El máster puede enseñártelas{0}.', [
+                    canCreateRecipes ? ' o puedes crearlas tú' : '',
+                  ]),
                   style: t.bodySmall,
                 )
               : Column(
@@ -111,7 +113,7 @@ class _ProjectTile extends StatelessWidget {
 
   Future<void> _send(BuildContext context, Command cmd) async {
     final r = await SessionScope.read(context).send(cmd);
-    if (!r.ok && context.mounted) showSnack(context, r.error ?? 'Error', error: true);
+    if (!r.ok && context.mounted) showSnack(context, r.error ?? tr('Error'), error: true);
   }
 
   @override
@@ -133,7 +135,7 @@ class _ProjectTile extends StatelessWidget {
                   style: t.titleSmall,
                 ),
               ),
-              Text('${p.daysDone}/${p.daysRequired} días'),
+              Text(tr('{0}/{1} días', [p.daysDone, p.daysRequired])),
             ],
           ),
           Gap.xs,
@@ -147,30 +149,30 @@ class _ProjectTile extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () => _send(context, Command.craftProgress(character.id, p.id, 1)),
-                  child: const Text('+1 día'),
+                  child: Text(tr('+1 día')),
                 ),
                 TextButton(
                   onPressed: () async {
-                    final n = await promptNumber(context, 'Días trabajados', hint: 'Días de 8 horas');
+                    final n = await promptNumber(context, tr('Días trabajados'), hint: tr('Días de 8 horas'));
                     if (n != null && n > 0 && context.mounted) {
                       await _send(context, Command.craftProgress(character.id, p.id, n));
                     }
                   },
-                  child: const Text('+N días'),
+                  child: Text(tr('+N días')),
                 ),
                 TextButton(
                   style: TextButton.styleFrom(foregroundColor: AppColors.danger),
                   onPressed: () async {
                     final ok = await confirm(
                       context,
-                      'Abandonar',
-                      'Se perderán los materiales gastados.',
-                      ok: 'Abandonar',
+                      tr('Abandonar'),
+                      tr('Se perderán los materiales gastados.'),
+                      ok: tr('Abandonar'),
                       danger: true,
                     );
                     if (ok && context.mounted) await _send(context, Command.craftCancel(character.id, p.id));
                   },
-                  child: const Text('Abandonar'),
+                  child: Text(tr('Abandonar')),
                 ),
               ],
             ),
@@ -197,7 +199,7 @@ class _RecipeTile extends StatelessWidget {
       leading: GameIcon(r.result.iconName, size: 30, color: check.canCraft ? AppColors.gold : AppColors.muted),
       title: Text(r.name),
       subtitle: Text(
-        check.canCraft ? 'Puedes fabricarlo (×${check.maxTimes})' : 'Faltan: ${_missingText(check)}',
+        check.canCraft ? tr('Puedes fabricarlo (×{0})', [check.maxTimes]) : tr('Faltan: {0}', [_missingText(check)]),
         style: t.bodySmall?.copyWith(color: color),
       ),
       childrenPadding: const EdgeInsets.only(bottom: 10),
@@ -205,7 +207,7 @@ class _RecipeTile extends StatelessWidget {
       children: [
         if (r.description.isNotEmpty) Text(r.description),
         Gap.s,
-        Text('Resultado: ${r.resultQuantity}× ${r.result.name}', style: t.titleSmall),
+        Text(tr('Resultado: {0}× {1}', [r.resultQuantity, r.result.name]), style: t.titleSmall),
         Gap.xs,
         for (final ing in check.ingredients)
           Row(
@@ -229,7 +231,7 @@ class _RecipeTile extends StatelessWidget {
                 color: check.goldOk ? AppColors.success : AppColors.danger,
               ),
               Gap.s,
-              Text('Coste adicional: ${formatCp(r.goldCostCp)}'),
+              Text(tr('Coste adicional: {0}', [formatCp(r.goldCostCp)])),
             ],
           ),
         if (r.tool.isNotEmpty)
@@ -241,17 +243,17 @@ class _RecipeTile extends StatelessWidget {
                 color: check.toolOk ? AppColors.success : AppColors.warning,
               ),
               Gap.s,
-              Expanded(child: Text('Herramienta: ${r.tool}${check.toolOk ? '' : ' (no la tienes)'}')),
+              Expanded(child: Text(tr('Herramienta: {0}{1}', [r.tool, check.toolOk ? '' : ' (no la tienes)']))),
             ],
           ),
-        if (r.days > 0) Text('Tiempo: ${r.days} día(s) de trabajo', style: t.bodySmall),
-        if (r.check.isNotEmpty) Text('Prueba: ${r.check}', style: t.bodySmall),
+        if (r.days > 0) Text(tr('Tiempo: {0} día(s) de trabajo', [r.days]), style: t.bodySmall),
+        if (r.check.isNotEmpty) Text(tr('Prueba: {0}', [r.check]), style: t.bodySmall),
         if (editable) ...[
           Gap.s,
           FilledButton.icon(
             onPressed: check.canCraft ? () => _craft(context, check.maxTimes) : null,
             icon: const GameIcon('anvil', size: 18, color: AppColors.background),
-            label: const Text('Fabricar'),
+            label: Text(tr('Fabricar')),
           ),
         ],
       ],
@@ -272,17 +274,17 @@ class _RecipeTile extends StatelessWidget {
           var v = 1;
           return StatefulBuilder(
             builder: (ctx, setState) => AlertDialog(
-              title: Text('Fabricar ${recipe.name}'),
+              title: Text(tr('Fabricar {0}', [recipe.name])),
               content: Row(
                 children: [
-                  const Text('Veces'),
+                  Text(tr('Veces')),
                   const Spacer(),
                   NumberStepper(value: v, min: 1, max: maxTimes, onChanged: (x) => setState(() => v = x)),
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-                FilledButton(onPressed: () => Navigator.pop(ctx, v), child: const Text('Fabricar')),
+                TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
+                FilledButton(onPressed: () => Navigator.pop(ctx, v), child: Text(tr('Fabricar'))),
               ],
             ),
           );
@@ -298,7 +300,7 @@ class _RecipeTile extends StatelessWidget {
       context,
       r.ok
           ? (recipe.days > 0 ? 'Empiezas a trabajar en ${recipe.name}' : '¡${recipe.result.name} fabricado!')
-          : r.error ?? 'Error',
+          : r.error ?? tr('Error'),
       error: !r.ok,
     );
   }
@@ -315,9 +317,9 @@ class _StandardCraftingCard extends ConsumerWidget {
     final rs = s.campaign.ruleset;
     final srd = ref.watch(srdProvider(rs)).value;
     final t = Theme.of(context).textTheme;
-    final tools = srd?.craftTools.where((tool) => hasToolProficiency(character, tool)).toList() ?? const <CraftTool>[];
+    final tools = srd?.craftTools.where((tool) => hasToolProficiency(character, tool)).toList() ?? <CraftTool>[];
     return SectionCard(
-      title: 'Fabricación según las reglas (${rs.short})',
+      title: tr('Fabricación según las reglas ({0})', [rs.short]),
       icon: 'anvil',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,8 +329,10 @@ class _StandardCraftingCard extends ConsumerWidget {
           if (rs == Ruleset.v2024)
             Text(
               tools.isEmpty
-                  ? 'No tienes competencia con herramientas de artesano (añádelas en «Editar ficha → Competencias»).'
-                  : 'Tus herramientas: ${tools.map((x) => x.tool).join(', ')}',
+                  ? tr(
+                      'No tienes competencia con herramientas de artesano (añádelas en «Editar ficha → Competencias»).',
+                    )
+                  : tr('Tus herramientas: {0}', [tools.map((x) => x.tool).join(', ')]),
               style: t.bodySmall,
             ),
           if (editable && srd != null) ...[
@@ -339,13 +343,13 @@ class _StandardCraftingCard extends ConsumerWidget {
               children: [
                 FilledButton.tonalIcon(
                   icon: const GameIcon('hammer', size: 18),
-                  label: const Text('Fabricar objeto'),
+                  label: Text(tr('Fabricar objeto')),
                   onPressed: () => _craftMundane(context, srd),
                 ),
                 if (s.campaign.settings.allowMagicCrafting)
                   OutlinedButton.icon(
                     icon: const GameIcon('sparkles', size: 18),
-                    label: const Text('Objeto mágico'),
+                    label: Text(tr('Objeto mágico')),
                     onPressed: () => _craftMagic(context, srd),
                   ),
               ],
@@ -359,7 +363,7 @@ class _StandardCraftingCard extends ConsumerWidget {
   Future<void> _craftMundane(BuildContext context, SrdData srd) async {
     final s = SessionScope.read(context);
     final rules = s.campaign.rules;
-    final picked = await pickSrdItem(context, s.campaign.ruleset, includeMagic: false, title: 'Elige qué fabricar');
+    final picked = await pickSrdItem(context, s.campaign.ruleset, includeMagic: false, title: tr('Elige qué fabricar'));
     if (picked == null || !context.mounted) return;
     final (item, qty) = picked;
     final cost = item.costCp * qty;
@@ -370,44 +374,47 @@ class _StandardCraftingCard extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Fabricar ${qty > 1 ? '$qty× ' : ''}${item.name}'),
+        title: Text(tr('Fabricar {0}{1}', [qty > 1 ? '$qty× ' : '', item.name])),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Precio de mercado: ${formatCp(cost)}'),
-            Text('Materias primas: ${formatCp(materials)} (se descuentan de tu bolsa)'),
-            Text('Tiempo: $days día(s) de trabajo'),
+            Text(tr('Precio de mercado: {0}', [formatCp(cost)])),
+            Text(tr('Materias primas: {0} (se descuentan de tu bolsa)', [formatCp(materials)])),
+            Text(tr('Tiempo: {0} día(s) de trabajo', [days])),
             Gap.s,
             if (tools.isNotEmpty)
               Text(
-                'Herramienta: ${tools.map((x) => x.tool).join(' o ')}${hasTool == true ? ' ✓' : ' — no tienes competencia'}',
+                tr('Herramienta: {0}{1}', [
+                  tools.map((x) => x.tool).join(' o '),
+                  hasTool == true ? ' ✓' : ' — no tienes competencia',
+                ]),
                 style: TextStyle(color: hasTool == true ? AppColors.success : AppColors.warning),
               )
             else
-              const Text('Herramienta: la adecuada, a criterio del máster.'),
+              Text(tr('Herramienta: la adecuada, a criterio del máster.')),
             if (!character.currency.canAfford(materials))
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  'No tienes dinero suficiente para los materiales.',
-                  style: TextStyle(color: AppColors.danger),
+                  tr('No tienes dinero suficiente para los materiales.'),
+                  style: const TextStyle(color: AppColors.danger),
                 ),
               ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
           FilledButton(
             onPressed: character.currency.canAfford(materials) ? () => Navigator.pop(ctx, true) : null,
-            child: const Text('Empezar'),
+            child: Text(tr('Empezar')),
           ),
         ],
       ),
     );
     if (ok != true || !context.mounted) return;
     final r = await s.send(Command.craftStandard(character.id, item.toInventoryItem(quantity: qty), materials, days));
-    if (context.mounted) showSnack(context, r.ok ? 'Proyecto iniciado' : r.error ?? 'Error', error: !r.ok);
+    if (context.mounted) showSnack(context, r.ok ? tr('Proyecto iniciado') : r.error ?? tr('Error'), error: !r.ok);
   }
 
   Future<void> _craftMagic(BuildContext context, SrdData srd) async {
@@ -417,7 +424,7 @@ class _StandardCraftingCard extends ConsumerWidget {
       context,
       s.campaign.ruleset,
       includeMundane: false,
-      title: 'Objeto mágico a fabricar',
+      title: tr('Objeto mágico a fabricar'),
     );
     if (picked == null || !context.mounted) return;
     final item = picked.$1;
@@ -426,7 +433,7 @@ class _StandardCraftingCard extends ConsumerWidget {
     if (costs == null) {
       showSnack(
         context,
-        'La rareza «${item.rarity}» no tiene coste estándar: pídele una receta al máster.',
+        tr('La rareza «{0}» no tiene coste estándar: pídele una receta al máster.', [item.rarity]),
         error: true,
       );
       return;
@@ -434,14 +441,17 @@ class _StandardCraftingCard extends ConsumerWidget {
     final (gp, days) = costs;
     final ok = await confirm(
       context,
-      'Fabricar ${item.name}',
-      'Rareza: ${item.rarity}\nCoste: $gp po · Tiempo: $days días\n\n'
-          'Las reglas piden además la fórmula del objeto, competencia en Arcanos o con la herramienta '
-          'adecuada y, a veces, conjuros o ingredientes especiales. Consulta al máster.',
-      ok: 'Empezar',
+      tr('Fabricar {0}', [item.name]),
+      tr(
+        'Rareza: {0}\nCoste: {1} po · Tiempo: {2} días\n\nLas reglas piden además la fórmula del objeto, competencia en Arcanos o con la herramienta adecuada y, a veces, conjuros o ingredientes especiales. Consulta al máster.',
+        [item.rarity, gp, days],
+      ),
+      ok: tr('Empezar'),
     );
     if (!ok || !context.mounted) return;
     final r = await s.send(Command.craftStandard(character.id, item.toInventoryItem(), gp * 100, days));
-    if (context.mounted) showSnack(context, r.ok ? 'Proyecto mágico iniciado' : r.error ?? 'Error', error: !r.ok);
+    if (context.mounted) {
+      showSnack(context, r.ok ? tr('Proyecto mágico iniciado') : r.error ?? tr('Error'), error: !r.ok);
+    }
   }
 }

@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
+import '../core/ids.dart';
 import '../core/json.dart';
 import '../data/storage.dart';
 import '../domain/campaign.dart';
 import '../domain/chat.dart';
+import '../domain/roll.dart';
 import '../domain/profile.dart';
 import '../engine/campaign_engine.dart';
 import '../engine/commands.dart';
@@ -14,6 +18,7 @@ import '../net/network_info.dart';
 import '../net/protocol.dart';
 import '../net/transport.dart';
 import 'session.dart';
+import '../core/i18n.dart';
 
 class ConnectedPlayer {
   ConnectedPlayer(this.peer);
@@ -66,7 +71,10 @@ class HostSession extends GameSession {
   Campaign get campaign => _campaign;
 
   @override
-  ChatState get chat => _campaign.chat.visibleTo(myUserId);
+  ChatState get chat => _campaign.chat.visibleTo(myUserId, isDm: true);
+
+  @override
+  List<RollEntry> get rolls => _campaign.rolls;
 
   @override
   bool get isDm => true;
@@ -191,12 +199,58 @@ class HostSession extends GameSession {
       if (msg['t'] == Proto.hello) _handleHello(p, msg);
       return;
     }
-    if (msg['t'] == Proto.cmd) {
-      final id = msg['id'];
-      final cmd = Command.fromJson(asMap(msg['cmd']));
-      final result = _apply(cmd, Actor(userId: p.userId!, name: p.name, isDm: false));
-      p.peer.send(Proto.encode(Proto.ack, {'id': id, 'ok': result.ok, 'error': result.error}));
+    switch (msg['t']) {
+      case Proto.cmd:
+        final id = msg['id'];
+        final cmd = Command.fromJson(asMap(msg['cmd']));
+        final result = _apply(cmd, Actor(userId: p.userId!, name: p.name, isDm: false));
+        p.peer.send(Proto.encode(Proto.ack, {'id': id, 'ok': result.ok, 'error': result.error, 'data': ?result.data}));
+      case Proto.getAsset:
+        unawaited(_sendAsset(p, asString(msg['id'])));
+      case Proto.putAsset:
+        unawaited(_receiveAsset(p, msg));
     }
+  }
+
+  // ------------------------------------------------------------ Imágenes
+
+  final Map<String, Uint8List> _assetCache = {};
+
+  /// Tamaño máximo de una imagen subida por un jugador (fichas).
+  static const maxPlayerAssetBytes = 512 * 1024;
+
+  Future<void> _sendAsset(ConnectedPlayer p, String id) async {
+    final bytes = await loadAsset(id);
+    p.peer.send(Proto.encode(Proto.asset, {'id': id, if (bytes != null) 'data': base64Encode(bytes)}));
+  }
+
+  Future<void> _receiveAsset(ConnectedPlayer p, Map<String, dynamic> msg) async {
+    final req = msg['req'];
+    try {
+      final bytes = base64Decode(asString(msg['data']));
+      if (bytes.length > maxPlayerAssetBytes) throw const FormatException('demasiado grande');
+      final id = await uploadAsset(bytes);
+      p.peer.send(Proto.encode(Proto.assetSaved, {'req': req, 'id': id}));
+    } on Object {
+      p.peer.send(Proto.encode(Proto.assetSaved, {'req': req}));
+    }
+  }
+
+  @override
+  Future<Uint8List?> loadAsset(String id) async {
+    final cached = _assetCache[id];
+    if (cached != null) return cached;
+    final bytes = await storage?.loadAsset(id);
+    if (bytes != null) _assetCache[id] = bytes;
+    return bytes;
+  }
+
+  @override
+  Future<String?> uploadAsset(Uint8List bytes) async {
+    final id = newId();
+    _assetCache[id] = bytes;
+    await storage?.saveAsset(id, bytes);
+    return id;
   }
 
   void _deny(ConnectedPlayer p, String reason) {
@@ -212,28 +266,31 @@ class HostSession extends GameSession {
     final code = asString(msg['code']).trim().toUpperCase();
     final campaignId = asString(msg['campaignId']);
     if (asInt(msg['v']) != Proto.version) {
-      return _deny(p, 'Versión de la app distinta a la del máster. Actualizad los dos.');
+      return _deny(p, tr('Versión de la app distinta a la del máster. Actualizad los dos.'));
     }
     if (campaignId.isNotEmpty && campaignId != _campaign.id) {
-      return _deny(p, 'Este anfitrión está alojando otra partida ("${_campaign.name}").');
+      return _deny(p, tr('Este anfitrión está alojando otra partida ("{0}").', [_campaign.name]));
     }
-    if (userId.isEmpty || secret.isEmpty) return _deny(p, 'Perfil no válido');
-    if (userId == _campaign.dmUserId) return _deny(p, 'Eres el máster de esta partida.');
+    if (userId.isEmpty || secret.isEmpty) return _deny(p, tr('Perfil no válido'));
+    if (userId == _campaign.dmUserId) return _deny(p, tr('Eres el máster de esta partida.'));
     var member = _campaign.member(userId);
     if (member != null) {
-      if (member.banned) return _deny(p, 'El máster te ha expulsado de esta partida.');
+      if (member.banned) return _deny(p, tr('El máster te ha expulsado de esta partida.'));
       if (member.deviceKey.isNotEmpty && member.deviceKey != secret) {
-        return _deny(p, 'Tu identidad no coincide con la registrada en la partida.');
+        return _deny(p, tr('Tu identidad no coincide con la registrada en la partida.'));
       }
       member.deviceKey = secret;
     } else {
       if (!_campaign.settings.allowNewPlayers) {
-        return _deny(p, 'La partida no admite jugadores nuevos ahora mismo.');
+        return _deny(p, tr('La partida no admite jugadores nuevos ahora mismo.'));
       }
-      if (code != _campaign.joinCode.toUpperCase()) return _deny(p, 'Código de partida incorrecto.');
-      member = Member(userId: userId, name: name.isEmpty ? 'Jugador' : name, deviceKey: secret);
+      if (code != _campaign.joinCode.toUpperCase()) return _deny(p, tr('Código de partida incorrecto.'));
+      if (_campaign.members.where((m) => !m.banned).length >= Campaign.maxPlayers) {
+        return _deny(p, tr('La partida está completa (máximo {0} jugadores).', [Campaign.maxPlayers]));
+      }
+      member = Member(userId: userId, name: name.isEmpty ? tr('Jugador') : name, deviceKey: secret);
       _campaign.members.add(member);
-      _campaign.addLog('${member.name} se ha unido a la partida', actor: member.name);
+      _campaign.addLog(tr('{0} se ha unido a la partida', [member.name]), actor: member.name);
     }
     if (name.isNotEmpty) member.name = name;
     member.lastSeenAt = DateTime.now().millisecondsSinceEpoch;
@@ -256,11 +313,18 @@ class HostSession extends GameSession {
         'campaignId': _campaign.id,
         'view': view,
         'chat': _campaign.chat.visibleTo(userId).toJson(),
+        'rolls': _visibleRolls().map((r) => r.toJson()).toList(),
       }),
     );
     _scheduleSave();
     _scheduleBroadcast();
     notifyListeners();
+  }
+
+  /// Últimas tiradas que pueden ver los jugadores (las del máster no).
+  List<RollEntry> _visibleRolls() {
+    final visible = _campaign.rolls.where((r) => !r.hidden).toList();
+    return visible.length > 100 ? visible.sublist(visible.length - 100) : visible;
   }
 
   Map<String, dynamic> _viewFor(String userId) =>
@@ -283,7 +347,10 @@ class HostSession extends GameSession {
     for (final c in result.channels) {
       _deliverChannel(c);
     }
-    if (result.messages.isNotEmpty || result.channels.isNotEmpty) _scheduleSave();
+    for (final r in result.rolls) {
+      _deliverRoll(r);
+    }
+    if (result.messages.isNotEmpty || result.channels.isNotEmpty || result.rolls.isNotEmpty) _scheduleSave();
     if (result.kickedUserId != null) _kick(result.kickedUserId!);
     notifyListeners();
     return result;
@@ -292,7 +359,15 @@ class HostSession extends GameSession {
   @override
   Future<CommandResult> send(Command cmd) async {
     final r = _apply(cmd, Actor(userId: myUserId, name: myName, isDm: true));
-    return CommandResult(r.ok, r.error);
+    return CommandResult(r.ok, r.error, r.data);
+  }
+
+  void _deliverRoll(RollEntry r) {
+    if (r.hidden) return;
+    final encoded = Proto.encode(Proto.roll, {'roll': r.toJson()});
+    for (final p in _players.values) {
+      if (p.authed) p.peer.send(encoded);
+    }
   }
 
   void _deliverChat(ChatMessage m) {
@@ -302,7 +377,8 @@ class HostSession extends GameSession {
     for (final p in _players.values) {
       if (p.authed && channel.includes(p.userId!)) p.peer.send(encoded);
     }
-    if (channel.includes(myUserId)) countUnread(m);
+    // El máster ve todas las conversaciones.
+    countUnread(m);
   }
 
   void _deliverChannel(ChatChannel c) {
@@ -315,7 +391,7 @@ class HostSession extends GameSession {
   void _kick(String userId) {
     for (final p in _players.values.toList()) {
       if (p.userId == userId) {
-        p.peer.send(Proto.encode(Proto.kicked, {'reason': 'El máster te ha expulsado de la partida.'}));
+        p.peer.send(Proto.encode(Proto.kicked, {'reason': tr('El máster te ha expulsado de la partida.')}));
         Future<void>.delayed(const Duration(milliseconds: 200), () => p.peer.close('expulsado'));
       }
     }

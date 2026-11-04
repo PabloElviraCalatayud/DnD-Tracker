@@ -79,7 +79,7 @@ void main() {
 
     // El jugador edita su ficha (cantidad y visibilidad) sin destapar lo oculto.
     await client.editCharacter(pc.id, (c) {
-      c.inventory.single.shared = true;
+      c.inventory.single.visibility = ItemVisibility.party;
       c.hpCurrent = 7;
     });
     await waitFor(() => host.campaign.character(pc.id)!.hpCurrent == 7);

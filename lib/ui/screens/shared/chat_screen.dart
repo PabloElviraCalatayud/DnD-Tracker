@@ -5,6 +5,7 @@ import '../../../engine/commands.dart';
 import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../../../core/i18n.dart';
 
 /// Chat de la partida: canal general, mensajes privados y grupos.
 class ChatScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _ChatScreenState extends State<ChatScreen> {
       for (final m in c.members.where((m) => !m.banned && m.userId != s.myUserId)) m.userId: m.name,
     };
     if (people.isEmpty) {
-      showSnack(context, 'Todavía no hay nadie más en la partida', error: true);
+      showSnack(context, tr('Todavía no hay nadie más en la partida'), error: true);
       return;
     }
     final selected = <String>{};
@@ -58,13 +59,13 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Nueva conversación'),
+          title: Text(tr('Nueva conversación')),
           content: SizedBox(
             width: 380,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Un solo destinatario = mensaje privado. Varios = grupo.'),
+                Text(tr('Un solo destinatario = mensaje privado. Varios = grupo.')),
                 Gap.s,
                 for (final e in people.entries)
                   CheckboxListTile(
@@ -76,17 +77,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (selected.length > 1)
                   TextField(
                     controller: name,
-                    decoration: const InputDecoration(labelText: 'Nombre del grupo'),
+                    decoration: InputDecoration(labelText: tr('Nombre del grupo')),
                   ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            FilledButton(
-              onPressed: selected.isEmpty ? null : () => Navigator.pop(ctx, true),
-              child: const Text('Crear'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
+            FilledButton(onPressed: selected.isEmpty ? null : () => Navigator.pop(ctx, true), child: Text(tr('Crear'))),
           ],
         ),
       ),
@@ -96,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final r = await s.send(Command.createChannel(name.text.trim(), selected.toList(), direct: direct));
     if (!mounted) return;
     if (!r.ok) {
-      showSnack(context, r.error ?? 'Error', error: true);
+      showSnack(context, r.error ?? tr('Error'), error: true);
       return;
     }
     // El canal llega por la red: buscamos el que coincide con los miembros.
@@ -108,7 +106,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String _channelTitle(GameSession s, ChatChannel c) {
+    if (c.kind == ChannelKind.general) return tr('Taberna (todos)');
     if (c.kind != ChannelKind.direct) return c.name;
+    // El máster ve también las conversaciones privadas entre jugadores.
+    if (!c.memberIds.contains(s.myUserId)) return '✉ ${c.memberIds.map(s.campaign.memberName).join(' ↔ ')}';
     final other = c.memberIds.firstWhere((id) => id != s.myUserId, orElse: () => '');
     return '✉ ${s.campaign.memberName(other)}';
   }
@@ -124,8 +125,17 @@ class _ChatScreenState extends State<ChatScreen> {
       children: [
         ListTile(
           leading: const Icon(Icons.group_add, color: AppColors.gold),
-          title: const Text('Nueva conversación'),
+          title: Text(tr('Nueva conversación')),
           onTap: s.canEdit ? _newChannel : null,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Text(
+            s.isDm
+                ? tr('Como máster ves todas las conversaciones de la partida, también las de los jugadores entre sí.')
+                : tr('El máster puede leer todas las conversaciones de la partida.'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
         ),
         const Divider(),
         for (final c in channels)
@@ -195,7 +205,7 @@ class _MessagesPaneState extends State<_MessagesPane> {
     final r = await s.send(Command.sendChat(widget.channel.id, text));
     if (!r.ok && mounted) {
       _input.text = text;
-      showSnack(context, r.error ?? 'No se pudo enviar', error: true);
+      showSnack(context, r.error ?? tr('No se pudo enviar'), error: true);
     }
   }
 
@@ -217,16 +227,16 @@ class _MessagesPaneState extends State<_MessagesPane> {
                 : IconButton(icon: const Icon(Icons.arrow_back), onPressed: widget.onBack),
             title: Text(widget.title, style: t.titleMedium),
             subtitle: widget.channel.kind == ChannelKind.general
-                ? const Text('Todos los jugadores y el máster')
+                ? Text(tr('Todos los jugadores y el máster'))
                 : Text(widget.channel.memberIds.map(s.campaign.memberName).join(', ')),
           ),
         ),
         Expanded(
           child: msgs.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: 'conversation',
-                  title: 'Sin mensajes',
-                  message: 'Las tiradas compartidas también aparecen aquí.',
+                  title: tr('Sin mensajes'),
+                  message: tr('Las tiradas compartidas también aparecen aquí.'),
                 )
               : ListView.builder(
                   controller: _scroll,
@@ -252,7 +262,7 @@ class _MessagesPaneState extends State<_MessagesPane> {
                     minLines: 1,
                     maxLines: 4,
                     textInputAction: TextInputAction.send,
-                    decoration: InputDecoration(hintText: s.canEdit ? 'Mensaje…' : 'Sin conexión'),
+                    decoration: InputDecoration(hintText: s.canEdit ? tr('Mensaje…') : tr('Sin conexión')),
                     onSubmitted: (_) => _send(),
                   ),
                 ),

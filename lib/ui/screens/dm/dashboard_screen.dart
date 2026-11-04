@@ -10,6 +10,7 @@ import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../character/character_views.dart';
 import 'invite_panel.dart';
+import '../../../core/i18n.dart';
 
 /// Vista general del máster: todo el grupo de un vistazo.
 class DashboardScreen extends StatelessWidget {
@@ -34,24 +35,24 @@ class DashboardScreen extends StatelessWidget {
           runSpacing: 8,
           children: [
             StatBox(
-              label: 'Jugadores',
+              label: tr('Jugadores'),
               value: '${s.onlineCount}/${c.members.where((m) => !m.banned).length}',
-              sub: 'conectados',
+              sub: tr('conectados'),
               width: 100,
             ),
-            StatBox(label: 'Personajes', value: '${pcs.length}', width: 100),
-            StatBox(label: 'Nivel medio', value: avgLevel == 0 ? '—' : avgLevel.toStringAsFixed(1), width: 100),
-            StatBox(label: 'Oro del grupo', value: formatCp(totalGold), width: 150),
+            StatBox(label: tr('Personajes'), value: '${pcs.length}', width: 100),
+            StatBox(label: tr('Nivel medio'), value: avgLevel == 0 ? '—' : avgLevel.toStringAsFixed(1), width: 100),
+            StatBox(label: tr('Oro del grupo'), value: formatCp(totalGold), width: 150),
             if (c.encounter.active)
-              StatBox(label: 'Combate', value: 'Ronda ${c.encounter.round}', highlight: true, width: 120),
+              StatBox(label: tr('Combate'), value: 'Ronda ${c.encounter.round}', highlight: true, width: 120),
           ],
         ),
         Gap.m,
         if (pcs.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: 'party',
-            title: 'Aún no hay personajes',
-            message: 'Comparte la invitación: cuando tus jugadores se unan y creen su personaje aparecerán aquí.',
+            title: tr('Aún no hay personajes'),
+            message: tr('Comparte la invitación: cuando tus jugadores se unan y creen su personaje aparecerán aquí.'),
           ),
         LayoutBuilder(
           builder: (context, cons) {
@@ -72,7 +73,7 @@ class DashboardScreen extends StatelessWidget {
         ),
         if (npcs.isNotEmpty) ...[
           Gap.l,
-          Text('PNJ y aliados', style: t.titleLarge),
+          Text(tr('PNJ y aliados'), style: t.titleLarge),
           Gap.s,
           Wrap(
             spacing: 8,
@@ -82,10 +83,10 @@ class DashboardScreen extends StatelessWidget {
         ],
         Gap.l,
         SectionCard(
-          title: 'Últimos sucesos',
+          title: tr('Últimos sucesos'),
           icon: 'scroll',
           child: c.log.isEmpty
-              ? Text('Aquí aparecerán los cambios de PG, oro, objetos, artesanía…', style: t.bodySmall)
+              ? Text(tr('Aquí aparecerán los cambios de PG, oro, objetos, artesanía…'), style: t.bodySmall)
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -167,26 +168,26 @@ class _PartyCard extends StatelessWidget {
               Gap.s,
               Row(
                 children: [
-                  _mini(t, 'CA', '${c.armorClass}'),
-                  _mini(t, 'Perc.', '${c.passive(Skill.perception)}'),
-                  _mini(t, 'Perspic.', '${c.passive(Skill.insight)}'),
-                  _mini(t, 'Inv.', '${c.passive(Skill.investigation)}'),
+                  _mini(t, tr('CA'), '${c.armorClass}'),
+                  _mini(t, tr('Perc.'), '${c.passive(Skill.perception)}'),
+                  _mini(t, tr('Perspic.'), '${c.passive(Skill.insight)}'),
+                  _mini(t, tr('Inv.'), '${c.passive(Skill.investigation)}'),
                   const Spacer(),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    tooltip: 'Daño',
+                    tooltip: tr('Daño'),
                     icon: const GameIcon('sword_wound', size: 20, color: AppColors.crimson),
                     onPressed: () async {
-                      final v = await promptNumber(context, 'Daño a ${c.name}');
+                      final v = await promptNumber(context, tr('Daño a {0}', [c.name]));
                       if (v != null && context.mounted) await editCharacter(context, c.id, (x) => x.takeDamage(v));
                     },
                   ),
                   IconButton(
                     visualDensity: VisualDensity.compact,
-                    tooltip: 'Curar',
+                    tooltip: tr('Curar'),
                     icon: const GameIcon('heart_plus', size: 20, color: AppColors.success),
                     onPressed: () async {
-                      final v = await promptNumber(context, 'Curar a ${c.name}');
+                      final v = await promptNumber(context, tr('Curar a {0}', [c.name]));
                       if (v != null && context.mounted) {
                         await editCharacter(context, c.id, (x) => x.heal(v, s.campaign.ruleset));
                       }
@@ -200,9 +201,9 @@ class _PartyCard extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     for (final cond in c.conditions) Pill(conditionLabel(cond), color: AppColors.warning),
-                    if (c.exhaustion > 0) Pill('Cansancio ${c.exhaustion}', color: AppColors.danger),
+                    if (c.exhaustion > 0) Pill(tr('Cansancio {0}', [c.exhaustion]), color: AppColors.danger),
                     if (c.spellcasting.concentratingOn.isNotEmpty)
-                      Pill('Conc.: ${c.spellcasting.concentratingOn}', color: AppColors.arcane),
+                      Pill(tr('Conc.: {0}', [c.spellcasting.concentratingOn]), color: AppColors.arcane),
                   ],
                 ),
             ],

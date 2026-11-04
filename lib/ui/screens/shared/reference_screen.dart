@@ -10,6 +10,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../character/spells_view.dart';
+import '../../../core/i18n.dart';
 
 /// Material de consulta rápida de la edición de la partida.
 class ReferenceScreen extends ConsumerWidget {
@@ -27,14 +28,14 @@ class ReferenceScreen extends ConsumerWidget {
         length: 5,
         child: Column(
           children: [
-            const TabBar(
+            TabBar(
               isScrollable: true,
               tabs: [
-                Tab(text: 'Estados'),
-                Tab(text: 'Conjuros'),
-                Tab(text: 'Objetos'),
-                Tab(text: 'Reglas'),
-                Tab(text: '5e vs 5.5e'),
+                Tab(text: tr('Estados')),
+                Tab(text: tr('Conjuros')),
+                Tab(text: tr('Objetos')),
+                Tab(text: tr('Reglas')),
+                Tab(text: tr('5e vs 5.5e')),
               ],
             ),
             Expanded(
@@ -123,8 +124,8 @@ class _ItemsState extends ConsumerState<_Items> {
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 expandedCrossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (i.damage.isNotEmpty) Text('Daño: ${i.damage}'),
-                  if (i.armorClass.isNotEmpty) Text('CA: ${i.armorClass}'),
+                  if (i.damage.isNotEmpty) Text(tr('Daño: {0}', [i.damage])),
+                  if (i.armorClass.isNotEmpty) Text(tr('CA: {0}', [i.armorClass])),
                   if (i.propertiesText.isNotEmpty) Text(i.propertiesText),
                   if (i.description.isNotEmpty) RichDescription(i.description),
                 ],
@@ -170,13 +171,15 @@ Capacidad = FUE × 15 libras (criatura mediana). Variante: más de FUE × 5 carg
     return ListView(
       padding: const EdgeInsets.all(12),
       children: [
-        SectionCard(title: 'Resumen rápido', icon: 'scroll', child: RichDescription(quick)),
+        SectionCard(title: tr('Resumen rápido'), icon: 'scroll', child: RichDescription(quick)),
         if (data.rules.isEmpty)
           Padding(
             padding: const EdgeInsets.all(8),
             child: Text(
-              'El texto completo de reglas sólo está incluido para el SRD 5.1. Los estados, conjuros, '
-              'objetos y criaturas de ${rules.ruleset.srdName} sí están completos.',
+              tr(
+                'El texto completo de reglas sólo está incluido para el SRD 5.1. Los estados, conjuros, objetos y criaturas de {0} sí están completos.',
+                [rules.ruleset.srdName],
+              ),
               style: t.bodySmall,
             ),
           ),

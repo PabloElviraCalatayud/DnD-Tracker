@@ -1,10 +1,13 @@
+import '../core/i18n.dart';
 import '../core/ids.dart';
 import '../core/json.dart';
+import 'board.dart';
 import 'character.dart';
 import 'chat.dart';
 import 'item.dart';
 import 'monster.dart';
 import 'recipe.dart';
+import 'roll.dart';
 import 'ruleset.dart';
 
 enum EncumbranceRule {
@@ -12,22 +15,35 @@ enum EncumbranceRule {
   standard('Capacidad de carga (FUE × 15)'),
   variant('Variante: cargado / muy cargado');
 
-  const EncumbranceRule(this.label);
-  final String label;
+  const EncumbranceRule(this._label);
+  final String _label;
+  String get label => tr(_label);
+}
+
+/// Cómo se cuentan las diagonales en la cuadrícula.
+enum DiagonalRule {
+  /// Cada casilla diagonal cuenta como una (5 pies). Regla estándar de 2014 y 2024.
+  standard('Estándar: cada diagonal = 1 casilla'),
+
+  /// Variante opcional de la Guía del Máster 2014: 5 pies, 10 pies, 5 pies…
+  alternate('Variante: diagonales alternas 5/10 pies');
+
+  const DiagonalRule(this._label);
+  final String _label;
+  String get label => tr(_label);
 }
 
 class CampaignSettings {
   CampaignSettings({
     this.hideItemWeights = false,
     this.hideItemValues = false,
-    this.showPartyHp = true,
-    this.showMonsterHp = false,
     this.encumbrance = EncumbranceRule.standard,
     this.countCoinWeight = true,
     this.allowMagicCrafting = true,
     this.playersCanCreateRecipes = false,
     this.allowNewPlayers = true,
     this.playersCanTrade = true,
+    this.diagonals = DiagonalRule.standard,
   });
 
   /// Oculta a los jugadores el peso de todos los objetos.
@@ -35,39 +51,36 @@ class CampaignSettings {
 
   /// Oculta a los jugadores el valor de todos los objetos.
   bool hideItemValues;
-  bool showPartyHp;
-  bool showMonsterHp;
   EncumbranceRule encumbrance;
   bool countCoinWeight;
   bool allowMagicCrafting;
   bool playersCanCreateRecipes;
   bool allowNewPlayers;
   bool playersCanTrade;
+  DiagonalRule diagonals;
 
   Map<String, dynamic> toJson() => {
     'hideItemWeights': hideItemWeights,
     'hideItemValues': hideItemValues,
-    'showPartyHp': showPartyHp,
-    'showMonsterHp': showMonsterHp,
     'encumbrance': encumbrance.name,
     'countCoinWeight': countCoinWeight,
     'allowMagicCrafting': allowMagicCrafting,
     'playersCanCreateRecipes': playersCanCreateRecipes,
     'allowNewPlayers': allowNewPlayers,
     'playersCanTrade': playersCanTrade,
+    'diagonals': diagonals.name,
   };
 
   factory CampaignSettings.fromJson(Map<String, dynamic> j) => CampaignSettings(
     hideItemWeights: asBool(j['hideItemWeights']),
     hideItemValues: asBool(j['hideItemValues']),
-    showPartyHp: asBool(j['showPartyHp'], true),
-    showMonsterHp: asBool(j['showMonsterHp']),
     encumbrance: enumByName(EncumbranceRule.values, j['encumbrance'], EncumbranceRule.standard),
     countCoinWeight: asBool(j['countCoinWeight'], true),
     allowMagicCrafting: asBool(j['allowMagicCrafting'], true),
     playersCanCreateRecipes: asBool(j['playersCanCreateRecipes']),
     allowNewPlayers: asBool(j['allowNewPlayers'], true),
     playersCanTrade: asBool(j['playersCanTrade'], true),
+    diagonals: enumByName(DiagonalRule.values, j['diagonals'], DiagonalRule.standard),
   );
 
   CampaignSettings copy() => CampaignSettings.fromJson(toJson());
@@ -135,9 +148,10 @@ class Combatant {
     this.hidden = false,
     this.notes = '',
     this.xp = 0,
-    this.status = '',
+    List<String>? tags,
   }) : id = id ?? newId(),
-       conditions = conditions ?? <String>[];
+       conditions = conditions ?? <String>[],
+       tags = tags ?? <String>[];
 
   String id;
   String name;
@@ -156,21 +170,11 @@ class Combatant {
   String notes;
   int xp;
 
-  /// Estado aproximado ("Ileso", "Herido"...) que ven los jugadores cuando
-  /// el máster oculta los PG de los monstruos.
-  String status;
+  /// Etiquetas que pone el máster para describir al enemigo sin mostrar sus
+  /// PG ("envenenado", "se le ve cansado"…). Las ven los jugadores.
+  List<String> tags;
 
   bool get isDown => hp != null && hp! <= 0;
-
-  static String healthStatus(int hp, int max) {
-    if (max <= 0) return '';
-    if (hp <= 0) return 'Fuera de combate';
-    final r = hp / max;
-    if (r >= 1) return 'Ileso';
-    if (r > 0.5) return 'Herido';
-    if (r > 0.25) return 'Malherido';
-    return 'Casi muerto';
-  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -187,7 +191,7 @@ class Combatant {
     if (hidden) 'hidden': true,
     if (notes.isNotEmpty) 'notes': notes,
     if (xp != 0) 'xp': xp,
-    if (status.isNotEmpty) 'status': status,
+    if (tags.isNotEmpty) 'tags': tags,
   };
 
   factory Combatant.fromJson(Map<String, dynamic> j) => Combatant(
@@ -205,7 +209,7 @@ class Combatant {
     hidden: asBool(j['hidden']),
     notes: asString(j['notes']),
     xp: asInt(j['xp']),
-    status: asString(j['status']),
+    tags: asStringList(j['tags']),
   );
 }
 
@@ -364,6 +368,8 @@ class Campaign {
     List<CampaignNote>? notes,
     List<LogEntry>? log,
     ChatState? chat,
+    List<RollEntry>? rolls,
+    Board? board,
     int? createdAt,
     int? updatedAt,
     this.revision = 0,
@@ -381,11 +387,17 @@ class Campaign {
        notes = notes ?? <CampaignNote>[],
        log = log ?? <LogEntry>[],
        chat = chat ?? ChatState(),
+       rolls = rolls ?? <RollEntry>[],
+       board = board ?? Board(),
        online = online ?? <String>[],
        createdAt = createdAt ?? DateTime.now().millisecondsSinceEpoch,
        updatedAt = updatedAt ?? DateTime.now().millisecondsSinceEpoch;
 
   static const maxLogEntries = 500;
+  static const maxRolls = 300;
+
+  /// Máximo de jugadores por partida (sin contar al máster).
+  static const maxPlayers = 8;
 
   String id;
   String name;
@@ -408,6 +420,12 @@ class Campaign {
   List<CampaignNote> notes;
   List<LogEntry> log;
   ChatState chat;
+
+  /// Tiradas hechas en la app (las del máster van marcadas como ocultas).
+  List<RollEntry> rolls;
+
+  /// Mapas y fichas del tablero.
+  Board board;
   int createdAt;
   int updatedAt;
 
@@ -476,6 +494,8 @@ class Campaign {
     'notes': notes.map((n) => n.toJson()).toList(),
     'log': log.map((l) => l.toJson()).toList(),
     if (includeChat) 'chat': chat.toJson(),
+    if (includeChat) 'rolls': rolls.map((r) => r.toJson()).toList(),
+    'board': board.toJson(),
     'createdAt': createdAt,
     'updatedAt': updatedAt,
     'revision': revision,
@@ -501,6 +521,8 @@ class Campaign {
     notes: asList(j['notes'], CampaignNote.fromJson),
     log: asList(j['log'], LogEntry.fromJson),
     chat: j['chat'] is Map ? ChatState.fromJson(asMap(j['chat'])) : ChatState(),
+    rolls: asList(j['rolls'], RollEntry.fromJson),
+    board: j['board'] is Map ? Board.fromJson(asMap(j['board'])) : Board(),
     createdAt: asIntOrNull(j['createdAt']),
     updatedAt: asIntOrNull(j['updatedAt']),
     revision: asInt(j['revision']),

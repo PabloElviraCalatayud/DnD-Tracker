@@ -9,7 +9,9 @@ import '../../../engine/commands.dart';
 import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
+import '../board/token_panel.dart';
 import '../dm/bestiary_screen.dart';
+import '../../../core/i18n.dart';
 
 final _roller = DiceRoller();
 
@@ -55,7 +57,7 @@ class InitiativeScreen extends StatelessWidget {
     final e = s.campaign.encounter.copy();
     change(e);
     final r = await s.send(Command.putEncounter(e));
-    if (!r.ok && context.mounted) showSnack(context, r.error ?? 'Error', error: true);
+    if (!r.ok && context.mounted) showSnack(context, r.error ?? tr('Error'), error: true);
   }
 
   void _addParty(BuildContext context) => _put(context, (e) {
@@ -76,9 +78,14 @@ class InitiativeScreen extends StatelessWidget {
   });
 
   Future<void> _addCustom(BuildContext context) async {
-    final name = await promptText(context, 'Nombre del combatiente', hint: 'PNJ, trampa, guardia…', ok: 'Añadir');
+    final name = await promptText(
+      context,
+      tr('Nombre del combatiente'),
+      hint: tr('PNJ, trampa, guardia…'),
+      ok: tr('Añadir'),
+    );
     if (name == null || name.trim().isEmpty || !context.mounted) return;
-    final hp = await promptNumber(context, 'PG (opcional)');
+    final hp = await promptNumber(context, tr('PG (opcional)'));
     if (!context.mounted) return;
     await _put(context, (e) {
       e.combatants.add(
@@ -120,12 +127,12 @@ class InitiativeScreen extends StatelessWidget {
                 }
               }),
               icon: Icon(e.active ? Icons.stop : Icons.play_arrow),
-              label: Text(e.active ? 'Terminar combate' : 'Empezar combate'),
+              label: Text(e.active ? tr('Terminar combate') : tr('Empezar combate')),
             ),
             OutlinedButton.icon(
               onPressed: () => _addParty(context),
               icon: const GameIcon('party', size: 18),
-              label: const Text('Grupo'),
+              label: Text(tr('Grupo')),
             ),
             OutlinedButton.icon(
               onPressed: () async {
@@ -133,15 +140,15 @@ class InitiativeScreen extends StatelessWidget {
                 if (m != null && context.mounted) await addMonsterDialog(context, m);
               },
               icon: const GameIcon('dragon', size: 18),
-              label: const Text('Criatura'),
+              label: Text(tr('Criatura')),
             ),
             OutlinedButton.icon(
               onPressed: () => _addCustom(context),
               icon: const Icon(Icons.add),
-              label: const Text('Otro'),
+              label: Text(tr('Otro')),
             ),
             IconButton(
-              tooltip: 'Tirar iniciativa de las criaturas',
+              tooltip: tr('Tirar iniciativa de las criaturas'),
               icon: const GameIcon('dice', size: 22),
               onPressed: () => _put(context, (x) {
                 for (final c in x.combatants.where((c) => c.kind != CombatantKind.pc)) {
@@ -151,10 +158,15 @@ class InitiativeScreen extends StatelessWidget {
               }),
             ),
             IconButton(
-              tooltip: 'Vaciar',
+              tooltip: tr('Vaciar'),
               icon: const Icon(Icons.delete_sweep),
               onPressed: () async {
-                final ok = await confirm(context, 'Vaciar combate', '¿Quitar a todos los combatientes?', danger: true);
+                final ok = await confirm(
+                  context,
+                  tr('Vaciar combate'),
+                  tr('¿Quitar a todos los combatientes?'),
+                  danger: true,
+                );
                 if (ok && context.mounted) {
                   await _put(
                     context,
@@ -168,7 +180,7 @@ class InitiativeScreen extends StatelessWidget {
               },
             ),
             FilterChip(
-              label: const Text('Visible para jugadores'),
+              label: Text(tr('Visible para jugadores')),
               selected: e.visibleToPlayers,
               onSelected: (v) => _put(context, (x) => x.visibleToPlayers = v),
             ),
@@ -184,15 +196,21 @@ class InitiativeScreen extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
-                    'Dificultad: ${rules.difficultyFor(adjusted, thresholds)}',
+                    tr('Dificultad: {0}', [rules.difficultyFor(adjusted, thresholds)]),
                     style: t.titleMedium?.copyWith(color: AppColors.gold),
                   ),
                   Text(
-                    'PX ${rules.is2024 ? '' : 'ajustados '}$adjusted (total $totalXp, ${totalXp ~/ pcLevels.length} por PJ)',
+                    tr('PX {0}{1} (total {2}, {3} por PJ)', [
+                      rules.is2024 ? '' : 'ajustados ',
+                      adjusted,
+                      totalXp,
+                      totalXp ~/ pcLevels.length,
+                    ]),
                   ),
                   Text(
-                    [for (var i = 0; i < thresholds.length; i++) '${rules.difficultyLabels[i]} ${thresholds[i]}']
-                        .join(' · '),
+                    [
+                      for (var i = 0; i < thresholds.length; i++) '${rules.difficultyLabels[i]} ${thresholds[i]}',
+                    ].join(' · '),
                     style: t.bodySmall,
                   ),
                 ],
@@ -204,22 +222,24 @@ class InitiativeScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
-                Text('Ronda ${e.round}', style: t.headlineSmall?.copyWith(color: AppColors.gold)),
+                Text(tr('Ronda {0}', [e.round]), style: t.headlineSmall?.copyWith(color: AppColors.gold)),
                 const Spacer(),
                 IconButton(onPressed: () => _put(context, (x) => x.previous()), icon: const Icon(Icons.skip_previous)),
                 FilledButton.icon(
                   onPressed: () => _put(context, (x) => x.next()),
                   icon: const Icon(Icons.skip_next),
-                  label: const Text('Siguiente turno'),
+                  label: Text(tr('Siguiente turno')),
                 ),
               ],
             ),
           ),
         if (e.combatants.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: 'crossed_swords',
-            title: 'Sin combatientes',
-            message: 'Añade al grupo y a las criaturas del grimorio. Los jugadores pueden enviar su tirada de iniciativa desde su app.',
+            title: tr('Sin combatientes'),
+            message: tr(
+              'Añade al grupo y a las criaturas del grimorio. Los jugadores pueden enviar su tirada de iniciativa desde su app.',
+            ),
           ),
         for (var i = 0; i < e.combatants.length; i++)
           _CombatantTile(index: i, combatant: e.combatants[i], isTurn: e.active && i == e.turn),
@@ -270,7 +290,7 @@ class _CombatantTile extends StatelessWidget {
               onTap: () async {
                 final v = await promptNumber(
                   context,
-                  'Iniciativa de ${c.name}',
+                  tr('Iniciativa de {0}', [c.name]),
                   initial: c.initiative,
                   allowNegative: true,
                 );
@@ -307,9 +327,9 @@ class _CombatantTile extends StatelessWidget {
                         ),
                       ),
                       if (c.hidden)
-                        const Padding(
-                          padding: EdgeInsets.only(left: 6),
-                          child: Pill('oculto', color: AppColors.muted),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Pill(tr('oculto'), color: AppColors.muted),
                         ),
                     ],
                   ),
@@ -323,7 +343,7 @@ class _CombatantTile extends StatelessWidget {
                         Gap.s,
                         Text('$hp/$hpMax', style: t.bodySmall),
                         if ((pc?.armorClass ?? c.ac) != null)
-                          Text('  CA ${pc?.armorClass ?? c.ac}', style: t.bodySmall),
+                          Text(tr('  CA {0}', [pc?.armorClass ?? c.ac]), style: t.bodySmall),
                       ],
                     ),
                   ],
@@ -337,20 +357,20 @@ class _CombatantTile extends StatelessWidget {
             ),
             if (c.kind != CombatantKind.pc && hp != null) ...[
               IconButton(
-                tooltip: 'Daño',
+                tooltip: tr('Daño'),
                 icon: const GameIcon('sword_wound', size: 20, color: AppColors.crimson),
                 onPressed: () async {
-                  final v = await promptNumber(context, 'Daño a ${c.name}');
+                  final v = await promptNumber(context, tr('Daño a {0}', [c.name]));
                   if (v != null && context.mounted) {
                     await _edit(context, (x) => x.hp = ((x.hp ?? 0) - v).clamp(0, 99999));
                   }
                 },
               ),
               IconButton(
-                tooltip: 'Curar',
+                tooltip: tr('Curar'),
                 icon: const GameIcon('heart_plus', size: 20, color: AppColors.success),
                 onPressed: () async {
-                  final v = await promptNumber(context, 'Curar a ${c.name}');
+                  final v = await promptNumber(context, tr('Curar a {0}', [c.name]));
                   if (v != null && context.mounted) {
                     await _edit(context, (x) => x.hp = ((x.hp ?? 0) + v).clamp(0, x.hpMax ?? 99999));
                   }
@@ -368,11 +388,13 @@ class _CombatantTile extends StatelessWidget {
                   e.combatants.removeAt(idx);
                   if (e.turn > idx || e.turn >= e.combatants.length) e.turn = (e.turn - 1).clamp(0, 999);
                   await ss.send(Command.putEncounter(e));
+                } else if (v == 'tags') {
+                  await editTags(context, name: c.name, combatant: c);
                 } else if (v == 'cond') {
                   final chosen = await showDialog<String>(
                     context: context,
                     builder: (ctx) => SimpleDialog(
-                      title: const Text('Estado'),
+                      title: Text(tr('Estado')),
                       children: [
                         for (final id in conditionNamesEs.keys)
                           SimpleDialogOption(
@@ -400,10 +422,14 @@ class _CombatantTile extends StatelessWidget {
                 }
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(value: 'turn', child: Text('Es su turno')),
-                const PopupMenuItem(value: 'cond', child: Text('Estados…')),
-                PopupMenuItem(value: 'hide', child: Text(c.hidden ? 'Mostrar a jugadores' : 'Ocultar a jugadores')),
-                const PopupMenuItem(value: 'remove', child: Text('Quitar')),
+                PopupMenuItem(value: 'turn', child: Text(tr('Es su turno'))),
+                PopupMenuItem(value: 'cond', child: Text(tr('Estados…'))),
+                if (c.kind != CombatantKind.pc) PopupMenuItem(value: 'tags', child: Text(tr('Etiquetas visibles…'))),
+                PopupMenuItem(
+                  value: 'hide',
+                  child: Text(c.hidden ? tr('Mostrar a jugadores') : tr('Ocultar a jugadores')),
+                ),
+                PopupMenuItem(value: 'remove', child: Text(tr('Quitar'))),
               ],
             ),
           ],
@@ -429,11 +455,11 @@ class _PlayerInitiative extends StatelessWidget {
       children: [
         if (me != null)
           SectionCard(
-            title: 'Tu iniciativa',
+            title: tr('Tu iniciativa'),
             icon: 'd20',
             child: Row(
               children: [
-                Text(me.initiativeRoll == null ? 'Sin enviar' : '${me.initiativeRoll}', style: t.headlineSmall),
+                Text(me.initiativeRoll == null ? tr('Sin enviar') : '${me.initiativeRoll}', style: t.headlineSmall),
                 const Spacer(),
                 FilledButton.icon(
                   onPressed: !s.canEdit
@@ -445,35 +471,37 @@ class _PlayerInitiative extends StatelessWidget {
                           if (context.mounted) {
                             showSnack(
                               context,
-                              res.ok ? 'Iniciativa ${r.total} (${r.breakdown}) enviada al máster' : res.error ?? '',
+                              res.ok
+                                  ? tr('Iniciativa {0} ({1}) enviada al máster', [r.total, r.breakdown])
+                                  : res.error ?? '',
                               error: !res.ok,
                             );
                           }
                         },
                   icon: const GameIcon('dice', size: 18, color: AppColors.background),
-                  label: Text('Tirar (${signed(me.initiative)})'),
+                  label: Text(tr('Tirar ({0})', [signed(me.initiative)])),
                 ),
                 Gap.s,
                 OutlinedButton(
                   onPressed: !s.canEdit
                       ? null
                       : () async {
-                          final v = await promptNumber(context, 'Resultado de tu tirada', allowNegative: true);
+                          final v = await promptNumber(context, tr('Resultado de tu tirada'), allowNegative: true);
                           if (v != null) await s.send(Command.setInitiative(me.id, v));
                         },
-                  child: const Text('Escribir'),
+                  child: Text(tr('Escribir')),
                 ),
               ],
             ),
           ),
         if (!e.active || e.combatants.isEmpty)
-          const EmptyState(
+          EmptyState(
             icon: 'campfire',
-            title: 'No hay combate',
-            message: 'Cuando el máster empiece un combate verás aquí el orden de turnos.',
+            title: tr('No hay combate'),
+            message: tr('Cuando el máster empiece un combate verás aquí el orden de turnos.'),
           )
         else ...[
-          Text('Ronda ${e.round}', style: t.headlineSmall?.copyWith(color: AppColors.gold)),
+          Text(tr('Ronda {0}', [e.round]), style: t.headlineSmall?.copyWith(color: AppColors.gold)),
           Gap.s,
           for (var i = 0; i < e.combatants.length; i++)
             Card(
@@ -487,8 +515,8 @@ class _PlayerInitiative extends StatelessWidget {
                 subtitle: Text(
                   [
                     if (e.combatants[i].hp != null && e.combatants[i].hpMax != null)
-                      'PG ${e.combatants[i].hp}/${e.combatants[i].hpMax}',
-                    if (e.combatants[i].status.isNotEmpty) e.combatants[i].status,
+                      tr('PG {0}/{1}', [e.combatants[i].hp, e.combatants[i].hpMax]),
+                    ...e.combatants[i].tags,
                     ...e.combatants[i].conditions.map(conditionLabel),
                   ].join(' · '),
                 ),

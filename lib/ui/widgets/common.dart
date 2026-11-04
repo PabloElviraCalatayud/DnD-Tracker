@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../theme.dart';
+import '../../core/i18n.dart';
 
 /// Icono de game-icons.net teñido con el color que se pida.
 class GameIcon extends StatelessWidget {
@@ -440,7 +441,7 @@ Future<bool> confirm(
       title: Text(title),
       content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 480), child: Text(message)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('Cancelar'))),
         FilledButton(
           style: danger ? FilledButton.styleFrom(backgroundColor: AppColors.crimson) : null,
           onPressed: () => Navigator.pop(ctx, true),
@@ -477,7 +478,7 @@ Future<String?> promptText(
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
         FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: Text(ok)),
       ],
     ),
@@ -509,8 +510,8 @@ Future<int?> promptNumber(
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, int.tryParse(controller.text)), child: const Text('Aceptar')),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
+        FilledButton(onPressed: () => Navigator.pop(ctx, int.tryParse(controller.text)), child: Text(tr('Aceptar'))),
       ],
     ),
   );

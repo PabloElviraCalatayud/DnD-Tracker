@@ -16,6 +16,7 @@ import 'character_editor.dart';
 import 'crafting_view.dart';
 import 'inventory_view.dart';
 import 'spells_view.dart';
+import '../../../core/i18n.dart';
 
 enum CharacterView { sheet, inventory, spells, crafting }
 
@@ -27,7 +28,7 @@ bool canEditCharacter(GameSession s, Character c) =>
 Future<void> editCharacter(BuildContext context, String id, void Function(Character c) change) async {
   final s = SessionScope.read(context);
   final r = await s.editCharacter(id, change);
-  if (!r.ok && context.mounted) showSnack(context, r.error ?? 'No se pudo guardar', error: true);
+  if (!r.ok && context.mounted) showSnack(context, r.error ?? tr('No se pudo guardar'), error: true);
 }
 
 class CharacterViewBody extends StatelessWidget {
@@ -39,7 +40,7 @@ class CharacterViewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = SessionScope.of(context);
     final c = s.campaign.character(characterId);
-    if (c == null) return const EmptyState(icon: 'skull', title: 'Este personaje ya no existe');
+    if (c == null) return EmptyState(icon: 'skull', title: tr('Este personaje ya no existe'));
     return switch (view) {
       CharacterView.sheet => CharacterSheet(character: c),
       CharacterView.inventory => InventoryView(character: c),
@@ -61,22 +62,22 @@ class CharacterDetailScreen extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: AppScaffold(
-        title: c?.name ?? 'Personaje',
+        title: c?.name ?? tr('Personaje'),
         actions: [
           if (c != null && canEditCharacter(s, c))
             IconButton(
-              tooltip: 'Editar ficha',
+              tooltip: tr('Editar ficha'),
               icon: const Icon(Icons.edit),
               onPressed: () => openCharacterEditor(context, c),
             ),
         ],
-        bottom: const TabBar(
+        bottom: TabBar(
           isScrollable: true,
           tabs: [
-            Tab(text: 'Ficha'),
-            Tab(text: 'Inventario'),
-            Tab(text: 'Conjuros'),
-            Tab(text: 'Artesanía'),
+            Tab(text: tr('Ficha')),
+            Tab(text: tr('Inventario')),
+            Tab(text: tr('Conjuros')),
+            Tab(text: tr('Artesanía')),
           ],
         ),
         body: TabBarView(
@@ -189,19 +190,19 @@ class _Header extends StatelessWidget {
                     [
                       if (c.species.isNotEmpty)
                         '${rs.speciesLabel}: ${c.species}${c.subspecies.isNotEmpty ? ' (${c.subspecies})' : ''}',
-                      if (c.background.isNotEmpty) 'Trasfondo: ${c.background}',
+                      if (c.background.isNotEmpty) tr('Trasfondo: {0}', [c.background]),
                       if (c.alignment.isNotEmpty) c.alignment,
-                      'Nivel ${c.level} · ${c.xp} PX',
+                      tr('Nivel {0} · {1} PX', [c.level, c.xp]),
                     ].join(' · '),
                     style: t.bodySmall,
                   ),
-                  if (s.isDm) Text('Jugador: ${s.campaign.memberName(c.ownerId)}', style: t.bodySmall),
+                  if (s.isDm) Text(tr('Jugador: {0}', [s.campaign.memberName(c.ownerId)]), style: t.bodySmall),
                 ],
               ),
             ),
             if (editable)
               IconButton(
-                tooltip: 'Editar ficha',
+                tooltip: tr('Editar ficha'),
                 icon: const Icon(Icons.edit_note),
                 onPressed: () => openCharacterEditor(context, c),
               ),
@@ -220,13 +221,13 @@ class _Vitals extends ConsumerWidget {
   final bool editable;
 
   Future<void> _damage(BuildContext context) async {
-    final v = await promptNumber(context, 'Daño recibido', hint: 'Primero se restan los PG temporales');
+    final v = await promptNumber(context, tr('Daño recibido'), hint: tr('Primero se restan los PG temporales'));
     if (v == null || !context.mounted) return;
     await editCharacter(context, character.id, (c) => c.takeDamage(v));
   }
 
   Future<void> _heal(BuildContext context, Ruleset rs) async {
-    final v = await promptNumber(context, 'Curación');
+    final v = await promptNumber(context, tr('Curación'));
     if (v == null || !context.mounted) return;
     await editCharacter(context, character.id, (c) => c.heal(v, rs));
   }
@@ -234,9 +235,9 @@ class _Vitals extends ConsumerWidget {
   Future<void> _temp(BuildContext context) async {
     final v = await promptNumber(
       context,
-      'PG temporales',
+      tr('PG temporales'),
       initial: character.hpTemp,
-      hint: 'No se acumulan: se queda el valor más alto',
+      hint: tr('No se acumulan: se queda el valor más alto'),
     );
     if (v == null || !context.mounted) return;
     await editCharacter(context, character.id, (c) => c.hpTemp = v);
@@ -251,7 +252,7 @@ class _Vitals extends ConsumerWidget {
     final rs = s.campaign.ruleset;
     final maxHp = c.effectiveHpMax(rs);
     return SectionCard(
-      title: 'Puntos de golpe',
+      title: tr('Puntos de golpe'),
       icon: 'heart',
       trailing: Text(
         '${c.hpCurrent} / $maxHp${c.hpTemp > 0 ? '  +${c.hpTemp}' : ''}',
@@ -271,28 +272,28 @@ class _Vitals extends ConsumerWidget {
                   style: FilledButton.styleFrom(backgroundColor: AppColors.secondaryDark, padding: _compact),
                   onPressed: () => _damage(context),
                   icon: const GameIcon('sword_wound', size: 18, color: AppColors.parchment),
-                  label: const Text('Daño'),
+                  label: Text(tr('Daño')),
                 ),
                 FilledButton.tonalIcon(
                   style: FilledButton.styleFrom(padding: _compact),
                   onPressed: () => _heal(context, rs),
                   icon: const GameIcon('heart_plus', size: 18, color: AppColors.parchment),
-                  label: const Text('Curar'),
+                  label: Text(tr('Curar')),
                 ),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(padding: _compact),
                   onPressed: () => _temp(context),
-                  child: const Text('PG temp.'),
+                  child: Text(tr('PG temp.')),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: '−1 PG',
+                  tooltip: tr('−1 PG'),
                   onPressed: () => editCharacter(context, c.id, (x) => x.takeDamage(1)),
                   icon: const Icon(Icons.remove_circle_outline),
                 ),
                 IconButton(
                   visualDensity: VisualDensity.compact,
-                  tooltip: '+1 PG',
+                  tooltip: tr('+1 PG'),
                   onPressed: () => editCharacter(context, c.id, (x) => x.heal(1, rs)),
                   icon: const Icon(Icons.add_circle_outline),
                 ),
@@ -304,21 +305,21 @@ class _Vitals extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              StatBox(label: 'CA', value: '${c.armorClass}'),
+              StatBox(label: tr('CA'), value: '${c.armorClass}'),
               StatBox(
-                label: 'Iniciativa',
+                label: tr('Iniciativa'),
                 value: signed(c.initiative),
                 onTap: () => showD20Roll(
                   context,
-                  'Iniciativa de ${c.name}',
+                  tr('Iniciativa de {0}', [c.name]),
                   c.initiative + s.campaign.rules.exhaustionD20Penalty(c.exhaustion),
                 ),
               ),
-              StatBox(label: 'Velocidad', value: units.distance(c.speed)),
-              StatBox(label: 'Compet.', value: signed(c.proficiencyBonus)),
-              StatBox(label: 'Perc. pasiva', value: '${c.passive(Skill.perception)}', width: 100),
+              StatBox(label: tr('Velocidad'), value: units.distance(c.speed)),
+              StatBox(label: tr('Compet.'), value: signed(c.proficiencyBonus)),
+              StatBox(label: tr('Perc. pasiva'), value: '${c.passive(Skill.perception)}', width: 100),
               StatBox(
-                label: 'Inspiración',
+                label: tr('Inspiración'),
                 value: c.inspiration ? 'Sí' : 'No',
                 valueWidget: Icon(
                   c.inspiration ? Icons.star : Icons.star_border,
@@ -363,12 +364,12 @@ class _DeathSaves extends StatelessWidget {
     final dead = c.deathFailures >= 3;
     final stable = c.deathSuccesses >= 3;
     return SectionCard(
-      title: dead ? 'Muerto' : (stable ? 'Estable' : 'Tiradas de salvación contra la muerte'),
+      title: dead ? tr('Muerto') : (stable ? 'Estable' : 'Tiradas de salvación contra la muerte'),
       icon: 'skull',
       trailing: editable
           ? TextButton(
-              onPressed: () => showD20Roll(context, 'Salvación contra la muerte', 0),
-              child: const Text('Tirar'),
+              onPressed: () => showD20Roll(context, tr('Salvación contra la muerte'), 0),
+              child: Text(tr('Tirar')),
             )
           : null,
       child: Column(
@@ -394,7 +395,7 @@ class _Conditions extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final ids = conditionNamesEs.keys.where((k) => k != 'exhaustion').toList();
     return SectionCard(
-      title: 'Estados',
+      title: tr('Estados'),
       icon: 'eye_target',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -413,13 +414,13 @@ class _Conditions extends ConsumerWidget {
                         ? (v) => editCharacter(context, c.id, (x) => v ? x.conditions.add(id) : x.conditions.remove(id))
                         : null,
                   ),
-              if (!editable && c.conditions.isEmpty) Text('Ninguno', style: t.bodySmall),
+              if (!editable && c.conditions.isEmpty) Text(tr('Ninguno'), style: t.bodySmall),
             ],
           ),
           Gap.m,
           Row(
             children: [
-              Text('Cansancio', style: t.titleSmall),
+              Text(tr('Cansancio'), style: t.titleSmall),
               Gap.s,
               if (editable)
                 NumberStepper(
@@ -451,9 +452,9 @@ class _Abilities extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final penalty = rules.exhaustionD20Penalty(c.exhaustion);
     return SectionCard(
-      title: 'Características',
+      title: tr('Características'),
       icon: 'muscle',
-      trailing: Text('Toca para tirar', style: t.bodySmall),
+      trailing: Text(tr('Toca para tirar'), style: t.bodySmall),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -466,8 +467,8 @@ class _Abilities extends StatelessWidget {
               mod: c.mod(a),
               save: c.saveBonus(a),
               proficientSave: c.saveProficiencies.contains(a),
-              onCheck: () => showD20Roll(context, 'Prueba de ${a.label}', c.mod(a) + penalty),
-              onSave: () => showD20Roll(context, 'Salvación de ${a.label}', c.saveBonus(a) + penalty),
+              onCheck: () => showD20Roll(context, tr('Prueba de {0}', [a.label]), c.mod(a) + penalty),
+              onSave: () => showD20Roll(context, tr('Salvación de {0}', [a.label]), c.saveBonus(a) + penalty),
             ),
         ],
       ),
@@ -531,7 +532,7 @@ class _AbilityBox extends StatelessWidget {
                 children: [
                   Icon(proficientSave ? Icons.circle : Icons.circle_outlined, size: 10, color: AppColors.gold),
                   const SizedBox(width: 4),
-                  Text('Salv. ${signed(save)}', style: t.labelMedium),
+                  Text(tr('Salv. {0}', [signed(save)]), style: t.labelMedium),
                 ],
               ),
             ),
@@ -554,7 +555,7 @@ class _Skills extends StatelessWidget {
     final penalty = rules.exhaustionD20Penalty(c.exhaustion);
     final skills = List.of(Skill.values)..sort((a, b) => a.label.compareTo(b.label));
     return SectionCard(
-      title: 'Habilidades',
+      title: tr('Habilidades'),
       icon: 'brain',
       child: Column(
         children: [
@@ -583,7 +584,7 @@ class _Skills extends StatelessWidget {
               ),
             ),
           Gap.s,
-          Text('C = competente · P = pericia · ½ = media competencia', style: t.bodySmall),
+          Text(tr('C = competente · P = pericia · ½ = media competencia'), style: t.bodySmall),
         ],
       ),
     );
@@ -604,20 +605,21 @@ class _HitDiceAndRest extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
-          title: const Text('Descanso corto'),
+          title: Text(tr('Descanso corto')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Elige cuántos dados de golpe gastas. Cada uno cura 1dX + mod. de CON. '
-                'También se recargan los rasgos de descanso corto y los espacios de pacto.',
+              Text(
+                tr(
+                  'Elige cuántos dados de golpe gastas. Cada uno cura 1dX + mod. de CON. También se recargan los rasgos de descanso corto y los espacios de pacto.',
+                ),
               ),
               Gap.m,
               for (final d in dice)
                 Row(
                   children: [
-                    Expanded(child: Text('d$d (quedan ${c.hitDiceAvailable(d)})')),
+                    Expanded(child: Text(tr('d{0} (quedan {1})', [d, c.hitDiceAvailable(d)]))),
                     NumberStepper(
                       compact: true,
                       value: spend[d]!,
@@ -629,7 +631,7 @@ class _HitDiceAndRest extends StatelessWidget {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('Cancelar'))),
             FilledButton(
               onPressed: () {
                 var healed = 0;
@@ -640,7 +642,7 @@ class _HitDiceAndRest extends StatelessWidget {
                 });
                 Navigator.pop(ctx, healed);
               },
-              child: const Text('Descansar'),
+              child: Text(tr('Descansar')),
             ),
           ],
         ),
@@ -653,12 +655,12 @@ class _HitDiceAndRest extends StatelessWidget {
       x.heal(result, rs);
       x.shortRest();
     });
-    if (context.mounted) showSnack(context, 'Descanso corto: recuperas $result PG');
+    if (context.mounted) showSnack(context, tr('Descanso corto: recuperas {0} PG', [result]));
   }
 
   Future<void> _longRest(BuildContext context) async {
     final s = SessionScope.read(context);
-    final ok = await confirm(context, 'Descanso largo', s.campaign.rules.longRestSummary, ok: 'Descansar');
+    final ok = await confirm(context, tr('Descanso largo'), s.campaign.rules.longRestSummary, ok: tr('Descansar'));
     if (!ok || !context.mounted) return;
     await editCharacter(context, character.id, (x) => x.longRest(s.campaign.ruleset));
   }
@@ -669,7 +671,7 @@ class _HitDiceAndRest extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final totals = c.hitDiceTotal;
     return SectionCard(
-      title: 'Dados de golpe y descansos',
+      title: tr('Dados de golpe y descansos'),
       icon: 'campfire',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,8 +680,8 @@ class _HitDiceAndRest extends StatelessWidget {
             spacing: 12,
             children: [
               for (final e in totals.entries)
-                Text('d${e.key}: ${c.hitDiceAvailable(e.key)}/${e.value}', style: t.titleSmall),
-              if (totals.isEmpty) Text('Añade una clase para tener dados de golpe.', style: t.bodySmall),
+                Text(tr('d{0}: {1}/{2}', [e.key, c.hitDiceAvailable(e.key), e.value]), style: t.titleSmall),
+              if (totals.isEmpty) Text(tr('Añade una clase para tener dados de golpe.'), style: t.bodySmall),
             ],
           ),
           if (editable) ...[
@@ -690,12 +692,12 @@ class _HitDiceAndRest extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => _shortRest(context),
                   icon: const GameIcon('hourglass', size: 18),
-                  label: const Text('Descanso corto'),
+                  label: Text(tr('Descanso corto')),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => _longRest(context),
                   icon: const GameIcon('sleep', size: 18),
-                  label: const Text('Descanso largo'),
+                  label: Text(tr('Descanso largo')),
                 ),
               ],
             ),
@@ -716,10 +718,10 @@ class _Features extends StatelessWidget {
     final c = character;
     final t = Theme.of(context).textTheme;
     return SectionCard(
-      title: 'Rasgos y recursos',
+      title: tr('Rasgos y recursos'),
       icon: 'sparkles',
       child: c.features.isEmpty
-          ? Text('Sin rasgos. Añádelos desde «Editar ficha».', style: t.bodySmall)
+          ? Text(tr('Sin rasgos. Añádelos desde «Editar ficha».'), style: t.bodySmall)
           : Column(
               children: [
                 for (final f in c.features)
@@ -729,7 +731,8 @@ class _Features extends StatelessWidget {
                     subtitle: Text(
                       [
                         if (f.source.isNotEmpty) f.source,
-                        if (f.maxUses != null) '${f.maxUses! - f.used}/${f.maxUses} usos · ${f.recharge.label}',
+                        if (f.maxUses != null)
+                          tr('{0}/{1} usos · {2}', [f.maxUses! - f.used, f.maxUses, f.recharge.label]),
                       ].join(' · '),
                     ),
                     trailing: f.maxUses == null || !editable
@@ -738,7 +741,7 @@ class _Features extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                tooltip: 'Gastar un uso',
+                                tooltip: tr('Gastar un uso'),
                                 onPressed: f.used < f.maxUses!
                                     ? () => editCharacter(
                                         context,
@@ -749,7 +752,7 @@ class _Features extends StatelessWidget {
                                 icon: const Icon(Icons.remove_circle_outline),
                               ),
                               IconButton(
-                                tooltip: 'Recuperar un uso',
+                                tooltip: tr('Recuperar un uso'),
                                 onPressed: f.used > 0
                                     ? () => editCharacter(
                                         context,
@@ -783,7 +786,7 @@ class _Attacks extends StatelessWidget {
     final weapons = c.inventory.where((i) => i.equipped && i.damage.isNotEmpty).toList();
     if (c.attacks.isEmpty && weapons.isEmpty) return const SizedBox.shrink();
     return SectionCard(
-      title: 'Ataques',
+      title: tr('Ataques'),
       icon: 'crossed_swords',
       child: Column(
         children: [
@@ -798,13 +801,14 @@ class _Attacks extends StatelessWidget {
                   if (int.tryParse(a.bonus.replaceAll('+', '')) != null)
                     TextButton(
                       onPressed: () =>
-                          showD20Roll(context, 'Ataque: ${a.name}', int.parse(a.bonus.replaceAll('+', ''))),
-                      child: const Text('Atacar'),
+                          showD20Roll(context, tr('Ataque: {0}', [a.name]), int.parse(a.bonus.replaceAll('+', ''))),
+                      child: Text(tr('Atacar')),
                     ),
                   if (a.damage.isNotEmpty)
                     TextButton(
-                      onPressed: () => showExpressionRoll(context, 'Daño: ${a.name}', a.damage.split(' ').first),
-                      child: const Text('Daño'),
+                      onPressed: () =>
+                          showExpressionRoll(context, tr('Daño: {0}', [a.name]), a.damage.split(' ').first),
+                      child: Text(tr('Daño')),
                     ),
                 ],
               ),
@@ -816,8 +820,8 @@ class _Attacks extends StatelessWidget {
               title: Text(w.name),
               subtitle: Text([w.damage, w.properties].where((x) => x.isNotEmpty).join(' · '), style: t.bodySmall),
               trailing: TextButton(
-                onPressed: () => showExpressionRoll(context, 'Daño: ${w.name}', w.damage.split(' ').first),
-                child: const Text('Daño'),
+                onPressed: () => showExpressionRoll(context, tr('Daño: {0}', [w.name]), w.damage.split(' ').first),
+                child: Text(tr('Daño')),
               ),
             ),
         ],
@@ -844,7 +848,7 @@ class _Proficiencies extends StatelessWidget {
     if (rows.isEmpty) return const SizedBox.shrink();
     final t = Theme.of(context).textTheme;
     return SectionCard(
-      title: 'Competencias e idiomas',
+      title: tr('Competencias e idiomas'),
       icon: 'scroll',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -888,7 +892,7 @@ class _Personality extends StatelessWidget {
     ].where((r) => r.$2.trim().isNotEmpty).toList();
     if (rows.isEmpty) return const SizedBox.shrink();
     return SectionCard(
-      title: 'Personalidad e historia',
+      title: tr('Personalidad e historia'),
       icon: 'quill',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -914,14 +918,14 @@ class _DmNotes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionCard(
-      title: 'Notas del máster (privadas)',
+      title: tr('Notas del máster (privadas)'),
       icon: 'padlock',
       trailing: IconButton(
         icon: const Icon(Icons.edit),
         onPressed: () async {
           final v = await promptText(
             context,
-            'Notas sobre ${character.name}',
+            tr('Notas sobre {0}', [character.name]),
             initial: character.dmNotes,
             multiline: true,
           );
@@ -929,7 +933,7 @@ class _DmNotes extends StatelessWidget {
           await editCharacter(context, character.id, (c) => c.dmNotes = v);
         },
       ),
-      child: Text(character.dmNotes.isEmpty ? 'El jugador nunca ve estas notas.' : character.dmNotes),
+      child: Text(character.dmNotes.isEmpty ? tr('El jugador nunca ve estas notas.') : character.dmNotes),
     );
   }
 }

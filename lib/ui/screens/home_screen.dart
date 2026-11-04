@@ -14,6 +14,7 @@ import 'campaign_shell.dart';
 import 'create_campaign_screen.dart';
 import 'join_screen.dart';
 import 'profile_screen.dart';
+import '../../core/i18n.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -31,19 +32,19 @@ class HomeScreen extends ConsumerWidget {
           const GameIcon('d20', size: 26),
           Gap.s,
           Text(
-            'DnD Tracker',
+            tr('DnD Tracker'),
             style: t.titleLarge?.copyWith(fontFamily: 'CinzelDecorative', color: AppColors.gold),
           ),
         ],
       ),
       actions: [
         IconButton(
-          tooltip: 'Perfil y ajustes',
+          tooltip: tr('Perfil y ajustes'),
           icon: const Icon(Icons.person_outline),
           onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const ProfileScreen())),
         ),
         IconButton(
-          tooltip: 'Créditos y licencias',
+          tooltip: tr('Créditos y licencias'),
           icon: const Icon(Icons.info_outline),
           onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => const AboutScreen())),
         ),
@@ -62,8 +63,8 @@ class HomeScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Saludos, ${profile.displayName}', style: t.headlineSmall),
-                    Text('¿Diriges o juegas hoy?', style: t.bodyLarge?.copyWith(color: AppColors.muted)),
+                    Text(tr('Saludos, {0}', [profile.displayName]), style: t.headlineSmall),
+                    Text(tr('¿Diriges o juegas hoy?'), style: t.bodyLarge?.copyWith(color: AppColors.muted)),
                     Gap.m,
                     LayoutBuilder(
                       builder: (context, c) {
@@ -71,15 +72,15 @@ class HomeScreen extends ConsumerWidget {
                         final cards = [
                           _ActionCard(
                             icon: 'crowned_skull',
-                            title: 'Crear partida',
-                            subtitle: 'Serás el máster y el anfitrión',
+                            title: tr('Crear partida'),
+                            subtitle: tr('Serás el máster y el anfitrión'),
                             color: AppColors.gold,
                             onTap: () => _create(context, ref),
                           ),
                           _ActionCard(
                             icon: 'rally',
-                            title: 'Unirse a partida',
-                            subtitle: 'Con la invitación del máster',
+                            title: tr('Unirse a partida'),
+                            subtitle: tr('Con la invitación del máster'),
                             color: AppColors.arcane,
                             onTap: () => _join(context, ref),
                           ),
@@ -98,28 +99,28 @@ class HomeScreen extends ConsumerWidget {
                     Gap.l,
                     _Header(
                       icon: 'crown',
-                      title: 'Partidas que diriges',
+                      title: tr('Partidas que diriges'),
                       trailing: TextButton.icon(
                         onPressed: () => _demo(context, ref),
                         icon: const GameIcon('sparkles', size: 18),
-                        label: const Text('Partida de ejemplo'),
+                        label: Text(tr('Partida de ejemplo')),
                       ),
                     ),
                     hosted.when(
                       data: (list) => list.isEmpty
-                          ? const _Hint('Todavía no diriges ninguna partida.')
+                          ? _Hint(tr('Todavía no diriges ninguna partida.'))
                           : Column(children: [for (final c in list) _HostedTile(campaign: c)]),
                       loading: () => const LinearProgressIndicator(),
-                      error: (e, _) => _Hint('Error al leer las partidas: $e'),
+                      error: (e, _) => _Hint(tr('Error al leer las partidas: {0}', [e])),
                     ),
                     Gap.l,
-                    const _Header(icon: 'party', title: 'Partidas en las que juegas'),
+                    _Header(icon: 'party', title: tr('Partidas en las que juegas')),
                     joined.when(
                       data: (list) => list.isEmpty
-                          ? const _Hint('Cuando te unas a una partida aparecerá aquí, también sin conexión.')
+                          ? _Hint(tr('Cuando te unas a una partida aparecerá aquí, también sin conexión.'))
                           : Column(children: [for (final j in list) _JoinedTile(joined: j)]),
                       loading: () => const LinearProgressIndicator(),
-                      error: (e, _) => _Hint('Error: $e'),
+                      error: (e, _) => _Hint(tr('Error: {0}', [e])),
                     ),
                     Gap.l,
                   ],
@@ -145,10 +146,11 @@ class HomeScreen extends ConsumerWidget {
     final profile = ref.read(profileProvider);
     final ok = await confirm(
       context,
-      'Partida de ejemplo',
-      'Se creará «La Cripta del Rey Ceniza» con tres personajes ficticios, recetas, un combate en curso y notas, '
-          'para que pruebes todo como máster. Puedes borrarla cuando quieras.',
-      ok: 'Crear',
+      tr('Partida de ejemplo'),
+      tr(
+        'Se creará «La Cripta del Rey Ceniza» con tres personajes ficticios, recetas, un combate en curso y notas, para que pruebes todo como máster. Puedes borrarla cuando quieras.',
+      ),
+      ok: tr('Crear'),
     );
     if (!ok || !context.mounted) return;
     final demo = buildDemoCampaign(dmUserId: profile.userId, dmName: profile.displayName);
@@ -298,7 +300,9 @@ class _HostedTile extends ConsumerWidget {
       child: ListTile(
         leading: const GameIcon('castle', size: 34),
         title: Text(campaign.name, style: Theme.of(context).textTheme.titleMedium),
-        subtitle: Text('$players jugadores · ${campaign.characters.length} personajes · ${_ago(campaign.updatedAt)}'),
+        subtitle: Text(
+          tr('{0} jugadores · {1} personajes · {2}', [players, campaign.characters.length, _ago(campaign.updatedAt)]),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -308,13 +312,15 @@ class _HostedTile extends ConsumerWidget {
                 final storage = ref.read(storageProvider);
                 if (v == 'export') {
                   final path = await storage.exportCampaign(campaign);
-                  if (context.mounted) showSnack(context, 'Copia guardada en $path');
+                  if (context.mounted) showSnack(context, tr('Copia guardada en {0}', [path]));
                 } else if (v == 'delete') {
                   final ok = await confirm(
                     context,
-                    'Borrar partida',
-                    'Se borrará "${campaign.name}" de este dispositivo con todos sus personajes. No se puede deshacer.',
-                    ok: 'Borrar',
+                    tr('Borrar partida'),
+                    tr('Se borrará "{0}" de este dispositivo con todos sus personajes. No se puede deshacer.', [
+                      campaign.name,
+                    ]),
+                    ok: tr('Borrar'),
                     danger: true,
                   );
                   if (!ok) return;
@@ -322,9 +328,9 @@ class _HostedTile extends ConsumerWidget {
                   ref.invalidate(hostedCampaignsProvider);
                 }
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'export', child: Text('Exportar copia de seguridad')),
-                PopupMenuItem(value: 'delete', child: Text('Borrar')),
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'export', child: Text(tr('Exportar copia de seguridad'))),
+                PopupMenuItem(value: 'delete', child: Text(tr('Borrar'))),
               ],
             ),
           ],
@@ -343,7 +349,7 @@ class _JoinedTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = joined.lastView;
     final profile = ref.watch(profileProvider);
-    final mine = view?.charactersOf(profile.userId) ?? const [];
+    final mine = view?.charactersOf(profile.userId) ?? [];
     return Card(
       child: ListTile(
         leading: GameIcon(mine.isEmpty ? 'hood' : mine.first.portrait, size: 34),
@@ -351,8 +357,8 @@ class _JoinedTile extends ConsumerWidget {
         subtitle: Text(
           [
             if (mine.isNotEmpty) mine.map((c) => c.name).join(', '),
-            'Máster: ${view?.dmName ?? joined.invite.dmName}',
-            'conectado ${_ago(joined.lastConnectedAt)}',
+            tr('Máster: {0}', [view?.dmName ?? joined.invite.dmName]),
+            tr('conectado {0}', [_ago(joined.lastConnectedAt)]),
           ].where((s) => s.isNotEmpty).join(' · '),
         ),
         trailing: Row(
@@ -364,10 +370,12 @@ class _JoinedTile extends ConsumerWidget {
                 if (v == 'delete') {
                   final ok = await confirm(
                     context,
-                    'Olvidar partida',
-                    'Se borrará la copia local de "${joined.name}". Tu personaje sigue guardado en el dispositivo '
-                        'del máster y podrás volver a unirte.',
-                    ok: 'Olvidar',
+                    tr('Olvidar partida'),
+                    tr(
+                      'Se borrará la copia local de "{0}". Tu personaje sigue guardado en el dispositivo del máster y podrás volver a unirte.',
+                      [joined.name],
+                    ),
+                    ok: tr('Olvidar'),
                     danger: true,
                   );
                   if (!ok) return;
@@ -375,7 +383,7 @@ class _JoinedTile extends ConsumerWidget {
                   ref.invalidate(joinedCampaignsProvider);
                 }
               },
-              itemBuilder: (_) => const [PopupMenuItem(value: 'delete', child: Text('Olvidar esta partida'))],
+              itemBuilder: (_) => [PopupMenuItem(value: 'delete', child: Text(tr('Olvidar esta partida')))],
             ),
           ],
         ),

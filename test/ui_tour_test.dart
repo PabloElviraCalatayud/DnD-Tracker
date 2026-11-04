@@ -7,10 +7,12 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dnd_tracker/data/demo.dart';
+import 'package:dnd_tracker/core/i18n.dart';
 import 'package:dnd_tracker/data/storage.dart';
 import 'package:dnd_tracker/domain/campaign.dart';
 import 'package:dnd_tracker/domain/chat.dart';
 import 'package:dnd_tracker/domain/profile.dart';
+import 'package:dnd_tracker/domain/roll.dart';
 import 'package:dnd_tracker/engine/commands.dart';
 import 'package:dnd_tracker/engine/view_filter.dart';
 import 'package:dnd_tracker/state/host_session.dart';
@@ -50,11 +52,20 @@ class DemoPlayerSession extends GameSession {
   Future<CommandResult> send(Command cmd) async {
     final r = host.engine.apply(cmd, Actor(userId: userId, name: name, isDm: false));
     notifyListeners();
-    return CommandResult(r.ok, r.error);
+    return CommandResult(r.ok, r.error, r.data);
   }
 
   @override
   Future<void> close() async {}
+
+  @override
+  List<RollEntry> get rolls => host.campaign.rolls.where((r) => !r.hidden).toList();
+
+  @override
+  Future<Uint8List?> loadAsset(String id) => host.loadAsset(id);
+
+  @override
+  Future<String?> uploadAsset(Uint8List bytes) => host.uploadAsset(bytes);
 }
 
 Future<void> _loadFonts() async {
@@ -117,6 +128,20 @@ Future<void> _tap(WidgetTester tester, String text) async {
   await _settle(tester);
 }
 
+/// Va a una sección: la busca en la barra/raíl y si no está, en «Más».
+Future<void> _goTo(WidgetTester tester, String section) async {
+  for (final nav in [find.byType(NavigationRail), find.byType(NavigationBar)]) {
+    final f = find.descendant(of: nav, matching: find.text(section));
+    if (f.evaluate().isNotEmpty) {
+      await tester.tap(f.first);
+      await _settle(tester);
+      return;
+    }
+  }
+  await _openMore(tester);
+  await _tap(tester, section);
+}
+
 Future<void> _openMore(WidgetTester tester) async {
   await tester.tap(find.byIcon(Icons.more_horiz));
   await tester.pump();
@@ -155,36 +180,32 @@ void main() {
       addTearDown(tester.view.reset);
       // Sombras reales para que las capturas se parezcan a la app (se restaura al final).
       debugDisableShadows = _shotDir == null;
+      addTearDown(() => debugDisableShadows = true);
       final host = demoHost();
       await tester.pumpWidget(_app(storage, dm, CampaignShell(session: host)));
-      await _shot(tester, 'dm_${label}_01_resumen');
+      await _shot(tester, 'dm_${label}_01_tablero');
 
       final sections = [
-        'Personajes',
+        'Resumen',
         'Combate',
         'Grimorio',
+        'Chat',
+        'Personajes',
         'Objetos',
         'Artesanía',
         'Notas',
-        'Chat',
         'Referencia',
         'Partida',
       ];
       var n = 2;
       for (final sec in sections) {
-        if (label == 'movil' && !['Combate', 'Grimorio', 'Chat'].contains(sec)) {
-          // En móvil están en el menú «Más».
-          await _openMore(tester);
-          await _tap(tester, sec);
-        } else {
-          await _tap(tester, sec);
-        }
+        await _goTo(tester, tr(sec));
         await _shot(tester, 'dm_${label}_${(n++).toString().padLeft(2, '0')}_${sec.toLowerCase()}');
       }
 
       // Ficha completa de un personaje desde «Personajes».
       if (label == 'escritorio') {
-        await _tap(tester, 'Personajes');
+        await _goTo(tester, tr('Personajes'));
         await _tap(tester, 'Lyra Vientoalba');
         await _shot(tester, 'dm_${label}_20_ficha_lyra');
         await _tap(tester, 'Inventario');
@@ -201,21 +222,34 @@ void main() {
       addTearDown(tester.view.reset);
       // Sombras reales para que las capturas se parezcan a la app (se restaura al final).
       debugDisableShadows = _shotDir == null;
+      addTearDown(() => debugDisableShadows = true);
       final host = demoHost();
       final player = DemoPlayerSession(host, 'demo-luis', 'Luis');
       final luis = UserProfile(userId: 'demo-luis', displayName: 'Luis');
       await tester.pumpWidget(_app(storage, luis, CampaignShell(session: player)));
-      await _shot(tester, 'jugador_${label}_01_ficha');
+      await _shot(tester, 'jugador_${label}_01_tablero');
 
-      final sections = ['Inventario', 'Conjuros', 'Chat', 'Artesanía', 'Grupo', 'Combate', 'Notas', 'Referencia'];
+      // Tirada desde el tablero: la genera el máster, se anima y queda registrada.
+      final before = host.campaign.rolls.length;
+      await tester.tap(find.descendant(of: find.byType(AppBar), matching: find.byTooltip(tr('Tirar dados'))));
+      await _settle(tester);
+      await tester.tap(find.text('d20').last);
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await _shot(tester, 'jugador_${label}_01b_dados');
+      for (var i = 0; i < 40; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(host.campaign.rolls.length, before + 1);
+      expect(host.campaign.rolls.last.hidden, isFalse);
+
+      final sections = ['Ficha', 'Inventario', 'Conjuros', 'Chat', 'Artesanía', 'Grupo', 'Combate', 'Notas', 'Referencia'];
       var n = 2;
       for (final sec in sections) {
-        if (label == 'movil' && !['Inventario', 'Conjuros', 'Chat'].contains(sec)) {
-          await _openMore(tester);
-          await _tap(tester, sec);
-        } else {
-          await _tap(tester, sec);
-        }
+        await _goTo(tester, tr(sec));
         await _shot(tester, 'jugador_${label}_${(n++).toString().padLeft(2, '0')}_${sec.toLowerCase()}');
       }
       // El jugador no debe ver datos ocultos por el máster.

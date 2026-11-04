@@ -129,9 +129,10 @@ class ChatState {
     }
   }
 
-  /// Copia con sólo lo que puede ver [userId].
-  ChatState visibleTo(String userId) {
-    final visible = channels.where((c) => c.includes(userId)).toList();
+  /// Copia con lo que puede ver [userId]. El máster ([isDm]) ve todas las
+  /// conversaciones de la partida, también las de los jugadores entre sí.
+  ChatState visibleTo(String userId, {bool isDm = false}) {
+    final visible = channels.where((c) => isDm || c.includes(userId)).toList();
     final ids = visible.map((c) => c.id).toSet();
     return ChatState(
       channels: visible.map((c) => ChatChannel.fromJson(c.toJson())).toList(),

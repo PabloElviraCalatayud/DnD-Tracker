@@ -1,3 +1,4 @@
+import '../core/i18n.dart';
 import '../core/ids.dart';
 import '../core/json.dart';
 
@@ -5,8 +6,9 @@ enum UnitSystem {
   imperial('Imperial (libras, pies)'),
   metric('Métrico (kg, metros, como los manuales en castellano)');
 
-  const UnitSystem(this.label);
-  final String label;
+  const UnitSystem(this._label);
+  final String _label;
+  String get label => tr(_label);
 }
 
 /// Perfil local del usuario de este dispositivo. El mismo perfil puede ser
@@ -19,6 +21,7 @@ class UserProfile {
     this.units = UnitSystem.metric,
     this.hostPort = 4040,
     this.relayUrl = '',
+    this.language = AppLanguage.es,
   }) : userId = userId ?? newId(),
        secret = secret ?? newSecret();
 
@@ -28,6 +31,7 @@ class UserProfile {
   UnitSystem units;
   int hostPort;
   String relayUrl;
+  AppLanguage language;
 
   bool get isComplete => displayName.trim().isNotEmpty;
 
@@ -40,6 +44,7 @@ class UserProfile {
     'units': units.name,
     'hostPort': hostPort,
     'relayUrl': relayUrl,
+    'language': language.name,
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> j) => UserProfile(
@@ -49,6 +54,7 @@ class UserProfile {
     units: enumByName(UnitSystem.values, j['units'], UnitSystem.metric),
     hostPort: asInt(j['hostPort'], 4040),
     relayUrl: asString(j['relayUrl']),
+    language: AppLanguage.parse(j['language']),
   );
 }
 
@@ -67,7 +73,7 @@ class Units {
 
   String distance(int feet) {
     if (system == UnitSystem.metric) return '${_fmt(feet * 0.3, 1)} m';
-    return '$feet pies';
+    return I18n.isEnglish ? '$feet ft' : '$feet pies';
   }
 
   /// Convierte un peso introducido por el usuario a libras.

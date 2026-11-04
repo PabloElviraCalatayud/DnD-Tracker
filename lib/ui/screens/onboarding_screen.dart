@@ -5,6 +5,7 @@ import '../../domain/profile.dart';
 import '../../state/providers.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../../core/i18n.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
@@ -42,29 +43,30 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   const Center(child: GameIcon('dragon', size: 110, color: AppColors.gold)),
                   Gap.m,
                   Text(
-                    'DnD Tracker',
+                    tr('DnD Tracker'),
                     textAlign: TextAlign.center,
                     style: t.displaySmall?.copyWith(fontFamily: 'CinzelDecorative', color: AppColors.gold),
                   ),
                   Gap.s,
                   Text(
-                    'Tu mesa de rol en el bolsillo: el máster lleva la partida y los jugadores se conectan '
-                    'desde su móvil u ordenador.',
+                    tr(
+                      'Tu mesa de rol en el bolsillo: el máster lleva la partida y los jugadores se conectan desde su móvil u ordenador.',
+                    ),
                     textAlign: TextAlign.center,
                     style: t.bodyLarge?.copyWith(color: AppColors.muted),
                   ),
                   Gap.l,
-                  Text('¿Cómo te llamas?', style: t.titleLarge),
+                  Text(tr('¿Cómo te llamas?'), style: t.titleLarge),
                   Gap.s,
                   TextField(
                     controller: _name,
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(hintText: 'Tu nombre (lo verán los demás jugadores)'),
+                    decoration: InputDecoration(hintText: tr('Tu nombre (lo verán los demás jugadores)')),
                     onSubmitted: (_) => _continue(),
                   ),
                   Gap.l,
-                  Text('Unidades', style: t.titleLarge),
+                  Text(tr('Unidades'), style: t.titleLarge),
                   Gap.s,
                   RadioGroup<UnitSystem>(
                     groupValue: _units,
@@ -82,12 +84,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     builder: (context, _) => FilledButton.icon(
                       onPressed: _name.text.trim().isEmpty ? null : _continue,
                       icon: const Icon(Icons.arrow_forward),
-                      label: const Text('Empezar'),
+                      label: Text(tr('Empezar')),
                     ),
                   ),
                   Gap.m,
                   Text(
-                    'Podrás ser máster en unas partidas y jugador en otras con el mismo perfil.',
+                    tr('Podrás ser máster en unas partidas y jugador en otras con el mismo perfil.'),
                     textAlign: TextAlign.center,
                     style: t.bodySmall,
                   ),

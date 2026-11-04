@@ -139,8 +139,9 @@ class RelayLink {
     while (!_stopped) {
       _setState(RelayState.connecting);
       try {
-        final ws = await WebSocket.connect(Invite.relayHostUri(relayUrl, room, hostKey).toString())
-            .timeout(const Duration(seconds: 10));
+        final ws = await WebSocket.connect(
+          Invite.relayHostUri(relayUrl, room, hostKey).toString(),
+        ).timeout(const Duration(seconds: 10));
         ws.pingInterval = const Duration(seconds: 20);
         _ws = ws;
         _attempt = 0;

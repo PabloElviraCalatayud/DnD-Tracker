@@ -8,6 +8,7 @@ import '../../../state/session.dart';
 import '../../theme.dart';
 import '../../widgets/common.dart';
 import '../character/item_dialogs.dart';
+import '../../../core/i18n.dart';
 
 /// Recetas de artesanía de la partida.
 class RecipesScreen extends StatelessWidget {
@@ -23,15 +24,15 @@ class RecipesScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => openRecipeEditor(context, null),
         icon: const Icon(Icons.add),
-        label: const Text('Receta'),
+        label: Text(tr('Receta')),
       ),
       body: recipes.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               icon: 'anvil',
-              title: 'Sin recetas',
-              message:
-                  'Crea recetas de objetos personalizados (pociones, venenos, armas especiales…) y decide qué '
-                  'personajes las conocen. La app comprobará si tienen los materiales.',
+              title: tr('Sin recetas'),
+              message: tr(
+                'Crea recetas de objetos personalizados (pociones, venenos, armas especiales…) y decide qué personajes las conocen. La app comprobará si tienen los materiales.',
+              ),
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -47,7 +48,7 @@ class RecipesScreen extends StatelessWidget {
                           if (r.ingredients.isNotEmpty) r.ingredients.map((i) => '${i.quantity} ${i.name}').join(', '),
                           if (r.goldCostCp > 0) formatCp(r.goldCostCp),
                           r.availableToAll
-                              ? 'todos'
+                              ? tr('todos')
                               : r.characterIds.map((id) => s.campaign.character(id)?.name ?? '?').join(', '),
                         ].join(' · '),
                       ),
@@ -55,13 +56,18 @@ class RecipesScreen extends StatelessWidget {
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () async {
-                          final ok = await confirm(context, 'Borrar receta', '¿Borrar ${r.name}?', danger: true);
+                          final ok = await confirm(
+                            context,
+                            tr('Borrar receta'),
+                            tr('¿Borrar {0}?', [r.name]),
+                            danger: true,
+                          );
                           if (ok) await s.send(Command.deleteRecipe(r.id));
                         },
                       ),
                     ),
                   ),
-                Text('Toca una receta para editarla.', style: t.bodySmall),
+                Text(tr('Toca una receta para editarla.'), style: t.bodySmall),
               ],
             ),
     );
@@ -124,7 +130,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
     final s = SessionScope.read(context);
     final gold = parseCost(_gold.text);
     if (gold == null) {
-      showSnack(context, 'Coste no válido (ej.: 25 po)', error: true);
+      showSnack(context, tr('Coste no válido (ej.: 25 po)'), error: true);
       return;
     }
     _r
@@ -136,7 +142,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
       ..check = _check.text.trim();
     _r.ingredients.removeWhere((i) => i.name.trim().isEmpty);
     if (_r.result.name.trim().isEmpty) {
-      showSnack(context, 'Define el objeto resultante', error: true);
+      showSnack(context, tr('Define el objeto resultante'), error: true);
       return;
     }
     final res = await s.send(Command.putRecipe(_r));
@@ -144,7 +150,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
     if (res.ok) {
       Navigator.pop(context);
     } else {
-      showSnack(context, res.error ?? 'Error', error: true);
+      showSnack(context, res.error ?? tr('Error'), error: true);
     }
   }
 
@@ -154,30 +160,30 @@ class _RecipeEditorState extends State<_RecipeEditor> {
     final t = Theme.of(context).textTheme;
     final chars = s.isDm ? s.campaign.characters : s.myCharacters;
     return AppScaffold(
-      title: widget.initial == null ? 'Nueva receta' : 'Editar receta',
-      actions: [TextButton(onPressed: _save, child: const Text('Guardar'))],
+      title: widget.initial == null ? tr('Nueva receta') : tr('Editar receta'),
+      actions: [TextButton(onPressed: _save, child: Text(tr('Guardar')))],
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Nombre de la receta'),
+            decoration: InputDecoration(labelText: tr('Nombre de la receta')),
           ),
           Gap.m,
           TextField(
             controller: _desc,
             minLines: 2,
             maxLines: 6,
-            decoration: const InputDecoration(labelText: 'Descripción / instrucciones'),
+            decoration: InputDecoration(labelText: tr('Descripción / instrucciones')),
           ),
           Gap.l,
-          Text('Resultado', style: t.titleMedium),
+          Text(tr('Resultado'), style: t.titleMedium),
           Card(
             child: ListTile(
               leading: GameIcon(_r.result.iconName, size: 30),
-              title: Text(_r.result.name.isEmpty ? 'Definir objeto…' : _r.result.name),
+              title: Text(_r.result.name.isEmpty ? tr('Definir objeto…') : _r.result.name),
               subtitle: Text(
-                _r.result.description.isEmpty ? 'Toca para editar' : _r.result.description,
+                _r.result.description.isEmpty ? tr('Toca para editar') : _r.result.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -188,10 +194,10 @@ class _RecipeEditorState extends State<_RecipeEditor> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        ListTile(title: const Text('Objeto personalizado'), onTap: () => Navigator.pop(ctx, 'custom')),
-                        ListTile(title: const Text('Objeto del SRD'), onTap: () => Navigator.pop(ctx, 'srd')),
+                        ListTile(title: Text(tr('Objeto personalizado')), onTap: () => Navigator.pop(ctx, 'custom')),
+                        ListTile(title: Text(tr('Objeto del SRD')), onTap: () => Navigator.pop(ctx, 'srd')),
                         if (s.isDm && s.campaign.itemLibrary.isNotEmpty)
-                          ListTile(title: const Text('De mi biblioteca'), onTap: () => Navigator.pop(ctx, 'lib')),
+                          ListTile(title: Text(tr('De mi biblioteca')), onTap: () => Navigator.pop(ctx, 'lib')),
                       ],
                     ),
                   ),
@@ -203,7 +209,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
                     context,
                     initial: _r.result.name.isEmpty ? null : _r.result,
                     dmMode: s.isDm,
-                    title: 'Objeto resultante',
+                    title: tr('Objeto resultante'),
                   );
                 } else if (choice == 'srd') {
                   final p = await pickSrdItem(context, s.campaign.ruleset);
@@ -230,7 +236,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
           ),
           Row(
             children: [
-              const Text('Cantidad que se obtiene'),
+              Text(tr('Cantidad que se obtiene')),
               const Spacer(),
               NumberStepper(value: _r.resultQuantity, min: 1, onChanged: (v) => setState(() => _r.resultQuantity = v)),
             ],
@@ -238,16 +244,16 @@ class _RecipeEditorState extends State<_RecipeEditor> {
           Gap.l,
           Row(
             children: [
-              Text('Materiales', style: t.titleMedium),
+              Text(tr('Materiales'), style: t.titleMedium),
               const Spacer(),
               TextButton.icon(
                 onPressed: () => setState(() => _r.ingredients.add(Ingredient(name: ''))),
                 icon: const Icon(Icons.add),
-                label: const Text('Añadir'),
+                label: Text(tr('Añadir')),
               ),
             ],
           ),
-          Text('Escribe el nombre exacto del objeto o una etiqueta (p. ej. «hierba»).', style: t.bodySmall),
+          Text(tr('Escribe el nombre exacto del objeto o una etiqueta (p. ej. «hierba»).'), style: t.bodySmall),
           for (final ing in _r.ingredients)
             Padding(
               key: ObjectKey(ing),
@@ -257,7 +263,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
                   Expanded(
                     child: TextFormField(
                       initialValue: ing.name,
-                      decoration: const InputDecoration(labelText: 'Material'),
+                      decoration: InputDecoration(labelText: tr('Material')),
                       onChanged: (v) => ing.name = v,
                     ),
                   ),
@@ -268,7 +274,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
                     onChanged: (v) => setState(() => ing.quantity = v),
                   ),
                   Tooltip(
-                    message: 'Se gasta al fabricar',
+                    message: tr('Se gasta al fabricar'),
                     child: Checkbox(value: ing.consumed, onChanged: (v) => setState(() => ing.consumed = v ?? true)),
                   ),
                   IconButton(
@@ -284,7 +290,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
               Expanded(
                 child: TextField(
                   controller: _gold,
-                  decoration: const InputDecoration(labelText: 'Coste extra', hintText: '25 po'),
+                  decoration: InputDecoration(labelText: tr('Coste extra'), hintText: tr('25 po')),
                 ),
               ),
               Gap.m,
@@ -292,7 +298,7 @@ class _RecipeEditorState extends State<_RecipeEditor> {
                 child: TextField(
                   controller: _days,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Días de trabajo', hintText: '0 = al momento'),
+                  decoration: InputDecoration(labelText: tr('Días de trabajo'), hintText: tr('0 = al momento')),
                 ),
               ),
             ],
@@ -300,19 +306,19 @@ class _RecipeEditorState extends State<_RecipeEditor> {
           Gap.m,
           TextField(
             controller: _tool,
-            decoration: const InputDecoration(labelText: 'Herramienta necesaria', hintText: 'Útiles de alquimista'),
+            decoration: InputDecoration(labelText: tr('Herramienta necesaria'), hintText: tr('Útiles de alquimista')),
           ),
           Gap.m,
           TextField(
             controller: _check,
-            decoration: const InputDecoration(labelText: 'Prueba (opcional)', hintText: 'CD 15 INT (Arcanos)'),
+            decoration: InputDecoration(labelText: tr('Prueba (opcional)'), hintText: tr('CD 15 INT (Arcanos)')),
           ),
           Gap.l,
-          Text('¿Quién conoce esta receta?', style: t.titleMedium),
+          Text(tr('¿Quién conoce esta receta?'), style: t.titleMedium),
           if (s.isDm)
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Todos los personajes'),
+              title: Text(tr('Todos los personajes')),
               value: _r.availableToAll,
               onChanged: (v) => setState(() => _r.availableToAll = v),
             ),
@@ -325,12 +331,12 @@ class _RecipeEditorState extends State<_RecipeEditor> {
                 onChanged: (v) => setState(() => v == true ? _r.characterIds.add(c.id) : _r.characterIds.remove(c.id)),
               ),
           Gap.l,
-          FilledButton(onPressed: _save, child: const Text('Guardar receta')),
+          FilledButton(onPressed: _save, child: Text(tr('Guardar receta'))),
           if (!s.isDm)
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'El máster verá tus recetas y puede editarlas.',
+                tr('El máster verá tus recetas y puede editarlas.'),
                 style: t.bodySmall?.copyWith(color: AppColors.muted),
               ),
             ),

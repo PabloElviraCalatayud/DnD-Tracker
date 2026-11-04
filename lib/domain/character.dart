@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../core/i18n.dart';
 import '../core/ids.dart';
 import '../core/json.dart';
 import 'abilities.dart';
@@ -42,8 +43,9 @@ enum Recharge {
   longRest('Descanso largo'),
   dawn('Al amanecer');
 
-  const Recharge(this.label);
-  final String label;
+  const Recharge(this._label);
+  final String _label;
+  String get label => tr(_label);
 }
 
 /// Rasgo, dote o recurso con usos (Furia, Canalizar divinidad...).
@@ -454,7 +456,7 @@ class Character {
   int get level => classes.fold(0, (a, c) => a + c.level);
   int get proficiencyBonus => Rules.proficiencyBonus(max(1, level));
 
-  String get classSummary => classes.isEmpty ? 'Sin clase' : classes.map((c) => c.toString()).join(' / ');
+  String get classSummary => classes.isEmpty ? tr('Sin clase') : classes.map((c) => c.toString()).join(' / ');
 
   int score(Ability a) => abilities[a] ?? 10;
   int mod(Ability a) => Rules.abilityModifier(score(a));

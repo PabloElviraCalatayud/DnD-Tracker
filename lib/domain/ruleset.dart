@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../core/i18n.dart';
+
 /// Edición de reglas de la partida.
 enum Ruleset {
   v2014,
@@ -13,9 +15,9 @@ enum Ruleset {
   String get srdName => this == v2014 ? 'SRD 5.1' : 'SRD 5.2';
 
   /// En 2024 "raza" pasa a llamarse "especie".
-  String get speciesLabel => this == v2014 ? 'Raza' : 'Especie';
-  String get subspeciesLabel => this == v2014 ? 'Subraza' : 'Linaje';
-  String get inspirationLabel => this == v2014 ? 'Inspiración' : 'Inspiración heroica';
+  String get speciesLabel => this == v2014 ? tr('Raza') : tr('Especie');
+  String get subspeciesLabel => this == v2014 ? tr('Subraza') : tr('Linaje');
+  String get inspirationLabel => this == v2014 ? tr('Inspiración') : tr('Inspiración heroica');
 
   static Ruleset parse(Object? v) => v == 'v2014' ? Ruleset.v2014 : Ruleset.v2024;
 }
@@ -38,28 +40,32 @@ class Rules {
   int hitDiceRecoveredOnLongRest(int totalHitDice) => is2024 ? totalHitDice : max(1, totalHitDice ~/ 2);
 
   String get longRestSummary => is2024
-      ? 'Recuperas todos los PG, todos los dados de golpe gastados y todos los espacios de conjuro. '
-            'El cansancio baja 1 nivel.'
-      : 'Recuperas todos los PG, la mitad de tus dados de golpe (mínimo 1) y todos los espacios '
-            'de conjuro. El cansancio baja 1 nivel si has comido y bebido.';
+      ? tr(
+          'Recuperas todos los PG, todos los dados de golpe gastados y todos los espacios de conjuro. El cansancio baja 1 nivel.',
+        )
+      : tr(
+          'Recuperas todos los PG, la mitad de tus dados de golpe (mínimo 1) y todos los espacios de conjuro. El cansancio baja 1 nivel si has comido y bebido.',
+        );
 
   // ---------------------------------------------------------------- Cansancio
 
   static const int maxExhaustion = 6;
 
   String exhaustionEffect(int level) {
-    if (level <= 0) return 'Sin cansancio.';
-    if (level >= 6) return 'Muerte.';
+    if (level <= 0) return tr('Sin cansancio.');
+    if (level >= 6) return tr('Muerte.');
     if (is2024) {
-      return '−${2 * level} a todas las pruebas de d20 (ataques, características y salvaciones) '
-          'y −${5 * level} pies de velocidad.';
+      return tr('−{0} a todas las pruebas de d20 (ataques, características y salvaciones) y −{1} pies de velocidad.', [
+        2 * level,
+        5 * level,
+      ]);
     }
-    const effects = [
-      'Desventaja en las pruebas de característica.',
-      'Velocidad reducida a la mitad.',
-      'Desventaja en tiradas de ataque y de salvación.',
-      'Puntos de golpe máximos reducidos a la mitad.',
-      'Velocidad reducida a 0.',
+    final effects = [
+      tr('Desventaja en las pruebas de característica.'),
+      tr('Velocidad reducida a la mitad.'),
+      tr('Desventaja en tiradas de ataque y de salvación.'),
+      tr('Puntos de golpe máximos reducidos a la mitad.'),
+      tr('Velocidad reducida a 0.'),
     ];
     return effects.take(level).join(' ');
   }
@@ -183,12 +189,17 @@ class Rules {
   int craftingMaterialsCp(int costCp) => (costCp / 2).ceil();
 
   String get craftingRulesSummary => is2024
-      ? 'Necesitas competencia con la herramienta indicada y materias primas por valor de la mitad '
-            'del precio del objeto. Cada día de trabajo (8 h) avanza 10 po del precio; varios '
-            'personajes competentes pueden colaborar para reducir el tiempo.'
-      : 'Necesitas competencia con las herramientas adecuadas y materias primas por valor de la '
-            'mitad del precio. Cada día de tiempo libre (8 h) avanza 5 po del precio del objeto; '
-            'varios personajes pueden colaborar para reducir el tiempo.';
+      ? tr(
+          'Necesitas competencia con la herramienta indicada y materias primas por valor de la mitad del precio del objeto. Cada día de trabajo (8 h) avanza 10 po del precio; varios personajes competentes pueden colaborar para reducir el tiempo.',
+        )
+      : tr(
+          'Necesitas competencia con las herramientas adecuadas y materias primas por valor de la mitad del precio. Cada día de tiempo libre (8 h) avanza 5 po del precio del objeto; varios personajes pueden colaborar para reducir el tiempo.',
+        );
+
+  // ---------------------------------------------------------------- Cuadrícula
+
+  /// Lado de una casilla del tablero: 5 pies en 2014 y en 2024.
+  static const int gridFeet = 5;
 
   /// Coste y días orientativos para fabricar objetos mágicos según rareza.
   (int costGp, int days)? magicItemCrafting(String rarity, {bool consumable = false}) {
@@ -301,7 +312,7 @@ class Rules {
   ];
 
   List<String> get difficultyLabels =>
-      is2024 ? const ['Baja', 'Moderada', 'Alta'] : const ['Fácil', 'Media', 'Difícil', 'Mortal'];
+      is2024 ? [tr('Baja'), tr('Moderada'), tr('Alta')] : [tr('Fácil'), tr('Media'), tr('Difícil'), tr('Mortal')];
 
   /// Umbrales de PX del grupo para cada dificultad.
   List<int> partyThresholds(List<int> characterLevels) {
@@ -342,12 +353,12 @@ class Rules {
 
   /// Nombre de la dificultad alcanzada (o "Trivial").
   String difficultyFor(int adjustedXp, List<int> thresholds) {
-    var label = 'Trivial';
+    var label = tr('Trivial');
     for (var i = 0; i < thresholds.length; i++) {
       if (adjustedXp >= thresholds[i]) label = difficultyLabels[i];
     }
     if (is2024 && thresholds.isNotEmpty && adjustedXp > thresholds.last * 1.5) {
-      label = 'Extrema';
+      label = tr('Extrema');
     }
     return label;
   }
@@ -374,4 +385,7 @@ const Map<String, String> conditionNamesEs = {
   'unconscious': 'Inconsciente',
 };
 
-String conditionLabel(String id) => conditionNamesEs[id] ?? id;
+String conditionLabel(String id) {
+  if (I18n.isEnglish) return id.isEmpty ? id : id[0].toUpperCase() + id.substring(1);
+  return conditionNamesEs[id] ?? id;
+}

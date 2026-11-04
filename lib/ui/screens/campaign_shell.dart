@@ -5,6 +5,7 @@ import '../../state/session.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'character/character_editor.dart';
+import 'board/board_screen.dart';
 import 'character/character_views.dart';
 import 'dm/bestiary_screen.dart';
 import 'dm/campaign_settings_screen.dart';
@@ -18,9 +19,10 @@ import 'shared/dice_roller.dart';
 import 'shared/initiative_screen.dart';
 import 'shared/notes_screen.dart';
 import 'shared/reference_screen.dart';
+import '../../core/i18n.dart';
 
 class _Section {
-  const _Section(this.label, this.icon, this.builder, {this.badge = false});
+  _Section(this.label, this.icon, this.builder, {this.badge = false});
   final String label;
   final String icon;
   final WidgetBuilder builder;
@@ -49,28 +51,30 @@ class _CampaignShellState extends State<CampaignShell> {
     if (s.isDm) {
       return [
         // Las cuatro primeras van en la barra inferior del móvil.
-        _Section('Resumen', 'castle', (_) => const DashboardScreen()),
-        _Section('Combate', 'crossed_swords', (_) => const InitiativeScreen()),
-        _Section('Grimorio', 'dragon', (_) => const BestiaryScreen()),
-        _Section('Chat', 'conversation', (_) => const ChatScreen(), badge: true),
-        _Section('Personajes', 'party', (_) => const CharactersScreen()),
-        _Section('Objetos', 'open_chest', (_) => const ItemsScreen()),
-        _Section('Artesanía', 'anvil', (_) => const RecipesScreen()),
-        _Section('Notas', 'quill', (_) => const NotesScreen()),
-        _Section('Referencia', 'book', (_) => const ReferenceScreen()),
-        _Section('Partida', 'settings', (_) => const CampaignSettingsScreen()),
+        _Section(tr('Tablero'), 'treasure_map', (_) => const BoardScreen()),
+        _Section(tr('Resumen'), 'castle', (_) => const DashboardScreen()),
+        _Section(tr('Combate'), 'crossed_swords', (_) => const InitiativeScreen()),
+        _Section(tr('Chat'), 'conversation', (_) => const ChatScreen(), badge: true),
+        _Section(tr('Grimorio'), 'dragon', (_) => const BestiaryScreen()),
+        _Section(tr('Personajes'), 'party', (_) => const CharactersScreen()),
+        _Section(tr('Objetos'), 'open_chest', (_) => const ItemsScreen()),
+        _Section(tr('Artesanía'), 'anvil', (_) => const RecipesScreen()),
+        _Section(tr('Notas'), 'quill', (_) => const NotesScreen()),
+        _Section(tr('Referencia'), 'book', (_) => const ReferenceScreen()),
+        _Section(tr('Partida'), 'settings', (_) => const CampaignSettingsScreen()),
       ];
     }
     return [
-      _Section('Ficha', 'hood', (_) => const _PlayerCharacterSection(view: CharacterView.sheet)),
-      _Section('Inventario', 'backpack', (_) => const _PlayerCharacterSection(view: CharacterView.inventory)),
-      _Section('Conjuros', 'spell_book', (_) => const _PlayerCharacterSection(view: CharacterView.spells)),
-      _Section('Chat', 'conversation', (_) => const ChatScreen(), badge: true),
-      _Section('Artesanía', 'anvil', (_) => const _PlayerCharacterSection(view: CharacterView.crafting)),
-      _Section('Grupo', 'party', (_) => const PartyScreen()),
-      _Section('Combate', 'crossed_swords', (_) => const InitiativeScreen()),
-      _Section('Notas', 'quill', (_) => const NotesScreen()),
-      _Section('Referencia', 'book', (_) => const ReferenceScreen()),
+      _Section(tr('Tablero'), 'treasure_map', (_) => const BoardScreen()),
+      _Section(tr('Ficha'), 'hood', (_) => const _PlayerCharacterSection(view: CharacterView.sheet)),
+      _Section(tr('Inventario'), 'backpack', (_) => const _PlayerCharacterSection(view: CharacterView.inventory)),
+      _Section(tr('Conjuros'), 'spell_book', (_) => const _PlayerCharacterSection(view: CharacterView.spells)),
+      _Section(tr('Chat'), 'conversation', (_) => const ChatScreen(), badge: true),
+      _Section(tr('Artesanía'), 'anvil', (_) => const _PlayerCharacterSection(view: CharacterView.crafting)),
+      _Section(tr('Grupo'), 'party', (_) => const PartyScreen()),
+      _Section(tr('Combate'), 'crossed_swords', (_) => const InitiativeScreen()),
+      _Section(tr('Notas'), 'quill', (_) => const NotesScreen()),
+      _Section(tr('Referencia'), 'book', (_) => const ReferenceScreen()),
     ];
   }
 
@@ -100,7 +104,7 @@ class _CampaignShellState extends State<CampaignShell> {
               actions: [
                 if (!s.isDm && s.myCharacters.length > 1) const _CharacterSwitcher(),
                 IconButton(
-                  tooltip: 'Tirar dados',
+                  tooltip: tr('Tirar dados'),
                   icon: const GameIcon('d20', size: 24),
                   onPressed: () => showDiceRoller(context),
                 ),
@@ -173,7 +177,17 @@ class _CampaignShellState extends State<CampaignShell> {
             selectedIcon: _NavIcon(section: sections[j], selected: true),
             label: sections[j].label,
           ),
-        NavigationDestination(icon: const Icon(Icons.more_horiz), label: inMore ? sections[_index].label : 'Más'),
+        NavigationDestination(
+          icon: Builder(
+            builder: (context) {
+              final s = SessionScope.of(context);
+              final hiddenBadge = sections.skip(primary).any((x) => x.badge) && s.totalUnread > 0;
+              const icon = Icon(Icons.more_horiz);
+              return hiddenBadge ? Badge(label: Text('${s.totalUnread}'), child: icon) : icon;
+            },
+          ),
+          label: inMore ? sections[_index].label : tr('Más'),
+        ),
       ],
     );
   }
@@ -213,7 +227,7 @@ class _Title extends StatelessWidget {
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                s.isDm ? '${s.onlineCount} conectados' : s.status.label,
+                s.isDm ? tr('{0} conectados', [s.onlineCount]) : s.status.label,
                 style: t.labelMedium?.copyWith(color: AppColors.muted),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -257,7 +271,7 @@ class _ConnectionBanner extends StatelessWidget {
             if (s is ClientSession)
               TextButton(
                 onPressed: fatal ? () => Navigator.pop(context) : s.retryNow,
-                child: Text(fatal ? 'Salir' : 'Reintentar'),
+                child: Text(fatal ? tr('Salir') : tr('Reintentar')),
               ),
           ],
         ),
@@ -274,7 +288,7 @@ class _CharacterSwitcher extends StatelessWidget {
     final s = SessionScope.of(context);
     final active = s.activeCharacter;
     return PopupMenuButton<String>(
-      tooltip: 'Cambiar de personaje',
+      tooltip: tr('Cambiar de personaje'),
       icon: GameIcon(active?.portrait ?? 'hood', size: 26),
       onSelected: s.selectCharacter,
       itemBuilder: (_) => [
@@ -297,16 +311,16 @@ class _PlayerCharacterSection extends StatelessWidget {
       final waiting = s is ClientSession && !s.hasData && s.status != ConnectionStatus.online;
       return EmptyState(
         icon: 'hood',
-        title: waiting ? 'Conectando con el máster…' : 'Aún no tienes personaje',
+        title: waiting ? tr('Conectando con el máster…') : tr('Aún no tienes personaje'),
         message: waiting
-            ? 'En cuanto conecte verás tu ficha. Si ya jugaste antes, se usará la última copia guardada.'
+            ? tr('En cuanto conecte verás tu ficha. Si ya jugaste antes, se usará la última copia guardada.')
             : 'Crea tu personaje para esta partida. El máster lo verá al instante.',
         action: waiting
             ? null
             : FilledButton.icon(
                 onPressed: s.canEdit ? () => openCharacterEditor(context, null) : null,
                 icon: const Icon(Icons.add),
-                label: const Text('Crear personaje'),
+                label: Text(tr('Crear personaje')),
               ),
       );
     }
