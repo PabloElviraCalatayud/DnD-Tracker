@@ -250,7 +250,10 @@ class StatBlock extends StatelessWidget {
   const StatBlock({super.key, required this.monster});
   final Monster monster;
 
-  static final _hit = RegExp(r'(?:Attack Roll|to hit)[: ]*\s*([+-]\d+)|([+-]\d+) to hit', caseSensitive: false);
+  static final _hit = RegExp(
+    r'(?:Attack Roll|to hit|Tirada de ataque[^:]*)[: ]*\s*([+-]\d+)|([+-]\d+) (?:to hit|a impactar)',
+    caseSensitive: false,
+  );
   static final _dmg = RegExp(r'\((\d+d\d+(?:\s*[+−-]\s*\d+)?)\)');
 
   @override

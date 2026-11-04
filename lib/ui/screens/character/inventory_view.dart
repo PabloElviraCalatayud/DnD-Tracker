@@ -14,6 +14,7 @@ import '../../widgets/common.dart';
 import 'character_views.dart';
 import 'item_dialogs.dart';
 import '../../../core/i18n.dart';
+import '../../../data/srd.dart';
 
 class InventoryView extends ConsumerStatefulWidget {
   const InventoryView({super.key, required this.character});
@@ -96,9 +97,10 @@ class _InventoryViewState extends ConsumerState<InventoryView> {
     final settings = s.campaign.settings;
     final t = Theme.of(context).textTheme;
 
+    final srd = ref.watch(srdProvider(s.campaign.ruleset)).value;
     final q = _query.toLowerCase();
     final items =
-        c.inventory.where((i) {
+        c.inventory.map((i) => srd?.localizeItem(i) ?? i).where((i) {
           if (_category != null && i.category != _category) return false;
           return q.isEmpty || i.name.toLowerCase().contains(q) || i.tags.any((x) => x.toLowerCase().contains(q));
         }).toList()..sort((a, b) {

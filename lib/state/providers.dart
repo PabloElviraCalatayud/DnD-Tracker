@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/i18n.dart';
 import '../data/srd.dart';
 import '../data/storage.dart';
 import '../domain/campaign.dart';
@@ -28,6 +29,7 @@ final unitsProvider = Provider<Units>((ref) => Units(ref.watch(profileProvider).
 
 /// Contenido SRD de cada edición, cargado de los assets en segundo plano.
 final srdProvider = FutureProvider.family<SrdData, Ruleset>((ref, ruleset) async {
+  final spanish = ref.watch(profileProvider.select((p) => p.language)) == AppLanguage.es;
   final files = <String, String>{};
   for (final name in SrdData.fileNames) {
     try {
@@ -36,10 +38,10 @@ final srdProvider = FutureProvider.family<SrdData, Ruleset>((ref, ruleset) async
       files[name] = '[]';
     }
   }
-  return compute(_parseSrd, (ruleset, files));
+  return compute(_parseSrd, (ruleset, files, spanish));
 });
 
-SrdData _parseSrd((Ruleset, Map<String, String>) args) => SrdData.parse(args.$1, args.$2);
+SrdData _parseSrd((Ruleset, Map<String, String>, bool) args) => SrdData.parse(args.$1, args.$2, spanish: args.$3);
 
 final hostedCampaignsProvider = FutureProvider<List<Campaign>>((ref) => ref.read(storageProvider).listHosted());
 

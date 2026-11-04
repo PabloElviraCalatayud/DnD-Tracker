@@ -33,7 +33,7 @@ class AboutScreen extends StatelessWidget {
             icon: 'book',
             child: RichDescription(
               tr(
-                'Esta obra incluye material del **System Reference Document 5.1 ("SRD 5.1")** y del **System Reference Document 5.2 ("SRD 5.2")** de Wizards of the Coast LLC, disponibles en https://dnd.wizards.com/resources/systems-reference-document. Ambos se distribuyen bajo la licencia Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode).\n\nLos datos se han obtenido del proyecto 5e-bits/5e-srd-api (licencia MIT).\n\nDnD Tracker no está afiliada, respaldada ni patrocinada por Wizards of the Coast.',
+                'Esta obra incluye material del **System Reference Document 5.1 ("SRD 5.1")** y del **System Reference Document 5.2 ("SRD 5.2")** de Wizards of the Coast LLC, disponibles en https://dnd.wizards.com/resources/systems-reference-document. Ambos se distribuyen bajo la licencia Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/legalcode).\n\nEl texto en castellano es la traducción oficial del SRD 5.1 y del SRD 5.2.1 (© Wizards of the Coast LLC, CC BY 4.0), recopilada en La Taberna de Eme (https://github.com/CarlosEmerito/latabernadeeme, CC BY 4.0).\n\nLos datos se han obtenido del proyecto 5e-bits/5e-srd-api (licencia MIT).\n\nDnD Tracker no está afiliada, respaldada ni patrocinada por Wizards of the Coast.',
               ),
             ),
           ),

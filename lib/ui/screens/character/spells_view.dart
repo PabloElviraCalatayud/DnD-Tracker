@@ -67,7 +67,7 @@ class _SpellsViewState extends ConsumerState<SpellsView> {
     final sc = c.spellcasting;
     final t = Theme.of(context).textTheme;
     final limit = sc.preparedLimit ?? suggestedPreparedLimit(c, rs, srd);
-    final spells = sc.spells.where((x) => !_onlyReady || x.isReady).toList()
+    final spells = sc.spells.map((x) => srd?.localizeSpell(x) ?? x).where((x) => !_onlyReady || x.isReady).toList()
       ..sort((a, b) => a.level != b.level ? a.level.compareTo(b.level) : a.name.compareTo(b.name));
     final levels = spells.map((x) => x.level).toSet().toList()..sort();
 
@@ -607,19 +607,19 @@ class _SpellBrowserState extends State<SpellBrowser> {
     super.initState();
     final c = widget.character;
     if (c != null && c.classes.isNotEmpty) {
-      _class = widget.srd.classByName(c.classes.first.srdId ?? c.classes.first.name)?.name;
+      _class = widget.srd.classByName(c.classes.first.srdId ?? c.classes.first.name)?.nameEn;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final classNames = widget.srd.classes.where((c) => c.spellAbility != null).map((c) => c.name).toList();
+    final casterClasses = widget.srd.classes.where((c) => c.spellAbility != null).toList();
     final q = _query.toLowerCase();
     final list = widget.srd.spells.where((sp) {
       if (_level != null && sp.level != _level) return false;
       if (_class != null && !sp.classes.contains(_class)) return false;
-      return q.isEmpty || sp.name.toLowerCase().contains(q);
+      return q.isEmpty || sp.name.toLowerCase().contains(q) || sp.nameEn.toLowerCase().contains(q);
     }).toList();
     return AppScaffold(
       title: widget.picking ? tr('Añadir conjuros') : tr('Conjuros ({0})', [widget.srd.ruleset.srdName]),
@@ -636,7 +636,7 @@ class _SpellBrowserState extends State<SpellBrowser> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: SearchField(onChanged: (v) => setState(() => _query = v), hint: tr('Buscar conjuro (en inglés)')),
+            child: SearchField(onChanged: (v) => setState(() => _query = v), hint: tr('Buscar conjuro')),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -648,7 +648,7 @@ class _SpellBrowserState extends State<SpellBrowser> {
                     decoration: InputDecoration(labelText: tr('Clase')),
                     items: [
                       DropdownMenuItem(value: null, child: Text(tr('Todas'))),
-                      for (final n in classNames) DropdownMenuItem(value: n, child: Text(n)),
+                      for (final c in casterClasses) DropdownMenuItem(value: c.nameEn, child: Text(c.name)),
                     ],
                     onChanged: (v) => setState(() => _class = v),
                   ),
@@ -706,7 +706,7 @@ class _SpellBrowserState extends State<SpellBrowser> {
                               Text('${spellLevelLabel(sp.level)} · ${sp.school}', style: t.bodySmall),
                               Text('${sp.time} · ${sp.range} · ${sp.duration}', style: t.bodySmall),
                               Text(tr('Componentes: {0}', [sp.componentsFull]), style: t.bodySmall),
-                              Text(tr('Clases: {0}', [sp.classes.join(', ')]), style: t.bodySmall),
+                              Text(tr('Clases: {0}', [sp.classesShown.join(', ')]), style: t.bodySmall),
                               Gap.s,
                               RichDescription(sp.description),
                               if (sp.higher.isNotEmpty) ...[

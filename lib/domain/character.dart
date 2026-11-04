@@ -7,6 +7,7 @@ import 'abilities.dart';
 import 'currency.dart';
 import 'item.dart';
 import 'ruleset.dart';
+import 'srd_terms.dart';
 
 class ClassLevel {
   ClassLevel({required this.name, this.subclass = '', this.level = 1, this.hitDie = 8, this.srdId});
@@ -34,7 +35,8 @@ class ClassLevel {
   );
 
   @override
-  String toString() => subclass.isEmpty ? '$name $level' : '$name ($subclass) $level';
+  String toString() =>
+      subclass.isEmpty ? '${srdTerm(name)} $level' : '${srdTerm(name)} (${srdTerm(subclass)}) $level';
 }
 
 enum Recharge {

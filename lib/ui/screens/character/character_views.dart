@@ -17,6 +17,7 @@ import 'crafting_view.dart';
 import 'inventory_view.dart';
 import 'spells_view.dart';
 import '../../../core/i18n.dart';
+import '../../../domain/srd_terms.dart';
 
 enum CharacterView { sheet, inventory, spells, crafting }
 
@@ -189,8 +190,8 @@ class _Header extends StatelessWidget {
                   Text(
                     [
                       if (c.species.isNotEmpty)
-                        '${rs.speciesLabel}: ${c.species}${c.subspecies.isNotEmpty ? ' (${c.subspecies})' : ''}',
-                      if (c.background.isNotEmpty) tr('Trasfondo: {0}', [c.background]),
+                        '${rs.speciesLabel}: ${srdTerm(c.species)}${c.subspecies.isNotEmpty ? ' (${srdTerm(c.subspecies)})' : ''}',
+                      if (c.background.isNotEmpty) tr('Trasfondo: {0}', [srdTerm(c.background)]),
                       if (c.alignment.isNotEmpty) tr(c.alignment),
                       tr('Nivel {0} · {1} PX', [c.level, c.xp]),
                     ].join(' · '),

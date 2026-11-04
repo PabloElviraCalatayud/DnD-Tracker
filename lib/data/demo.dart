@@ -82,10 +82,11 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
     spellcasting: Spellcasting(
       ability: Ability.wis,
       spells: [
-        CharacterSpell(name: 'Guidance', level: 0, school: 'Divination', castingTime: 'Action', range: 'Touch'),
-        CharacterSpell(name: 'Sacred Flame', level: 0, school: 'Evocation', castingTime: 'Action', range: '60 feet'),
+        CharacterSpell(name: 'Guidance', srdId: 'guidance', level: 0, school: 'Divination', castingTime: 'Action', range: 'Touch'),
+        CharacterSpell(name: 'Sacred Flame', srdId: 'sacred-flame', level: 0, school: 'Evocation', castingTime: 'Action', range: '60 feet'),
         CharacterSpell(
           name: 'Cure Wounds',
+          srdId: 'cure-wounds',
           level: 1,
           prepared: true,
           school: 'Abjuration',
@@ -96,6 +97,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         ),
         CharacterSpell(
           name: 'Bless',
+          srdId: 'bless',
           level: 1,
           prepared: true,
           concentration: true,
@@ -105,6 +107,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         ),
         CharacterSpell(
           name: 'Spiritual Weapon',
+          srdId: 'spiritual-weapon',
           level: 2,
           prepared: true,
           school: 'Evocation',
@@ -186,10 +189,11 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
     spellcasting: Spellcasting(
       ability: Ability.intl,
       spells: [
-        CharacterSpell(name: 'Fire Bolt', level: 0, school: 'Evocation', castingTime: 'Action', range: '120 feet'),
-        CharacterSpell(name: 'Mage Hand', level: 0, school: 'Conjuration', castingTime: 'Action', range: '30 feet'),
+        CharacterSpell(name: 'Fire Bolt', srdId: 'fire-bolt', level: 0, school: 'Evocation', castingTime: 'Action', range: '120 feet'),
+        CharacterSpell(name: 'Mage Hand', srdId: 'mage-hand', level: 0, school: 'Conjuration', castingTime: 'Action', range: '30 feet'),
         CharacterSpell(
           name: 'Magic Missile',
+          srdId: 'magic-missile',
           level: 1,
           prepared: true,
           school: 'Evocation',
@@ -198,6 +202,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         ),
         CharacterSpell(
           name: 'Shield',
+          srdId: 'shield',
           level: 1,
           prepared: true,
           school: 'Abjuration',
@@ -206,6 +211,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         ),
         CharacterSpell(
           name: 'Detect Magic',
+          srdId: 'detect-magic',
           level: 1,
           ritual: true,
           concentration: true,
@@ -215,6 +221,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         ),
         CharacterSpell(
           name: 'Misty Step',
+          srdId: 'misty-step',
           level: 2,
           prepared: true,
           school: 'Conjuration',
@@ -223,6 +230,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
         ),
         CharacterSpell(
           name: 'Web',
+          srdId: 'web',
           level: 2,
           concentration: true,
           school: 'Conjuration',
@@ -338,29 +346,29 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
 
   final ashKnight = Monster(
     name: 'Caballero de ceniza',
-    size: 'Medium',
-    type: 'undead',
-    alignment: 'lawful evil',
+    size: 'Mediano',
+    type: 'muerto viviente',
+    alignment: 'legal malvado',
     ac: 17,
     acNote: 'armadura de placas quemada',
     hp: 52,
     hitDice: '8d8+16',
-    speed: '30 ft.',
+    speed: '9 m',
     abilities: [17, 10, 15, 8, 12, 14],
-    saves: 'CON +4, WIS +3',
-    immunities: 'Poison, Fire',
-    conditionImmunities: 'Exhaustion, Poisoned',
-    senses: 'darkvision 60 ft., passive perception 11',
+    saves: 'Con +4, Sab +3',
+    immunities: 'fuego, veneno',
+    conditionImmunities: 'cansancio, envenenado',
+    senses: 'visión en la oscuridad 18 m, Percepción pasiva 11',
     languages: 'las que conocía en vida',
     cr: 3,
     crText: '3',
     xp: 700,
-    traits: [NamedText('Rescoldos', 'Cuando cae a 0 PG, cada criatura a 5 pies recibe 5 (2d4) de daño de fuego.')],
+    traits: [NamedText('Rescoldos', 'Cuando cae a 0 PG, cada criatura a 1,5 m o menos recibe 5 (2d4) de daño de fuego.')],
     actions: [
       NamedText('Multiataque', 'El caballero hace dos ataques con su espada.'),
       NamedText(
         'Espada ardiente',
-        'Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage plus 3 (1d6) Fire damage.',
+        'Tirada de ataque cuerpo a cuerpo: +5, alcance 1,5 m. Acierto: 7 (1d8 + 3) de daño cortante más 3 (1d6) de daño de fuego.',
       ),
     ],
     custom: true,
@@ -521,7 +529,7 @@ Campaign buildDemoCampaign({required String dmUserId, required String dmName, Ru
       characterId: lyra.id,
       characterName: lyra.name,
       portrait: lyra.portrait,
-      label: 'Magic Missile',
+      label: 'Proyectil mágico',
       expression: '3d4+3',
       total: 11,
       dice: const [RollDie(sides: 4, value: 3), RollDie(sides: 4, value: 1), RollDie(sides: 4, value: 4)],
