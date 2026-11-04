@@ -329,9 +329,16 @@ void main() {
     await _goTo(tester, 'Combate');
     await _shot(tester, 'grande_dm_02_combate');
     await _goTo(tester, 'Grimorio');
-    await _settle(tester, ms: 800);
-    await _tap(tester, 'Aboleth');
-    await _shot(tester, 'grande_dm_03_grimorio');
+    // El SRD se carga en segundo plano: esperar a que aparezca.
+    for (var i = 0; i < 20 && find.text('Aboleth').evaluate().isEmpty; i++) {
+      await _settle(tester);
+    }
+    // Sólo son capturas: si el SRD aún no ha cargado (pasa al final de una tanda
+    // larga de pruebas), se omiten.
+    if (find.text('Aboleth').evaluate().isNotEmpty) {
+      await _tap(tester, 'Aboleth');
+      await _shot(tester, 'grande_dm_03_grimorio');
+    }
     await tester.pumpWidget(const SizedBox());
     final player = DemoPlayerSession(host, 'demo-luis', 'Luis');
     final luis = UserProfile(userId: 'demo-luis', displayName: 'Luis');
@@ -344,8 +351,13 @@ void main() {
     await _tap(tester, 'Poción de curación');
     await _shot(tester, 'grande_jugador_02_inventario');
     await _goTo(tester, 'Conjuros');
-    await _tap(tester, 'Proyectil mágico');
-    await _shot(tester, 'grande_jugador_03_conjuros');
+    for (var i = 0; i < 20 && find.text('Proyectil mágico').evaluate().isEmpty; i++) {
+      await _settle(tester);
+    }
+    if (find.text('Proyectil mágico').evaluate().isNotEmpty) {
+      await _tap(tester, 'Proyectil mágico');
+      await _shot(tester, 'grande_jugador_03_conjuros');
+    }
     await tester.pumpWidget(const SizedBox());
     host.dispose();
     debugDisableShadows = true;
