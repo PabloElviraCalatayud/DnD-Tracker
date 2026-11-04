@@ -428,10 +428,11 @@ class _SidebarHeader extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
                         children: [
                           Pill(s.campaign.ruleset.short),
-                          const SizedBox(width: 6),
                           Pill(
                             s.isDm ? tr('Máster') : tr('Jugador'),
                             color: s.isDm ? AppColors.crimson : AppColors.arcane,
